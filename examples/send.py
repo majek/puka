@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
-import os
 import sys
-sys.path.append(os.path.join("..", "puka"))
-
+sys.path.append("..")
 
 import puka
 

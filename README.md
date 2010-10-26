@@ -92,7 +92,7 @@ time. This can be exploited to achieve a degree of parallelism. For
 example, this snippet creates 1000 queues in parallel:
 
     tickets = [puka.queue_declare(queue='a%04i' % i) for i in range(1000)]
-    pork.wait_for_many(tickets)
+    puka.wait_for_many(tickets)
 
 
 Puka is also created to be a flat library, with only a few necessary
@@ -113,7 +113,8 @@ author. The major differences between Puka and raw AMQP are:
  - Mystic 'delivery-mode' property is renamed to `persistent` and by default
    all outgoing messages are marked as `persistent`.
  - Everything is made to be synchronous, even 'basic_publish' and 'basic_ack'.
-
+ - Heartbeats aren't supported. Use tcp keepalives or just do 'queue_declare'
+   every n seconds.
 
 
 Puka is experimental

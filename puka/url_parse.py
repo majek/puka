@@ -25,8 +25,5 @@ def parse_amqp_url(amqp_url):
     port = o.port if o.port else 5672
     return (username, password, vhost, host, port)
 
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
 
 

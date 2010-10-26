@@ -54,19 +54,19 @@ import datetime
 import calendar
 
 
-def encode_table(table):
+def encode(table):
     '''
-    >>> encode_table(None)
+    >>> encode(None)
     '\\x00\\x00\\x00\\x00'
-    >>> encode_table({})
+    >>> encode({})
     '\\x00\\x00\\x00\\x00'
-    >>> encode_table({'a':1, 'c':True, 'd':'x', 'e':{}})
+    >>> encode({'a':1, 'c':True, 'd':'x', 'e':{}})
     '\\x00\\x00\\x00\\x1d\\x01aI\\x00\\x00\\x00\\x01\\x01cI\\x00\\x00\\x00\\x01\\x01eF\\x00\\x00\\x00\\x00\\x01dS\\x00\\x00\\x00\\x01x'
-    >>> encode_table({'a':decimal.Decimal('1.0')})
+    >>> encode({'a':decimal.Decimal('1.0')})
     '\\x00\\x00\\x00\\x07\\x01aD\\x00\\x00\\x00\\x00\\x01'
-    >>> encode_table({'a':decimal.Decimal('5E-3')})
+    >>> encode({'a':decimal.Decimal('5E-3')})
     '\\x00\\x00\\x00\\x07\\x01aD\\x03\\x00\\x00\\x00\\x05'
-    >>> encode_table({'a':datetime.datetime(2010,12,31,23,58,59)})
+    >>> encode({'a':datetime.datetime(2010,12,31,23,58,59)})
     '\\x00\\x00\\x00\\x0b\\x01aT\\x00\\x00\\x00\\x00M\\x1enC'
     '''
     pieces = []
@@ -101,7 +101,7 @@ def encode_table(table):
             tablesize = tablesize + 9
         elif isinstance(value, dict):
             pieces.append(struct.pack('>c', 'F'))
-            piece = encode_table(value)
+            piece = encode(value)
             pieces.append(piece)
             tablesize = tablesize + 1 + len(piece)
         else:
@@ -109,7 +109,21 @@ def encode_table(table):
     pieces[length_index] = struct.pack('>I', tablesize)
     return ''.join(pieces)
 
-def decode_table(encoded, offset):
+def decode(encoded, offset):
+    '''
+    >>> decode(encode(None), 0)
+    ({}, 4)
+    >>> decode(encode({}), 0)[0]
+    {}
+    >>> decode(encode({'a':1, 'c':True, 'd':'x', 'e':{}}), 0)[0]
+    {'a': 1, 'c': 1, 'e': {}, 'd': 'x'}
+    >>> decode(encode({'a':decimal.Decimal('1.01')}), 0)[0]
+    {'a': Decimal('1.01')}
+    >>> decode(encode({'a':decimal.Decimal('5E-30')}), 0)[0]
+    {'a': Decimal('5E-30')}
+    >>> decode(encode({'a':datetime.datetime(2010,12,31,23,58,59)}), 0)[0]
+    {'a': datetime.datetime(2010, 12, 31, 23, 58, 59)}
+    '''
     result = {}
     tablesize = struct.unpack_from('>I', encoded, offset)[0]
     offset = offset + 4
@@ -139,7 +153,7 @@ def decode_table(encoded, offset):
             value = datetime.datetime.utcfromtimestamp(struct.unpack_from('>Q', encoded, offset)[0])
             offset = offset + 8
         elif kind == 'F':
-            (value, offset) = decode_table(encoded, offset)
+            (value, offset) = decode(encoded, offset)
         else:
             assert False, "Unsupported field kind %s during decoding" % (kind,)
         result[key] = value
