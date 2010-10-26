@@ -1,0 +1,3 @@
+*.pyc
+tests/.coverage
+puka/spec.py
