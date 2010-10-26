@@ -45,15 +45,31 @@
 # this file under the terms of any one of the MPL or the GPL.
 #
 # ***** END LICENSE BLOCK *****
+#
+# Code adapted to Puka.
 
 import struct
 import decimal
 import datetime
 import calendar
 
-from pika.exceptions import *
 
-def encode_table(pieces, table):
+def encode_table(table):
+    '''
+    >>> encode_table(None)
+    '\\x00\\x00\\x00\\x00'
+    >>> encode_table({})
+    '\\x00\\x00\\x00\\x00'
+    >>> encode_table({'a':1, 'c':True, 'd':'x', 'e':{}})
+    '\\x00\\x00\\x00\\x1d\\x01aI\\x00\\x00\\x00\\x01\\x01cI\\x00\\x00\\x00\\x01\\x01eF\\x00\\x00\\x00\\x00\\x01dS\\x00\\x00\\x00\\x01x'
+    >>> encode_table({'a':decimal.Decimal('1.0')})
+    '\\x00\\x00\\x00\\x07\\x01aD\\x00\\x00\\x00\\x00\\x01'
+    >>> encode_table({'a':decimal.Decimal('5E-3')})
+    '\\x00\\x00\\x00\\x07\\x01aD\\x03\\x00\\x00\\x00\\x05'
+    >>> encode_table({'a':datetime.datetime(2010,12,31,23,58,59)})
+    '\\x00\\x00\\x00\\x0b\\x01aT\\x00\\x00\\x00\\x00M\\x1enC'
+    '''
+    pieces = []
     if table is None:
         table = {}
     length_index = len(pieces)
@@ -75,21 +91,23 @@ def encode_table(pieces, table):
             if value._exp < 0:
                 decimals = -value._exp
                 raw = int(value * (decimal.Decimal(10) ** decimals))
-                pieces.append(struct.pack('cB>I', 'D', decimals, raw))
+                pieces.append(struct.pack('>cBI', 'D', decimals, raw))
             else:
                 # per spec, the "decimals" octet is unsigned (!)
-                pieces.append(struct.pack('cB>I', 'D', 0, int(value)))
+                pieces.append(struct.pack('>cBI', 'D', 0, int(value)))
             tablesize = tablesize + 5
         elif isinstance(value, datetime.datetime):
             pieces.append(struct.pack('>cQ', 'T', calendar.timegm(value.utctimetuple())))
             tablesize = tablesize + 9
         elif isinstance(value, dict):
             pieces.append(struct.pack('>c', 'F'))
-            tablesize = tablesize + 1 + encode_table(pieces, value)
+            piece = encode_table(value)
+            pieces.append(piece)
+            tablesize = tablesize + 1 + len(piece)
         else:
-            raise InvalidTableError("Unsupported field kind during encoding", key, value)
+            assert False, "Unsupported field kind during encoding %r/%r" % (key, value)
     pieces[length_index] = struct.pack('>I', tablesize)
-    return tablesize + 4
+    return ''.join(pieces)
 
 def decode_table(encoded, offset):
     result = {}
@@ -123,6 +141,6 @@ def decode_table(encoded, offset):
         elif kind == 'F':
             (value, offset) = decode_table(encoded, offset)
         else:
-            raise InvalidTableError("Unsupported field kind %s during decoding" % (kind,))
+            assert False, "Unsupported field kind %s during decoding" % (kind,)
         result[key] = value
     return (result, offset)

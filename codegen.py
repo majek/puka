@@ -8,7 +8,6 @@ import simplejson as json
 import sys
 import string
 
-sys.path.append("rabbitmq-codegen")
 sys.path.append(os.path.join("..","rabbitmq-codegen"))
 from amqp_codegen import *
 
