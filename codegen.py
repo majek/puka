@@ -48,9 +48,10 @@ def print_constants(spec):
 
     print
     for c in spec.allClasses():
-        print "%-24s= 0x%04X" % (
-            c.u,
-            c.index,)
+        if c.fields:
+            print "%-24s= 0x%04X" % (
+                c.u,
+                c.index,)
     print
 
 def print_decode_methods_map(client_methods):
@@ -66,8 +67,8 @@ def print_decode_methods_map(client_methods):
 def print_decode_properties_map(props_classes):
     print "PROPS = {"
     for c in props_classes:
-        print "    0x%04X: %s, \t# %d" % (
-            c.index, c.decode, c.index)
+        print "    %s: %s, \t# %d" % (
+            c.u, c.decode, c.index)
     print "}"
     print
 
