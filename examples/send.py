@@ -6,7 +6,7 @@ sys.path.append("..")
 import puka
 
 
-client = puka.Puka("amqp://localhost/")
+client = puka.Client("amqp://localhost/")
 ticket = client.connect()
 client.wait(ticket)
 

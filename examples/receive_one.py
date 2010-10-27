@@ -6,7 +6,7 @@ sys.path.append("..")
 import puka
 
 
-client = puka.Puka("amqp://localhost/")
+client = puka.Client("amqp://localhost/")
 ticket = client.connect()
 client.wait(ticket)
 
@@ -21,5 +21,5 @@ print " [x] Received message %r" % (result,)
 
 client.basic_ack(result)
 
-client.cancel(consume_ticket)
-client.wait(consume_ticket)
+#client.cancel(consume_ticket)
+#client.wait(consume_ticket)

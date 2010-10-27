@@ -212,7 +212,12 @@ def GetAmqpSpec(spec_path, accepted_by_udate):
             m.encode = pyize('encode', m.klass.name, m.name)
             m.frame = Pyize('frame', m.klass.name, m.name)
 
-            m.accepted_by = accepted_by_udate[c.name][m.name]
+            try:
+                m.accepted_by = accepted_by_udate[c.name][m.name]
+            except KeyError:
+                print >> sys.stderr, " [!] Method %s.%s unknown! Assuming " \
+                    "['server', 'client']" % (c.name, m.name)
+                m.accepted_by = ['server', 'client']
 
             for f in m.arguments:
                 f.t = spec.resolveDomain(f.domain)
