@@ -166,3 +166,18 @@ def _queue_purge(t):
 def _queue_purge_ok(t, result):
     t.done(result)
 
+
+####
+def queue_delete(conn, queue, if_unused=False, if_empty=False):
+    frames = spec.encode_queue_delete(queue, if_unused, if_empty)
+    return ticket.Ticket(conn,
+                         frames = frames,
+                         on_channel = _queue_delete,
+                         )
+
+def _queue_delete(t):
+    t.register(spec.METHOD_QUEUE_DELETE_OK, _queue_delete_ok)
+    t.send_frames(t.frames)
+
+def _queue_delete_ok(t, result):
+    t.done(result)

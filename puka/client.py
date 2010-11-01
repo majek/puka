@@ -28,6 +28,7 @@ class Client(connection.Connection):
     attach_methods = (machine_decorator, [
         machine.queue_declare,
         machine.queue_purge,
+        machine.queue_delete,
         machine.basic_publish,
         machine.basic_consume,
         machine.basic_get,

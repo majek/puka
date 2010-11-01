@@ -15,10 +15,16 @@ class TestLimits(unittest.TestCase):
         ticket = client.connect()
         client.wait(ticket)
 
-        tickets = [client.queue_declare(queue=qname+'.%s' % (i,),
-                                        auto_delete=True)
-                   for i in xrange(1000)]
+        queues = [qname+'.%s' % (i,) for i in xrange(1000)]
+        tickets = [client.queue_declare(queue=q,
+                                        ))
+                   for q in queues]
 
         for ticket in tickets:
             client.wait(ticket)
 
+        tickets = [client.queue_delete(queue=q) for q in queues]
+        for ticket in tickets:
+            client.wait(ticket)
+
+    #TODO: test queue_declare with auto_delete=True
