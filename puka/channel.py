@@ -58,6 +58,9 @@ class Channel(object):
     def register(self, method_id, callback):
         self.methods[method_id] = callback
 
+    def unregister(self, method_id):
+        del self.methods[method_id]
+
     def decorate_frames(self, frames):
         format = lambda frame_type, payload:''.join((struct.pack('!BHI',
                                                                  frame_type,

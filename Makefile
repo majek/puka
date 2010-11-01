@@ -24,4 +24,4 @@ clean:
 .PHONY: tests
 test: tests
 tests: puka/spec.py
-	cd tests && PYTHONPATH=.. $(PYTHON) tests.py ../puka puka
+	cd tests && AMQP_URL=amqp:/// PYTHONPATH=.. $(PYTHON) tests.py ../puka puka

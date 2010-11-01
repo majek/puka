@@ -181,7 +181,7 @@ class Connection(object):
                 ready = ticket_numbers & self.ready_tickets
                 if not ready:
                     break
-                ticket_number = ready.pop()
+                ticket_number = list(ready)[0]
                 return self.tickets[ticket_number].run_callback()
 
             r, w, e = select.select([fd],
@@ -198,7 +198,7 @@ class Connection(object):
         '''
         fd = self.fileno()
         while True:
-            self.run_all_callbacks()
+            self.run_any_callbacks()
             r, w, e = select.select([fd],
                                     [fd] if self.needs_write() else [],
                                     [fd])
@@ -212,5 +212,5 @@ class Connection(object):
         Run any callbacks, any tickets, but do not block.
         '''
         while self.ready_tickets:
-            ticket_number = self.ready_tickets.pop()
+            ticket_number = list(self.ready_tickets)[0]
             self.tickets[ticket_number].run_callback()

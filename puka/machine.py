@@ -26,7 +26,7 @@ def _connection_tune(t, result):
         channel_max = 65535
     t.conn.channel_max = channel_max
     # TODO put that on the connection.
-    t.conn.free_channel_numbers = range(min(1023, channel_max), 0, -1)
+    t.conn.free_channel_numbers = range(channel_max, 0, -1)
 
     f1 = spec.encode_connection_tune_ok(channel_max, t.conn.frame_max, 0)
     f2 = spec.encode_connection_open(t.conn.vhost)
@@ -83,11 +83,11 @@ def _basic_publish(t):
     t.send_frames(list(t.frames) + list(f))
 
 def _basic_publish_channel_flow_ok(t, result):
-    t.done({})
     # TODO: handle publish errors
+    t.done({})
 
 
-
+####
 def basic_consume(conn, queue, prefetch_size=0, prefetch_count=0,
                   no_local=False, no_ack=False, exclusive=False,
                   arguments={}):
@@ -118,9 +118,51 @@ def _basic_deliver(t, msg_result):
     t.ping( msg_result )
 
 
+####
 def basic_ack(conn, msg_result):
     ticket_number = msg_result['ticket_number']
     f = spec.encode_basic_ack(msg_result['delivery_tag'], False)
     t = conn.tickets[ticket_number]
     t.send_frames(f)
     return t
+
+
+####
+def basic_get(conn, queue, no_ack=False):
+    frames = spec.encode_basic_get(queue, no_ack)
+    return ticket.Ticket(conn,
+                         frames = frames,
+                         on_channel = _basic_get,
+                         )
+
+def _basic_get(t):
+    t.register(spec.METHOD_BASIC_GET_OK, _basic_get_ok)
+    t.register(spec.METHOD_BASIC_GET_EMPTY, _basic_get_empty)
+    t.send_frames(t.frames)
+
+
+def _basic_get_ok(t, result):
+    t.unregister(spec.METHOD_BASIC_GET_EMPTY)
+    # TODO: ref count acks
+    t.done(result)
+
+def _basic_get_empty(t, result):
+    t.unregister(spec.METHOD_BASIC_GET_OK)
+    t.done(result)
+
+
+####
+def queue_purge(conn, queue):
+    frames = spec.encode_queue_purge(queue)
+    return ticket.Ticket(conn,
+                         frames = frames,
+                         on_channel = _queue_purge,
+                         )
+
+def _queue_purge(t):
+    t.register(spec.METHOD_QUEUE_PURGE_OK, _queue_purge_ok)
+    t.send_frames(t.frames)
+
+def _queue_purge_ok(t, result):
+    t.done(result)
+
