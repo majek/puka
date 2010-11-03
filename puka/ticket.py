@@ -1,78 +1,112 @@
 from . import channel
 
-class Ticket(object):
-    def __init__(self, conn, frames=None, on_channel=None,
-                 delay_channel_release=None, assign_channel=None, reentrant=False):
+class TicketCollection(object):
+    def __init__(self, conn):
         self.conn = conn
-        self.callback = None
-        self.user_data = None
-        self.frames = frames
+        self._tickets = {}
+        self.ticket_number = 1
+        self.ready = set()
+
+    def new(self, on_channel, **kwargs):
+        number = self.ticket_number
+        self.ticket_number += 1
+        ticket = Ticket(self.conn, number, on_channel, **kwargs)
+        self._tickets[number] = ticket
+        return ticket
+
+    def free(self, ticket):
+        del self._tickets[ticket.number]
+
+    def mark_ready(self, ticket):
+        self.ready.add( ticket.number )
+
+    def unmark_ready(self, ticket):
+        self.ready.remove( ticket.number )
+
+    def run_callback(self, number):
+        return self._tickets[number].run_callback()
+
+    def by_number(self, number):
+        return self._tickets[number]
+
+class Ticket(object):
+    to_be_released = False
+    delay_release = None
+    user_callback = None
+    user_data = None
+    after_machine_callback = None
+
+    def __init__(self, conn, number, on_channel, reentrant=False):
+        self.number = number
+        self.conn = conn
         self.on_channel = on_channel
-        self.channel = assign_channel
-        self.to_be_released = False
         self.reentrant = reentrant
+
+        self.methods = {}
         self.callbacks = []
-        self.delay_channel_release = delay_channel_release
 
-        self.number = self.conn.ticket_number
-        self.conn.ticket_number += 1
-        self.conn.tickets[self.number] = self
-
-        if not self.channel:
-            if self.conn.free_channels:
-                self.channel = self.conn.free_channels.pop()
-                self.channel.ticket = self
-                self._on_channel()
-            else:
-                self.channel = channel.Channel(self.conn)
-                self.channel.ticket = self
-                from . import machine # TODO
-                machine.channel_open(self, self._on_channel)
-        else:
-            self.channel.ticket = self
+        self.conn.channels.allocate(self, self._on_channel)
 
     def _on_channel(self):
         self.on_channel(self)
 
-    def register(self, method_id, callback, *user_args):
-        self.channel.register(method_id, lambda result:callback(self, result, *user_args))
+
+    def recv_method(self, result):
+        # In this order, to allow callback to re-register to the same method.
+        callback = self.methods[result.method_id]
+        del self.methods[result.method_id]
+        callback(self, result)
+
+    def register(self, method_id, callback):
+        self.methods[method_id] = callback
+
     def unregister(self, method_id):
-        self.channel.unregister(method_id)
+        del self.methods[method_id]
+
 
     def send_frames(self, frames):
-        raw_frames = self.channel.decorate_frames(frames)
-        self.conn._send_frames(raw_frames)
+        self.conn._send_frames(self.channel.number, frames)
 
-    def done(self, result):
+
+    def done(self, result, delay_release=None):
         assert self.to_be_released == False
         if not self.reentrant:
             assert len(self.callbacks) == 0
-        self.callbacks.append( (self.callback, self.user_data, result) )
+        self.callbacks.append( (self.user_callback, self.user_data, result) )
         self.to_be_released = True
-        self.conn.ready_tickets.add( self.number )
+        self.delay_release = delay_release
+        self.conn.tickets.mark_ready(self)
 
     def ping(self, result):
         assert self.to_be_released == False
         assert self.reentrant
-        self.callbacks.append( (self.callback, self.user_data, result) )
-        self.conn.ready_tickets.add( self.number )
+        self.callbacks.append( (self.user_callback, self.user_data, result) )
+        self.conn.tickets.mark_ready(self)
+
 
     def run_callback(self):
-        callback, user_data, result = self.callbacks.pop()
-        if callback:
-            callback(self, result, user_data)
+        user_callback, user_data, result = self.callbacks.pop(0)
+        if user_callback:
+            user_callback(self, result, user_data)
         if not self.callbacks:
-            self.conn.ready_tickets.remove( self.number )
+            self.conn.tickets.unmark_ready(self)
 
         if not self.callbacks and self.to_be_released:
-            # TODO: release channel? make sure its' not registered
-            if self.delay_channel_release is None:
-                self.channel.ticket = None
-                self.conn.free_channels.append( self.channel )
-                self.channel = None
+            # Release channel and free ticket.
+            if self.delay_release is None:
+                self.conn.channels.deallocate(self.channel)
+                self.conn.tickets.free(self)
+            elif self.delay_release is Ellipsis:
+                # Never free.
+                pass
             else:
-                print "unable to free channel %i" % (self.number,)
-            del self.conn.tickets[self.number]
-
+                # TODO:
+                print "Unable to free channel %i (ticket %i)" % \
+                    (self.channel.number, self.number)
         return result
 
+
+    def after_machine(self):
+        if self.after_machine_callback:
+            self.after_machine_callback()
+            self.after_machine_callback = None

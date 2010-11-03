@@ -241,6 +241,9 @@ import struct
 from . import table
 
 """
+    print "PREAMBLE = 'AMQP\\x00\\x%02x\\x%02x\\x%02x'" % (
+        spec.major, spec.minor, spec.revision)
+    print
     print_constants(spec)
     print
 

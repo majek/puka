@@ -3,7 +3,13 @@
 import sys
 sys.path.append("..")
 
+import logging
+FORMAT_CONS = '%(asctime)s %(name)-12s %(levelname)8s\t%(message)s'
+logging.basicConfig(level=logging.DEBUG, format=FORMAT_CONS)
+
+
 import puka
+
 
 
 client = puka.Client("amqp://localhost/")

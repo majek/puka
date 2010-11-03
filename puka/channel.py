@@ -1,70 +1,91 @@
-import struct
+import array
+
+from . import machine
+
+
+class ChannelCollection(object):
+    channel_max = 65535
+
+    def __init__(self):
+        self.channels = {}
+        self.free_channels = []
+        # Channel 0 is a special case.
+        self.free_channel_numbers = [0]
+        zero_channel = self.new()
+        self.free_channels.append( zero_channel )
+
+    def tune_channel_max(self, new_channel_max):
+        new_channel_max = new_channel_max if new_channel_max != 0 else 65535
+        self.channel_max = min(self.channel_max, new_channel_max)
+        self.free_channel_numbers = array.array('H',
+                                                xrange(self.channel_max, 0, -1))
+        return self.channel_max
+
+    def new(self):
+        # TODO: handle out of channels case
+        number = self.free_channel_numbers.pop()
+        channel = Channel(number)
+        self.channels[number] = channel
+        return channel
+
+    def allocate(self, ticket, on_channel):
+        if self.free_channels:
+            channel = self.free_channels.pop()
+            channel.ticket = ticket
+            ticket.channel = channel
+            ticket.after_machine_callback = on_channel
+        else:
+            channel = self.new()
+            channel.ticket = ticket
+            ticket.channel = channel
+            machine.channel_open(ticket, on_channel)
+        return channel
+
+    def deallocate(self, channel):
+        channel.ticket.channel = channel.ticket = None
+        self.free_channels.append( channel )
+
+
 
 class Channel(object):
-    def __init__(self, conn, number=None):
-        self.conn = conn
-        if number is not None:
-            self.number = number
-        else:
-            self.number = self.conn.free_channel_numbers.pop()
-        self.conn.channels[self.number] = self
+    def __init__(self, number):
+        self.number = number
+        self.ticket = None
+        self._clear_inbound_state()
 
-        self.methods = {}
-        self.result = None
-        self.props = None
+    def _clear_inbound_state(self):
+        self.method_frame = self.props = None
         self.body_chunks = []
-        self.body_len = 0
-        self.body_size = 0
+        self.body_len = self.body_size = 0
 
-    def _full_frame(self, frame):
-        # In this order, to allow handler to re-register to the same event.
-        handler = self.methods[frame.method_id]
-        del self.methods[frame.method_id]
-        handler(frame)
 
-    def consume_method(self, frame):
+    def inbound_method(self, frame):
         if frame.has_content:
-            self.result = frame
+            self.method_frame = frame
         else:
-            self._full_frame(frame)
+            self._handle_inbound(frame)
 
-    def consume_props(self, body_size, props):
+    def inbound_props(self, body_size, props):
         self.body_size = body_size
         self.props = props
 
-    def consume_body(self, body_chunk):
+    def inbound_body(self, body_chunk):
         self.body_chunks.append( body_chunk )
         self.body_len += len(body_chunk)
         if self.body_len == self.body_size:
-            result = self.result
+            result = self.method_frame
             props = self.props
-            body = ''.join(self.body_chunks)
-            self.result = self.props = None
-            self.body_chunks = []
-            self.body_len = self.body_size = 0
 
-            if 'headers' in props:
-                headers = props['headers']
-                del props['headers']
-            else:
-                headers = {}
-            result['headers'] = headers
+            result['body'] = ''.join(self.body_chunks)
+            result['headers'] = props.get('headers', {})
             result['headers'].update( props )
-            result['body'] = body
+            # Aint need a reference loop.
+            if 'headers' in props:
+                del props['headers']
 
-            return self._full_frame(result)
+            self._clear_inbound_state()
+            return self._handle_inbound(result)
 
+    def _handle_inbound(self, result):
+        self.ticket.recv_method(result)
 
-    def register(self, method_id, callback):
-        self.methods[method_id] = callback
-
-    def unregister(self, method_id):
-        del self.methods[method_id]
-
-    def decorate_frames(self, frames):
-        format = lambda frame_type, payload:''.join((struct.pack('!BHI',
-                                                                 frame_type,
-                                                                 self.number,
-                                                                 len(payload)),
-                                                     payload, '\xCE'))
-        return [format(t, f) for t, f in frames]

@@ -16,9 +16,7 @@ class TestLimits(unittest.TestCase):
         client.wait(ticket)
 
         queues = [qname+'.%s' % (i,) for i in xrange(1000)]
-        tickets = [client.queue_declare(queue=q,
-                                        ))
-                   for q in queues]
+        tickets = [client.queue_declare(queue=q) for q in queues]
 
         for ticket in tickets:
             client.wait(ticket)

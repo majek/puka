@@ -58,6 +58,12 @@ try:
 except ImportError:
     print "No 'coverage' module found. Try:"
     print "     sudo apt-get install python-coverage"
+    sys.exit(1)
+
+import logging
+FORMAT_CONS = '%(asctime)s %(name)-12s %(levelname)8s\t%(message)s'
+logging.basicConfig(level=logging.DEBUG, format=FORMAT_CONS)
+
 
 
 TEST_NAMES = [f.rpartition('.')[0] for f in glob.glob("test_*.py")]

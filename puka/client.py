@@ -17,8 +17,9 @@ def machine_decorator(method):
         if user_data is not None:
             del kwargs['user_data']
         t = method(*args, **kwargs)
-        t.callback = callback
+        t.user_callback = callback
         t.user_data = user_data
+        t.after_machine()
         return t.number
     return wrapper
 

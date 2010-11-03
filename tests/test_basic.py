@@ -15,7 +15,7 @@ class TestBasic(unittest.TestCase):
         ticket = client.connect()
         client.wait(ticket)
 
-        ticket = client.queue_declare(queue=qname, auto_delete=True)
+        ticket = client.queue_declare(queue=qname)#, auto_delete=True)
         client.wait(ticket)
 
         ticket = client.basic_publish(exchange='', routing_key=qname,
@@ -39,7 +39,7 @@ class TestBasic(unittest.TestCase):
         ticket = client.connect()
         client.wait(ticket)
 
-        ticket = client.queue_declare(queue=qname, auto_delete=True)
+        ticket = client.queue_declare(queue=qname)#, auto_delete=True)
         client.wait(ticket)
 
         ticket = client.basic_publish(exchange='', routing_key=qname,
