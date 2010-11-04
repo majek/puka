@@ -1,4 +1,11 @@
+import logging
+
 from . import channel
+from . import spec
+
+log = logging.getLogger('puka')
+
+
 
 class TicketCollection(object):
     def __init__(self, conn):
@@ -35,6 +42,7 @@ class Ticket(object):
     user_callback = None
     user_data = None
     after_machine_callback = None
+    refcnt = 0
 
     def __init__(self, conn, number, on_channel, reentrant=False):
         self.number = number
@@ -47,9 +55,20 @@ class Ticket(object):
 
         self.conn.channels.allocate(self, self._on_channel)
 
+    def restore_error_handler(self):
+        self.register(spec.METHOD_CHANNEL_CLOSE, self._on_channel_close)
+
     def _on_channel(self):
+        self.channel.alive = True
+        self.restore_error_handler()
         self.on_channel(self)
 
+    def _on_channel_close(self, _t, result):
+        log.warn('channel %i died %r', self.channel.number, result)
+        self.send_frames(spec.encode_channel_close_ok())
+        result['is_error'] = True
+        self.channel.alive = False
+        self.done(result)
 
     def recv_method(self, result):
         # In this order, to allow callback to re-register to the same method.
@@ -87,11 +106,29 @@ class Ticket(object):
     def run_callback(self):
         user_callback, user_data, result = self.callbacks.pop(0)
         if user_callback:
-            user_callback(self, result, user_data)
+            user_callback(self.number, result, user_data)
         if not self.callbacks:
             self.conn.tickets.unmark_ready(self)
 
-        if not self.callbacks and self.to_be_released:
+        self.release()
+        return result
+
+
+    def after_machine(self):
+        if self.after_machine_callback:
+            self.after_machine_callback()
+            self.after_machine_callback = None
+
+    def refcnt_inc(self):
+        self.refcnt += 1
+
+    def refcnt_dec(self):
+        self.refcnt -= 1
+        if self.refcnt == 0:
+            self.release()
+
+    def release(self):
+        if not self.callbacks and self.to_be_released and self.refcnt == 0:
             # Release channel and free ticket.
             if self.delay_release is None:
                 self.conn.channels.deallocate(self.channel)
@@ -103,10 +140,4 @@ class Ticket(object):
                 # TODO:
                 print "Unable to free channel %i (ticket %i)" % \
                     (self.channel.number, self.number)
-        return result
 
-
-    def after_machine(self):
-        if self.after_machine_callback:
-            self.after_machine_callback()
-            self.after_machine_callback = None

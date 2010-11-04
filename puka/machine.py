@@ -1,4 +1,8 @@
+import logging
+
 from . import spec
+
+log = logging.getLogger('puka')
 
 
 ####
@@ -11,6 +15,7 @@ def _connection_handshake(t):
     t.register(spec.METHOD_CONNECTION_START, _connection_start)
 
 def _connection_start(t, result):
+    log.info("Connected to %r", result['server_properties'])
     assert 'PLAIN' in result['mechanisms'].split(), "Only PLAIN auth supported."
     response = '\0%s\0%s' % (t.conn.username, t.conn.password)
     frames = spec.encode_connection_start_ok({'product': 'Puka'}, 'PLAIN',
@@ -31,6 +36,10 @@ def _connection_tune(t, result):
 def _connection_open_ok(t, result):
     # Never free the ticket and channel.
     t.done(t.cached_result, delay_release=Ellipsis)
+    t.register(spec.METHOD_CONNECTION_CLOSE, _connection_close)
+
+def _connection_close(t, result):
+    log.error('Connection killed: %r', result)
 
 
 ####
@@ -45,13 +54,35 @@ def _channel_open_ok(t, result):
 
 
 ####
-def queue_declare(conn, queue='', arguments={}):
-    # TODO:
-    auto_delete = False
+def queue_declare(conn, queue='', auto_delete=False, exclusive=False, arguments={}):
+    # Don't use AMQP auto-delete. Use RabbitMQ queue-leases instead:
+    # http://www.rabbitmq.com/extensions.html#queue-leases
+    # durable = not auto_delete
     t = conn.tickets.new(_queue_declare)
+    args = {}
+    if auto_delete:
+        args['x-expires'] = 5000
+    args.update( arguments )
     t.x_frames = spec.encode_queue_declare(queue, False, not auto_delete,
-                                           False, auto_delete, arguments)
+                                           exclusive, False, args)
     return t
+
+# No way ATM to check if queue_declare will return errors.
+# def _queue_declare_passive(t):
+#     t.register(spec.METHOD_CHANNEL_CLOSE, _queue_declare_ok_passive1)
+#     t.register(spec.METHOD_QUEUE_DECLARE_OK, _queue_declare_ok_passive2)
+#     t.send_frames(t.x_frames_passive)
+
+# def _queue_declare_ok_passive1(t, result):
+#     log.info('queue_declare passive fail %r', result)
+#     t.register(spec.METHOD_CHANNEL_OPEN_OK, _queue_declare_ok_passive3)
+#     t.send_frames(
+#         list(spec.encode_channel_close_ok()) +
+#         list(spec.encode_channel_open('')) )
+
+# def _queue_declare_ok_passive2(t, result):
+#     log.info('queue_declare passive ok %r', result)
+#     _queue_declare_ok_passive3(t, None)
 
 def _queue_declare(t):
     t.register(spec.METHOD_QUEUE_DECLARE_OK, _queue_declare_ok)
@@ -101,7 +132,8 @@ def _basic_consume_ok(t, result):
 
 def _basic_deliver(t, msg_result):
     t.register(spec.METHOD_BASIC_DELIVER, _basic_deliver)
-    msg_result.update({'ticket_number': t.number})
+    msg_result['ticket_number'] = t.number
+    t.refcnt_inc()
     t.ping( msg_result )
 
 
@@ -111,6 +143,7 @@ def basic_ack(conn, msg_result):
     f = spec.encode_basic_ack(msg_result['delivery_tag'], False)
     t = conn.tickets.by_number(ticket_number)
     t.send_frames(f)
+    t.refcnt_dec()
     return t
 
 
@@ -125,11 +158,11 @@ def _basic_get(t):
     t.register(spec.METHOD_BASIC_GET_EMPTY, _basic_get_empty)
     t.send_frames(t.x_frames)
 
-
-def _basic_get_ok(t, result):
+def _basic_get_ok(t, msg_result):
     t.unregister(spec.METHOD_BASIC_GET_EMPTY)
-    # TODO: ref count acks
-    t.done(result)
+    msg_result['ticket_number'] = t.number
+    t.refcnt_inc()
+    t.done(msg_result)
 
 def _basic_get_empty(t, result):
     t.unregister(spec.METHOD_BASIC_GET_OK)

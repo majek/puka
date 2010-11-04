@@ -43,11 +43,17 @@ class ChannelCollection(object):
 
     def deallocate(self, channel):
         channel.ticket.channel = channel.ticket = None
-        self.free_channels.append( channel )
+        if channel.alive:
+            self.free_channels.append( channel )
+        else:
+            del self.channels[channel.number]
+            self.free_channel_numbers.append( channel.number )
 
 
 
 class Channel(object):
+    alive = False
+
     def __init__(self, number):
         self.number = number
         self.ticket = None

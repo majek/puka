@@ -49,7 +49,7 @@ def main():
         cbk3(q)
 
 
-    for q in ['q%02i' % i for i in range(64)]:
+    for q in ['q%02i' % i for i in range(8)]:
         cbk0(q)
 
     def print_counter():

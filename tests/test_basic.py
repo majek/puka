@@ -15,7 +15,7 @@ class TestBasic(unittest.TestCase):
         ticket = client.connect()
         client.wait(ticket)
 
-        ticket = client.queue_declare(queue=qname)#, auto_delete=True)
+        ticket = client.queue_declare(queue=qname)
         client.wait(ticket)
 
         ticket = client.basic_publish(exchange='', routing_key=qname,
@@ -39,7 +39,7 @@ class TestBasic(unittest.TestCase):
         ticket = client.connect()
         client.wait(ticket)
 
-        ticket = client.queue_declare(queue=qname)#, auto_delete=True)
+        ticket = client.queue_declare(queue=qname)
         client.wait(ticket)
 
         ticket = client.basic_publish(exchange='', routing_key=qname,
@@ -56,5 +56,64 @@ class TestBasic(unittest.TestCase):
 
         ticket = client.queue_delete(queue=qname)
         client.wait(ticket)
+
+
+    def test_basic_get_ack(self):
+        qname = 'test%s' % (random.random(),)
+        msg = '%s' % (random.random(),)
+
+        client = puka.Client(AMQP_URL)
+        ticket = client.connect()
+        client.wait(ticket)
+
+        ticket = client.queue_declare(queue=qname)
+        client.wait(ticket)
+
+        for i in range(4):
+            ticket = client.basic_publish(exchange='', routing_key=qname,
+                                          body=msg+str(i))
+            client.wait(ticket)
+
+        msgs = []
+        for i in range(4):
+            ticket = client.basic_get(queue=qname)
+            result = client.wait(ticket)
+            self.assertEqual(result['body'], msg+str(i))
+            self.assertEqual(result['redelivered'], False)
+            msgs.append( result )
+
+        ticket = client.basic_get(queue=qname)
+        result = client.wait(ticket)
+        self.assertEqual('body' in result, False)
+
+        self.assertEqual(len(client.channels.free_channels), 1)
+        self.assertEqual(client.channels.free_channel_numbers[-1], 6)
+        for msg in msgs:
+            client.basic_ack(msg)
+        self.assertEqual(len(client.channels.free_channels), 5)
+        self.assertEqual(client.channels.free_channel_numbers[-1], 6)
+
+        ticket = client.queue_delete(queue=qname)
+        client.wait(ticket)
+
+
+    def test_basic_publish_bad_exchange(self):
+        client = puka.Client(AMQP_URL)
+        ticket = client.connect()
+        client.wait(ticket)
+
+        for i in range(2):
+            ticket = client.basic_publish(exchange='invalid_exchange',
+                                          routing_key='xxx', body='')
+
+            self.assertEqual(len(client.channels.free_channels), 0)
+            self.assertEqual(client.channels.free_channel_numbers[-1], 2)
+
+            r = client.wait(ticket)
+            self.assertEqual(r['is_error'], True)
+            self.assertEqual(r['reply_code'], 404)
+
+            self.assertEqual(len(client.channels.free_channels), 0)
+            self.assertEqual(client.channels.free_channel_numbers[-1], 1)
 
 

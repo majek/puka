@@ -25,4 +25,3 @@ class TestLimits(unittest.TestCase):
         for ticket in tickets:
             client.wait(ticket)
 
-    #TODO: test queue_declare with auto_delete=True

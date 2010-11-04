@@ -11,7 +11,6 @@ from . import simplebuffer
 from . import spec
 from . import ticket
 
-
 log = logging.getLogger('puka')
 
 
@@ -181,7 +180,7 @@ class Connection(object):
         '''
         Run any callbacks, any tickets, but do not block.
         '''
-        while self.ready_tickets:
+        while self.tickets.ready:
             ticket_number = list(self.tickets.ready)[0]
             self.tickets.run_callback(ticket_number)
 

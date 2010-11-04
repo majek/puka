@@ -21,7 +21,8 @@ clean:
 	rm -f tests/.coverage
 
 
-.PHONY: tests
+.PHONY: tests prerequisites
+
 test: tests
 tests: puka/spec.py
 	cd tests && AMQP_URL=amqp:/// PYTHONPATH=.. $(PYTHON) tests.py ../puka puka
