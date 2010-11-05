@@ -145,5 +145,48 @@ class TestBasic(unittest.TestCase):
             client.wait(ticket)
 
 
+    def test_persistent(self):
+        qname = 'test%s' % (random.random(),)
+        msg = '%s' % (random.random(),)
+
+        client = puka.Client(AMQP_URL)
+        ticket = client.connect()
+        client.wait(ticket)
+
+        ticket = client.queue_declare(queue=qname)
+        client.wait(ticket)
+
+        ticket = client.basic_publish(exchange='', routing_key=qname,
+                                      body=msg) # persistence=default
+        client.wait(ticket)
+
+        ticket = client.basic_publish(exchange='', routing_key=qname,
+                                      body=msg, headers={'persistent':True})
+        client.wait(ticket)
+
+        ticket = client.basic_publish(exchange='', routing_key=qname,
+                                      body=msg, headers={'persistent':False})
+        client.wait(ticket)
+
+
+        ticket = client.basic_get(queue=qname, no_ack=True)
+        result = client.wait(ticket)
+        self.assertTrue(result['headers']['persistent'])
+        self.assertEquals(result['headers']['delivery_mode'], 2)
+
+        ticket = client.basic_get(queue=qname, no_ack=True)
+        result = client.wait(ticket)
+        self.assertTrue(result['headers']['persistent'])
+        self.assertEquals(result['headers']['delivery_mode'], 2)
+
+        ticket = client.basic_get(queue=qname, no_ack=True)
+        result = client.wait(ticket)
+        self.assertTrue(not result['headers']['persistent'])
+        self.assertTrue('delivery_mode' not in result['headers'])
+
+
+        ticket = client.queue_delete(queue=qname)
+        client.wait(ticket)
+
 
 

@@ -102,7 +102,7 @@ def _queue_declare_ok(t, result):
 
 ####
 def basic_publish(conn, exchange, routing_key, mandatory=False, immediate=False,
-                  user_headers={}, body=''):
+                  headers={}, body=''):
     # After the publish there is a need to synchronize state. Currently,
     # we're using dummy channel.flow, in future that should be dropped
     # in favor for publisher-acks.
@@ -110,9 +110,16 @@ def basic_publish(conn, exchange, routing_key, mandatory=False, immediate=False,
     #   - channel_flow_ok (ok)
     #   - channel-close  (error)
     #   - basic_return (not delivered)
+
+    # Fix delivery_mode. Persistent by default.
+    nheaders = {}
+    nheaders.update(headers) # copy
+    if nheaders.get('persistent', True):
+        nheaders['delivery_mode'] = 2
+
     t = conn.tickets.new(_basic_publish)
     t.x_frames = spec.encode_basic_publish(exchange, routing_key, mandatory,
-                                           immediate, user_headers, body,
+                                           immediate, nheaders, body,
                                            conn.frame_max)
     t.x_result = spec.Frame()
     t.x_result['empty'] = True

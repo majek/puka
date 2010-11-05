@@ -179,6 +179,8 @@ def print_encode_properties(c):
         print "    if %s is not None:" % (pn,)
         print "        flags |= 0x%04x # (1 << %i)" % ( 1 << (15-i), 15-i,)
 
+        if f.t in ['table']:
+            print "        %s_raw = table.encode(%s)" % (f.n, f.n)
         fields = codegen_helpers.PackWrapper()
         fields.add(f.n, f.t)
         fields.close()

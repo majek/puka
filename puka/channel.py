@@ -90,6 +90,9 @@ class Channel(object):
             # Aint need a reference loop.
             if 'headers' in props:
                 del props['headers']
+            # Fix delivery_mode.
+            result['headers']['persistent'] = \
+                result['headers'].get('delivery_mode', 1) == 2
 
             self._clear_inbound_state()
             return self._handle_inbound(result)
