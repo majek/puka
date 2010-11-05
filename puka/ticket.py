@@ -2,6 +2,7 @@ import logging
 
 from . import channel
 from . import spec
+from . import exceptions
 
 log = logging.getLogger('puka')
 
@@ -64,9 +65,9 @@ class Ticket(object):
         self.on_channel(self)
 
     def _on_channel_close(self, _t, result):
-        log.warn('channel %i died %r', self.channel.number, result)
+        # log.warn('channel %i died %r', self.channel.number, result)
+        result.is_error = True
         self.send_frames(spec.encode_channel_close_ok())
-        result['is_error'] = True
         self.channel.alive = False
         self.done(result)
 
@@ -103,7 +104,7 @@ class Ticket(object):
         self.conn.tickets.mark_ready(self)
 
 
-    def run_callback(self):
+    def run_callback(self, raise_errors=True):
         user_callback, user_data, result = self.callbacks.pop(0)
         if user_callback:
             user_callback(self.number, result, user_data)
@@ -111,6 +112,8 @@ class Ticket(object):
             self.conn.tickets.unmark_ready(self)
 
         self.release()
+        if raise_errors and result.is_error:
+            raise exceptions.from_frame(result)
         return result
 
 

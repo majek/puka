@@ -74,6 +74,8 @@ class Channel(object):
     def inbound_props(self, body_size, props):
         self.body_size = body_size
         self.props = props
+        if self.body_size == 0: # don't expect body frame
+            self.inbound_body('')
 
     def inbound_body(self, body_chunk):
         self.body_chunks.append( body_chunk )

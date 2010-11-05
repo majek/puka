@@ -182,7 +182,7 @@ class Connection(object):
         '''
         while self.tickets.ready:
             ticket_number = list(self.tickets.ready)[0]
-            self.tickets.run_callback(ticket_number)
+            self.tickets.run_callback(ticket_number, raise_errors=False)
 
 
 

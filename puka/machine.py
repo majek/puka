@@ -15,7 +15,7 @@ def _connection_handshake(t):
     t.register(spec.METHOD_CONNECTION_START, _connection_start)
 
 def _connection_start(t, result):
-    log.info("Connected to %r", result['server_properties'])
+    # log.info("Connected to %r", result['server_properties'])
     assert 'PLAIN' in result['mechanisms'].split(), "Only PLAIN auth supported."
     response = '\0%s\0%s' % (t.conn.username, t.conn.password)
     frames = spec.encode_connection_start_ok({'product': 'Puka'}, 'PLAIN',
@@ -39,52 +39,59 @@ def _connection_open_ok(t, result):
     t.register(spec.METHOD_CONNECTION_CLOSE, _connection_close)
 
 def _connection_close(t, result):
+    result.is_error = True
     log.error('Connection killed: %r', result)
 
 
 ####
 def channel_open(t, callback):
-    f = spec.encode_channel_open('')
     t.register(spec.METHOD_CHANNEL_OPEN_OK, _channel_open_ok)
     t.x_callback = callback
-    t.send_frames(f)
+    t.send_frames( spec.encode_channel_open('') )
 
 def _channel_open_ok(t, result):
     t.x_callback()
 
 
 ####
-def queue_declare(conn, queue='', auto_delete=False, exclusive=False, arguments={}):
+def queue_declare(conn, queue='', auto_delete=False, exclusive=False,
+                  suicidal=False, arguments={}):
     # Don't use AMQP auto-delete. Use RabbitMQ queue-leases instead:
     # http://www.rabbitmq.com/extensions.html#queue-leases
     # durable = not auto_delete
-    t = conn.tickets.new(_queue_declare)
+    if not suicidal:
+        t = conn.tickets.new(_queue_declare_passive)
+    else:
+        t = conn.tickets.new(_queue_declare_suicidal)
     args = {}
     if auto_delete:
         args['x-expires'] = 5000
     args.update( arguments )
+    t.x_frames_passive = spec.encode_queue_declare(queue, True, not auto_delete,
+                                                   exclusive, False, args)
     t.x_frames = spec.encode_queue_declare(queue, False, not auto_delete,
                                            exclusive, False, args)
     return t
 
-# No way ATM to check if queue_declare will return errors.
-# def _queue_declare_passive(t):
-#     t.register(spec.METHOD_CHANNEL_CLOSE, _queue_declare_ok_passive1)
-#     t.register(spec.METHOD_QUEUE_DECLARE_OK, _queue_declare_ok_passive2)
-#     t.send_frames(t.x_frames_passive)
+def _queue_declare_passive(t):
+    t.register(spec.METHOD_CHANNEL_CLOSE, _queue_declare_passive_fail)
+    t.register(spec.METHOD_QUEUE_DECLARE_OK, _queue_declare_passive_ok)
+    t.send_frames(t.x_frames_passive)
 
-# def _queue_declare_ok_passive1(t, result):
-#     log.info('queue_declare passive fail %r', result)
-#     t.register(spec.METHOD_CHANNEL_OPEN_OK, _queue_declare_ok_passive3)
-#     t.send_frames(
-#         list(spec.encode_channel_close_ok()) +
-#         list(spec.encode_channel_open('')) )
+def _queue_declare_passive_ok(t, result):
+    # Queue exists.
+    result['exists'] = True
+    t.done(result)
 
-# def _queue_declare_ok_passive2(t, result):
-#     log.info('queue_declare passive ok %r', result)
-#     _queue_declare_ok_passive3(t, None)
+def _queue_declare_passive_fail(t, result):
+    # Doesn't exist. 1. recreate channel. 2.
+    t.restore_error_handler()
+    t.register(spec.METHOD_CHANNEL_OPEN_OK, _queue_declare_suicidal)
+    t.send_frames(
+        list(spec.encode_channel_close_ok()) +
+        list(spec.encode_channel_open('')) )
 
-def _queue_declare(t):
+def _queue_declare_suicidal(t, result=None):
     t.register(spec.METHOD_QUEUE_DECLARE_OK, _queue_declare_ok)
     t.send_frames(t.x_frames)
 
@@ -93,20 +100,37 @@ def _queue_declare_ok(t, result):
 
 
 ####
-def basic_publish(conn, exchange, routing_key, user_headers={}, body=''):
+def basic_publish(conn, exchange, routing_key, mandatory=False, immediate=False,
+                  user_headers={}, body=''):
+    # After the publish there is a need to synchronize state. Currently,
+    # we're using dummy channel.flow, in future that should be dropped
+    # in favor for publisher-acks.
+    # There are three return-paths:
+    #   - channel_flow_ok (ok)
+    #   - channel-close  (error)
+    #   - basic_return (not delivered)
     t = conn.tickets.new(_basic_publish)
-    t.x_frames = spec.encode_basic_publish(exchange, routing_key, False, False,
-                                           user_headers, body, conn.frame_max)
+    t.x_frames = spec.encode_basic_publish(exchange, routing_key, mandatory,
+                                           immediate, user_headers, body,
+                                           conn.frame_max)
+    t.x_result = spec.Frame()
+    t.x_result['empty'] = True
     return t
 
 def _basic_publish(t):
-    f = spec.encode_channel_flow(True)
     t.register(spec.METHOD_CHANNEL_FLOW_OK, _basic_publish_channel_flow_ok)
-    t.send_frames(list(t.x_frames) + list(f))
+    t.register(spec.METHOD_BASIC_RETURN, _basic_publish_return)
+    t.send_frames(
+        list(t.x_frames) +
+        list(spec.encode_channel_flow(True)) )
 
 def _basic_publish_channel_flow_ok(t, result):
-    # TODO: handle publish errors
-    t.done({})
+    # Publish went fine or we're after basic_return.
+    t.done(t.x_result)
+
+def _basic_publish_return(t, result):
+    result.is_error = True
+    t.x_result = result
 
 
 ####
@@ -140,9 +164,8 @@ def _basic_deliver(t, msg_result):
 ####
 def basic_ack(conn, msg_result):
     ticket_number = msg_result['ticket_number']
-    f = spec.encode_basic_ack(msg_result['delivery_tag'], False)
     t = conn.tickets.by_number(ticket_number)
-    t.send_frames(f)
+    t.send_frames( spec.encode_basic_ack(msg_result['delivery_tag'], False) )
     t.refcnt_dec()
     return t
 
@@ -159,13 +182,11 @@ def _basic_get(t):
     t.send_frames(t.x_frames)
 
 def _basic_get_ok(t, msg_result):
-    t.unregister(spec.METHOD_BASIC_GET_EMPTY)
     msg_result['ticket_number'] = t.number
     t.refcnt_inc()
     t.done(msg_result)
 
 def _basic_get_empty(t, result):
-    t.unregister(spec.METHOD_BASIC_GET_OK)
     t.done(result)
 
 
@@ -195,3 +216,6 @@ def _queue_delete(t):
 
 def _queue_delete_ok(t, result):
     t.done(result)
+
+
+

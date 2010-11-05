@@ -255,6 +255,7 @@ from . import table
     print '''
 class Frame(dict):
     has_content = False
+    is_error = False
 
 '''
     for m in client_methods:

@@ -1,7 +1,7 @@
 import os
-import unittest
 import puka
 import random
+import unittest_backport as unittest
 
 
 AMQP_URL=os.getenv('AMQP_URL')
@@ -109,11 +109,41 @@ class TestBasic(unittest.TestCase):
             self.assertEqual(len(client.channels.free_channels), 0)
             self.assertEqual(client.channels.free_channel_numbers[-1], 2)
 
-            r = client.wait(ticket)
-            self.assertEqual(r['is_error'], True)
+            with self.assertRaises(puka.exceptions.NotFound) as cm:
+                client.wait(ticket)
+
+            (r,) = cm.exception # unpack args of exception
+            self.assertTrue(r.is_error)
             self.assertEqual(r['reply_code'], 404)
 
             self.assertEqual(len(client.channels.free_channels), 0)
             self.assertEqual(client.channels.free_channel_numbers[-1], 1)
+
+
+    def test_basic_return(self):
+        qname = 'test%s' % (random.random(),)
+
+        client = puka.Client(AMQP_URL)
+        ticket = client.connect()
+        client.wait(ticket)
+
+        ticket = client.basic_publish(exchange='', routing_key=qname,
+                                      mandatory=True, body='')
+        with self.assertRaises(puka.exceptions.NoRoute):
+            client.wait(ticket)
+
+        ticket = client.queue_declare(queue=qname)
+        client.wait(ticket)
+
+        ticket = client.basic_publish(exchange='', routing_key=qname,
+                                      mandatory=True, body='')
+        client.wait(ticket) # no error
+
+        ticket = client.basic_publish(exchange='', routing_key=qname,
+                                      mandatory=True, immediate=True, body='')
+        with self.assertRaises(puka.exceptions.NoConsumers):
+            client.wait(ticket)
+
+
 
 
