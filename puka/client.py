@@ -35,11 +35,18 @@ class Client(connection.Connection):
         machine.basic_get,
         machine.exchange_declare,
         machine.exchange_delete,
+        machine.exchange_bind,
+        machine.exchange_unbind,
+        machine.queue_bind,
+        machine.queue_unbind,
         ])
 
     @machine_decorator
     def connect(self):
         return self._connect()
 
-    def basic_ack(self, msg_result):
-        machine.basic_ack(self, msg_result)
+    def basic_ack(self, *args, **kwargs):
+        machine.basic_ack(self, *args, **kwargs)
+
+    def basic_reject(self, *args, **kwargs):
+        machine.basic_reject(self, *args, **kwargs)

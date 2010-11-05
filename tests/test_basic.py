@@ -187,4 +187,40 @@ class TestBasic(unittest.TestCase):
         client.wait(ticket)
 
 
+    def test_basic_reject(self):
+        qname = 'test%s' % (random.random(),)
+
+        client = puka.Client(AMQP_URL)
+        ticket = client.connect()
+        client.wait(ticket)
+
+        ticket = client.queue_declare(queue=qname)
+        client.wait(ticket)
+
+        ticket = client.basic_publish(exchange='', routing_key=qname,
+                                      body='a')
+        client.wait(ticket)
+
+        t = client.basic_get(queue=qname)
+        r = client.wait(t)
+        self.assertEqual(r['body'], 'a')
+        self.assertTrue(not r['redelivered'])
+        client.basic_reject(r)
+
+        t = client.basic_get(queue=qname)
+        r = client.wait(t)
+        self.assertEqual(r['body'], 'a')
+        self.assertTrue(r['redelivered'])
+        client.basic_reject(r, False)
+
+        t = client.basic_get(queue=qname)
+        r = client.wait(t)
+        self.assertTrue(r['empty'])
+
+        ticket = client.queue_delete(queue=qname)
+        client.wait(ticket)
+
+
+
+
 

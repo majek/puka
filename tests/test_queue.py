@@ -68,3 +68,42 @@ class TestQueue(unittest.TestCase):
             client.wait(ticket)
 
 
+    def test_queue_bind(self):
+        qname = 'test%s' % (random.random(),)
+
+        client = puka.Client(AMQP_URL)
+        ticket = client.connect()
+        client.wait(ticket)
+
+        t = client.queue_declare(queue=qname)
+        client.wait(t)
+
+        t = client.exchange_declare(exchange=qname, type='direct')
+        client.wait(t)
+
+        t = client.basic_publish(exchange=qname, routing_key=qname, body='a')
+        client.wait(t)
+
+        t = client.queue_bind(exchange=qname, queue=qname, routing_key=qname)
+        client.wait(t)
+
+        t = client.basic_publish(exchange=qname, routing_key=qname, body='b')
+        client.wait(t)
+
+        t = client.queue_unbind(exchange=qname, queue=qname, routing_key=qname)
+        client.wait(t)
+
+        t = client.basic_publish(exchange=qname, routing_key=qname, body='c')
+        client.wait(t)
+
+        t = client.basic_get(queue=qname)
+        r = client.wait(t)
+        self.assertEquals(r['body'], 'b')
+        self.assertEquals(r['message_count'], 0)
+
+        t = client.queue_delete(queue=qname)
+        client.wait(t)
+
+        t = client.exchange_delete(exchange=qname)
+        client.wait(t)
+

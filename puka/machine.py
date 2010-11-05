@@ -183,6 +183,16 @@ def basic_ack(conn, msg_result):
 
 
 ####
+def basic_reject(conn, msg_result, requeue=True):
+    ticket_number = msg_result['ticket_number']
+    t = conn.tickets.by_number(ticket_number)
+    t.send_frames( spec.encode_basic_reject(msg_result['delivery_tag'],
+                                            requeue) )
+    t.refcnt_dec()
+    return t
+
+
+####
 def basic_get(conn, queue, no_ack=False):
     t = conn.tickets.new(_basic_get)
     t.x_frames = spec.encode_basic_get(queue, no_ack)
@@ -199,34 +209,7 @@ def _basic_get_ok(t, msg_result):
     t.done(msg_result)
 
 def _basic_get_empty(t, result):
-    t.done(result)
-
-
-####
-def queue_purge(conn, queue):
-    t = conn.tickets.new(_queue_purge)
-    t.x_frames = spec.encode_queue_purge(queue)
-    return t
-
-def _queue_purge(t):
-    t.register(spec.METHOD_QUEUE_PURGE_OK, _queue_purge_ok)
-    t.send_frames(t.x_frames)
-
-def _queue_purge_ok(t, result):
-    t.done(result)
-
-
-####
-def queue_delete(conn, queue, if_unused=False, if_empty=False):
-    t = conn.tickets.new(_queue_delete)
-    t.x_frames = spec.encode_queue_delete(queue, if_unused, if_empty)
-    return t
-
-def _queue_delete(t):
-    t.register(spec.METHOD_QUEUE_DELETE_OK, _queue_delete_ok)
-    t.send_frames(t.x_frames)
-
-def _queue_delete_ok(t, result):
+    result['empty'] = True
     t.done(result)
 
 
@@ -276,19 +259,57 @@ def _exchange_declare_ok(t, result):
 
 
 ####
+def _generic_callback(t):
+    t.register(t.x_method, _generic_callback_ok)
+    t.send_frames(t.x_frames)
+
+def _generic_callback_ok(t, result):
+    t.done(result)
+
+####
 def exchange_delete(conn, exchange, if_unused=False):
-    t = conn.tickets.new(_exchange_delete)
+    t = conn.tickets.new(_generic_callback)
+    t.x_method = spec.METHOD_EXCHANGE_DELETE_OK
     t.x_frames = spec.encode_exchange_delete(exchange, if_unused)
     return t
 
-def _exchange_delete(t):
-    t.register(spec.METHOD_EXCHANGE_DELETE_OK, _exchange_delete_ok)
-    t.send_frames(t.x_frames)
+def exchange_bind(conn, destination, source, routing_key='', arguments={}):
+    t = conn.tickets.new(_generic_callback)
+    t.x_method = spec.METHOD_EXCHANGE_BIND_OK
+    t.x_frames = spec.encode_exchange_bind(destination, source, routing_key,
+                                           arguments)
+    return t
 
-def _exchange_delete_ok(t, result):
-    t.done(result)
+def exchange_unbind(conn, destination, source, routing_key='', arguments={}):
+    t = conn.tickets.new(_generic_callback)
+    t.x_method = spec.METHOD_EXCHANGE_UNBIND_OK
+    t.x_frames = spec.encode_exchange_unbind(destination, source, routing_key,
+                                             arguments)
+    return t
 
+def queue_delete(conn, queue, if_unused=False, if_empty=False):
+    t = conn.tickets.new(_generic_callback)
+    t.x_method = spec.METHOD_QUEUE_DELETE_OK
+    t.x_frames = spec.encode_queue_delete(queue, if_unused, if_empty)
+    return t
 
+def queue_purge(conn, queue):
+    t = conn.tickets.new(_generic_callback)
+    t.x_method = spec.METHOD_QUEUE_PURGE_OK
+    t.x_frames = spec.encode_queue_purge(queue)
+    return t
 
+def queue_bind(conn, queue, exchange, routing_key='', arguments={}):
+    t = conn.tickets.new(_generic_callback)
+    t.x_method = spec.METHOD_QUEUE_BIND_OK
+    t.x_frames = spec.encode_queue_bind(queue, exchange, routing_key,
+                                        arguments)
+    return t
 
+def queue_unbind(conn, queue, exchange, routing_key='', arguments={}):
+    t = conn.tickets.new(_generic_callback)
+    t.x_method = spec.METHOD_QUEUE_UNBIND_OK
+    t.x_frames = spec.encode_queue_unbind(queue, exchange, routing_key,
+                                          arguments)
+    return t
 
