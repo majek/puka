@@ -120,6 +120,8 @@ def basic_publish(conn, exchange, routing_key, mandatory=False, immediate=False,
     nheaders.update(headers) # copy
     if nheaders.get('persistent', True):
         nheaders['delivery_mode'] = 2
+    # That's not a good idea.
+    assert 'headers' not in headers
 
     t = conn.tickets.new(_basic_publish)
     t.x_frames = spec.encode_basic_publish(exchange, routing_key, mandatory,

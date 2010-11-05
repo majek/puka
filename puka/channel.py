@@ -86,10 +86,10 @@ class Channel(object):
 
             result['body'] = ''.join(self.body_chunks)
             result['headers'] = props.get('headers', {})
-            result['headers'].update( props )
             # Aint need a reference loop.
             if 'headers' in props:
                 del props['headers']
+            result['headers'].update( props )
             # Fix delivery_mode.
             result['headers']['persistent'] = \
                 result['headers'].get('delivery_mode', 1) == 2

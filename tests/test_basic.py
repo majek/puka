@@ -221,6 +221,50 @@ class TestBasic(unittest.TestCase):
         client.wait(ticket)
 
 
+    def test_properties(self):
+        qname = 'test%s' % (random.random(),)
+
+        client = puka.Client(AMQP_URL)
+        ticket = client.connect()
+        client.wait(ticket)
+
+        t = client.queue_declare(queue=qname)
+        client.wait(t)
+
+        headers = {
+            "content_type": 'a',
+            "content_encoding": 'b',
+            #"headers": ,
+            #"delivery_mode": ,
+            "priority": 1,
+            "correlation_id": 'd',
+            "reply_to": 'e',
+            "expiration": 'f',
+            "message_id": 'g',
+            "timestamp": 1,
+            "type_": 'h',
+            "user_id": 'i',
+            "app_id": 'j',
+            "cluster_id": 'k',
+            "custom": 'l',
+            }
+
+        t = client.basic_publish(exchange='', routing_key=qname,
+                                 body='a', headers=headers.copy())
+        client.wait(t)
+
+        t = client.basic_get(queue=qname, no_ack=True)
+        r = client.wait(t)
+        self.assertEqual(r['body'], 'a')
+        recv_headers = r['headers']
+        del recv_headers['delivery_mode']
+        del recv_headers['persistent']
+
+        self.assertEqual(headers, recv_headers)
+
+        ticket = client.queue_delete(queue=qname)
+        client.wait(ticket)
+
 
 
 
