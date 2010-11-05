@@ -10,7 +10,7 @@ class NoRoute(AMQPError): pass
 class NoConsumers(AMQPError): pass
 
 
-def from_frame(result):
+def exception_from_frame(result):
     if result['reply_code'] == 404:
         return NotFound(result)
     elif result['reply_code'] == 312:
@@ -18,4 +18,8 @@ def from_frame(result):
     elif result['reply_code'] == 313:
         return NoConsumers(result)
     return AMQPError(result)
+
+def mark_frame(result):
+    result.is_error = True
+    result.exception = exception_from_frame(result)
 

@@ -33,6 +33,8 @@ class Client(connection.Connection):
         machine.basic_publish,
         machine.basic_consume,
         machine.basic_get,
+        machine.exchange_declare,
+        machine.exchange_delete,
         ])
 
     @machine_decorator

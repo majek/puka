@@ -1,5 +1,6 @@
 import logging
 
+from . import exceptions
 from . import spec
 
 log = logging.getLogger('puka')
@@ -39,7 +40,7 @@ def _connection_open_ok(t, result):
     t.register(spec.METHOD_CONNECTION_CLOSE, _connection_close)
 
 def _connection_close(t, result):
-    result.is_error = True
+    exceptions.mark_frame(result)
     log.error('Connection killed: %r', result)
 
 
@@ -55,7 +56,7 @@ def _channel_open_ok(t, result):
 
 ####
 def queue_declare(conn, queue='', auto_delete=False, exclusive=False,
-                  suicidal=False, arguments={}):
+                  arguments={}, suicidal=False):
     # Don't use AMQP auto-delete. Use RabbitMQ queue-leases instead:
     # http://www.rabbitmq.com/extensions.html#queue-leases
     # durable = not auto_delete
@@ -129,7 +130,7 @@ def _basic_publish_channel_flow_ok(t, result):
     t.done(t.x_result)
 
 def _basic_publish_return(t, result):
-    result.is_error = True
+    exceptions.mark_frame(result)
     t.x_result = result
 
 
@@ -216,6 +217,67 @@ def _queue_delete(t):
 
 def _queue_delete_ok(t, result):
     t.done(result)
+
+
+####
+def exchange_declare(conn, exchange, type='direct', arguments={},
+                     suicidal=False):
+    # Exchanges don't support 'x-expires', so we support only durable exchanges.
+    auto_delete = False
+    if not suicidal:
+        t = conn.tickets.new(_exchange_declare_passive)
+    else:
+        t = conn.tickets.new(_exchange_declare_suicidal)
+
+    t.x_frames_passive = spec.encode_exchange_declare(exchange, type, True,
+                                                      not auto_delete,
+                                                      auto_delete, False,
+                                                      arguments)
+    t.x_frames = spec.encode_exchange_declare(exchange, type, False,
+                                              not auto_delete,
+                                              auto_delete, False, arguments)
+    return t
+
+def _exchange_declare_passive(t):
+    t.register(spec.METHOD_CHANNEL_CLOSE, _exchange_declare_passive_fail)
+    t.register(spec.METHOD_EXCHANGE_DECLARE_OK, _exchange_declare_passive_ok)
+    t.send_frames(t.x_frames_passive)
+
+def _exchange_declare_passive_ok(t, result):
+    # Exchange exists.
+    result['exists'] = True
+    t.done(result)
+
+def _exchange_declare_passive_fail(t, result):
+    # Doesn't exist. 1. recreate channel. 2.
+    t.restore_error_handler()
+    t.register(spec.METHOD_CHANNEL_OPEN_OK, _exchange_declare_suicidal)
+    t.send_frames(
+        list(spec.encode_channel_close_ok()) +
+        list(spec.encode_channel_open('')) )
+
+def _exchange_declare_suicidal(t, result=None):
+    t.register(spec.METHOD_EXCHANGE_DECLARE_OK, _exchange_declare_ok)
+    t.send_frames(t.x_frames)
+
+def _exchange_declare_ok(t, result):
+    t.done(result)
+
+
+####
+def exchange_delete(conn, exchange, if_unused=False):
+    t = conn.tickets.new(_exchange_delete)
+    t.x_frames = spec.encode_exchange_delete(exchange, if_unused)
+    return t
+
+def _exchange_delete(t):
+    t.register(spec.METHOD_EXCHANGE_DELETE_OK, _exchange_delete_ok)
+    t.send_frames(t.x_frames)
+
+def _exchange_delete_ok(t, result):
+    t.done(result)
+
+
 
 
 

@@ -37,6 +37,8 @@ class TicketCollection(object):
     def by_number(self, number):
         return self._tickets[number]
 
+
+
 class Ticket(object):
     to_be_released = False
     delay_release = None
@@ -66,7 +68,7 @@ class Ticket(object):
 
     def _on_channel_close(self, _t, result):
         # log.warn('channel %i died %r', self.channel.number, result)
-        result.is_error = True
+        exceptions.mark_frame(result)
         self.send_frames(spec.encode_channel_close_ok())
         self.channel.alive = False
         self.done(result)
@@ -113,7 +115,7 @@ class Ticket(object):
 
         self.release()
         if raise_errors and result.is_error:
-            raise exceptions.from_frame(result)
+            raise result.exception
         return result
 
 
