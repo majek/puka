@@ -31,8 +31,8 @@ class TicketCollection(object):
     def unmark_ready(self, ticket):
         self.ready.remove( ticket.number )
 
-    def run_callback(self, number):
-        return self._tickets[number].run_callback()
+    def run_callback(self, number, **kwargs):
+        return self._tickets[number].run_callback(**kwargs)
 
     def by_number(self, number):
         return self._tickets[number]
