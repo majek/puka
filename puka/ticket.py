@@ -37,6 +37,8 @@ class TicketCollection(object):
     def by_number(self, number):
         return self._tickets[number]
 
+    def all(self):
+        return self._tickets.values()
 
 
 class Ticket(object):

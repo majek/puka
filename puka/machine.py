@@ -9,7 +9,7 @@ log = logging.getLogger('puka')
 ####
 def connection_handshake(conn):
     conn._send(spec.PREAMBLE)
-    return conn.tickets.new(_connection_handshake)
+    return conn.tickets.new(_connection_handshake, reentrant=True)
 
 def _connection_handshake(t):
     assert t.channel.number == 0
@@ -36,12 +36,16 @@ def _connection_tune(t, result):
 
 def _connection_open_ok(t, result):
     # Never free the ticket and channel.
-    t.done(t.cached_result, delay_release=Ellipsis)
+    t.ping(t.cached_result)
     t.register(spec.METHOD_CONNECTION_CLOSE, _connection_close)
 
 def _connection_close(t, result):
     exceptions.mark_frame(result)
-    log.error('Connection killed: %r', result)
+    # Explode, kill everything.
+    log.error('Connection killed with %r', result)
+    for ticket in t.conn.tickets.all():
+        ticket.done(result)
+    t.conn.shutdown()
 
 
 ####

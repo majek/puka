@@ -27,6 +27,19 @@ class TestExchange(unittest.TestCase):
         r = client.wait(ticket)
         self.assertTrue(r['exists'])
 
+        # Unless you can sacrifice the connection...
+        ticket = client.exchange_declare(exchange=ename, suicidal=True)
+        client.wait(ticket)
+
+        ticket = client.exchange_declare(exchange=ename, type='fanout',
+                                         suicidal=True)
+        with self.assertRaises(puka.exceptions.NotAllowed):
+            client.wait(ticket)
+
+        client = puka.Client(AMQP_URL)
+        ticket = client.connect()
+        client.wait(ticket)
+
         ticket = client.exchange_delete(exchange=ename)
         client.wait(ticket)
 

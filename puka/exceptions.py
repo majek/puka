@@ -8,6 +8,7 @@ class AMQPError(PukaError): pass
 class NotFound(AMQPError): pass
 class NoRoute(AMQPError): pass
 class NoConsumers(AMQPError): pass
+class NotAllowed(AMQPError): pass
 
 
 def exception_from_frame(result):
@@ -17,7 +18,10 @@ def exception_from_frame(result):
         return NoRoute(result)
     elif result['reply_code'] == 313:
         return NoConsumers(result)
-    return AMQPError(result)
+    elif result['reply_code'] == 530:
+        return NotAllowed(result)
+    else:
+        return AMQPError(result)
 
 def mark_frame(result):
     result.is_error = True

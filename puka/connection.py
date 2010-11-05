@@ -26,12 +26,15 @@ class Connection(object):
         self.sd.setblocking(False)
         set_ridiculously_high_buffers(self.sd)
 
+        self._init_buffers()
+        (self.username, self.password, self.vhost, self.host, self.port) = \
+            parse_amqp_url(amqp_url)
+
+    def _init_buffers(self):
         self.recv_buf = simplebuffer.SimpleBuffer()
         self.recv_need = 8
         self.send_buf = simplebuffer.SimpleBuffer()
 
-        (self.username, self.password, self.vhost, self.host, self.port) = \
-            parse_amqp_url(amqp_url)
 
     def fileno(self):
         return self.sd
@@ -184,6 +187,11 @@ class Connection(object):
             ticket_number = list(self.tickets.ready)[0]
             self.tickets.run_callback(ticket_number, raise_errors=False)
 
+    def shutdown(self):
+        self.sd.shutdown(socket.SHUT_RDWR)
+        self.sd.close()
+        self.sd = None
+        self._init_buffers()
 
 
 

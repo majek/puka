@@ -168,7 +168,6 @@ class TestBasic(unittest.TestCase):
                                       body=msg, headers={'persistent':False})
         client.wait(ticket)
 
-
         ticket = client.basic_get(queue=qname, no_ack=True)
         result = client.wait(ticket)
         self.assertTrue(result['headers']['persistent'])
@@ -183,7 +182,6 @@ class TestBasic(unittest.TestCase):
         result = client.wait(ticket)
         self.assertTrue(not result['headers']['persistent'])
         self.assertTrue('delivery_mode' not in result['headers'])
-
 
         ticket = client.queue_delete(queue=qname)
         client.wait(ticket)
