@@ -41,9 +41,10 @@ def my_import(name):
 def main_coverage(TESTS):
     modulenames = MODULE_NAMES
 
-    coverage.erase()
-    coverage.start()
-    coverage.exclude('#pragma[: ]+[nN][oO] [cC][oO][vV][eE][rR]')
+    cov = coverage.coverage(branch=True)
+    cov.erase()
+    cov.exclude('#pragma[: ]+[nN][oO] [cC][oO][vV][eE][rR]')
+    cov.start()
 
     modules = []
     for modulename in modulenames:
@@ -65,9 +66,9 @@ def main_coverage(TESTS):
         print "      Tests took %.3f seconds" % (td, )
 
     print "\n***** Coverage Python *****"
-    coverage.stop()
-    coverage.report(modules, ignore_errors=1, show_missing=1)
-    coverage.erase()
+    cov.stop()
+    cov.report(modules, ignore_errors=1, show_missing=1)
+    cov.erase()
 
 
 
