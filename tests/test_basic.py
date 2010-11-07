@@ -8,7 +8,7 @@ AMQP_URL=os.getenv('AMQP_URL')
 
 class TestBasic(base.TestCase):
     def test_simple_roundtrip(self):
-        client = puka.Client(AMQP_URL)
+        client = puka.Client(self.amqp_url)
         ticket = client.connect()
         client.wait(ticket)
 
@@ -29,7 +29,7 @@ class TestBasic(base.TestCase):
 
 
     def test_purge(self):
-        client = puka.Client(AMQP_URL)
+        client = puka.Client(self.amqp_url)
         ticket = client.connect()
         client.wait(ticket)
 
@@ -53,7 +53,7 @@ class TestBasic(base.TestCase):
 
 
     def test_basic_get_ack(self):
-        client = puka.Client(AMQP_URL)
+        client = puka.Client(self.amqp_url)
         ticket = client.connect()
         client.wait(ticket)
 
@@ -89,7 +89,7 @@ class TestBasic(base.TestCase):
 
 
     def test_basic_publish_bad_exchange(self):
-        client = puka.Client(AMQP_URL)
+        client = puka.Client(self.amqp_url)
         ticket = client.connect()
         client.wait(ticket)
 
@@ -112,7 +112,7 @@ class TestBasic(base.TestCase):
 
 
     def test_basic_return(self):
-        client = puka.Client(AMQP_URL)
+        client = puka.Client(self.amqp_url)
         ticket = client.connect()
         client.wait(ticket)
 
@@ -135,7 +135,7 @@ class TestBasic(base.TestCase):
 
 
     def test_persistent(self):
-        client = puka.Client(AMQP_URL)
+        client = puka.Client(self.amqp_url)
         ticket = client.connect()
         client.wait(ticket)
 
@@ -176,7 +176,7 @@ class TestBasic(base.TestCase):
 
 
     def test_basic_reject(self):
-        client = puka.Client(AMQP_URL)
+        client = puka.Client(self.amqp_url)
         ticket = client.connect()
         client.wait(ticket)
 
@@ -208,7 +208,7 @@ class TestBasic(base.TestCase):
 
 
     def test_properties(self):
-        client = puka.Client(AMQP_URL)
+        client = puka.Client(self.amqp_url)
         ticket = client.connect()
         client.wait(ticket)
 
@@ -251,7 +251,7 @@ class TestBasic(base.TestCase):
 
 
     def test_basic_ack_fail(self):
-        client = puka.Client(AMQP_URL)
+        client = puka.Client(self.amqp_url)
         ticket = client.connect()
         client.wait(ticket)
 
@@ -283,7 +283,7 @@ class TestBasic(base.TestCase):
 
 
     def test_basic_cancel(self):
-        client = puka.Client(AMQP_URL)
+        client = puka.Client(self.amqp_url)
         ticket = client.connect()
         client.wait(ticket)
 
@@ -311,3 +311,32 @@ class TestBasic(base.TestCase):
 
         ticket = client.queue_delete(queue=self.name)
         client.wait(ticket)
+
+
+    def test_close(self):
+        client = puka.Client(self.amqp_url)
+        ticket = client.connect()
+        client.wait(ticket)
+
+        ticket = client.queue_declare(queue=self.name)
+        client.wait(ticket)
+
+        ticket = client.basic_publish(exchange='', routing_key=self.name,
+                                      body=self.msg)
+        client.wait(ticket)
+
+        consume_ticket = client.basic_consume(queue=self.name)
+        msg_result = client.wait(consume_ticket)
+
+        ticket = client.queue_delete(queue=self.name)
+        client.wait(ticket)
+
+        self.assertEqual(msg_result['body'], self.msg)
+        client.basic_ack(msg_result)
+
+        ticket = client.close()
+        client.wait(ticket)
+
+if __name__ == '__main__':
+    import tests
+    tests.run_unittests(globals())

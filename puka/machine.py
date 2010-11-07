@@ -9,7 +9,9 @@ log = logging.getLogger('puka')
 ####
 def connection_handshake(conn):
     conn._send(spec.PREAMBLE)
-    return conn.tickets.new(_connection_handshake, reentrant=True)
+    t = conn.tickets.new(_connection_handshake, reentrant=True)
+    conn.x_connection_ticket = t
+    return t
 
 def _connection_handshake(t):
     assert t.channel.number == 0
@@ -23,7 +25,7 @@ def _connection_start(t, result):
                                              response, 'en_US')
     t.register(spec.METHOD_CONNECTION_TUNE, _connection_tune)
     t.send_frames(frames)
-    t.cached_result = result
+    t.x_cached_result = result
 
 def _connection_tune(t, result):
     frame_max = t.conn.tune_frame_max(result['frame_max'])
@@ -36,16 +38,25 @@ def _connection_tune(t, result):
 
 def _connection_open_ok(t, result):
     # Never free the ticket and channel.
-    t.ping(t.cached_result)
+    t.ping(t.x_cached_result)
     t.register(spec.METHOD_CONNECTION_CLOSE, _connection_close)
 
 def _connection_close(t, result):
     exceptions.mark_frame(result)
+    t.ping(result)
     # Explode, kill everything.
     log.error('Connection killed with %r', result)
-    for ticket in t.conn.tickets.all():
-        ticket.done(result)
-    t.conn.shutdown()
+    t.conn._shutdown(result)
+
+def connection_close(conn):
+    t = conn.x_connection_ticket
+    t.register(spec.METHOD_CONNECTION_CLOSE_OK, _connection_close_ok)
+    t.send_frames(spec.encode_connection_close(200, '', 0, 0))
+    return t
+
+def _connection_close_ok(t, result):
+    t.ping(result)
+    t.conn._shutdown(result)
 
 
 ####

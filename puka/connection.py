@@ -195,13 +195,21 @@ class Connection(object):
             ticket_number = list(self.tickets.ready)[0]
             self.tickets.run_callback(ticket_number, raise_errors=False)
 
-    def shutdown(self):
+
+    def _shutdown(self, result):
+        # Cancel all events.
+        for ticket in self.tickets.all():
+            ticket.done(result)
+
+        # And kill the socket
         self.sd.shutdown(socket.SHUT_RDWR)
         self.sd.close()
         self.sd = None
-        self._init_buffers()
+        # Sending is illegal
+        self.send_buf = None
 
-
+    def close(self):
+        return machine.connection_close(self).number
 
 def parse_amqp_url(amqp_url):
     '''
