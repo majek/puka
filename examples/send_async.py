@@ -3,11 +3,6 @@
 import sys
 sys.path.append("..")
 
-import logging
-FORMAT_CONS = '%(asctime)s %(name)-12s %(levelname)8s\t%(message)s'
-logging.basicConfig(level=logging.DEBUG, format=FORMAT_CONS)
-
-
 
 import puka
 
@@ -21,8 +16,8 @@ def on_queue_declare(ticket, result, user_data):
 
 def on_basic_publish(ticket, result, user_data):
     print " [*] Message sent"
-    sys.exit(0)
+    client.loop_break()
 
 client = puka.Client("amqp://localhost/")
 client.connect(callback=on_connection)
-client.wait_for_any()
+client.loop()

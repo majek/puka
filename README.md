@@ -38,7 +38,6 @@ simple tasks when you don't want to introduce callbacks.
 Here's the same code written in an asynchronous way:
 
     import puka
-    import sys
 
     def on_connection(ticket, result, user_data):
         client.queue_declare(queue='test', callback=on_queue_declare)
@@ -50,11 +49,11 @@ Here's the same code written in an asynchronous way:
 
     def on_basic_publish(ticket, result, user_data):
         print " [*] Message sent"
-        sys.exit(0)
+        client.loop_break()
 
     client = puka.Client("amqp://localhost/")
     client.connect(callback=on_connection)
-    client.wait_for_any()
+    client.loop()
 
 
 Puka never blocks
@@ -95,8 +94,7 @@ example, this snippet creates 1000 queues in parallel:
 Puka is sane
 ------------
 
-Puka does expose only a sane subset of AMQP, as judged by the
-author.
+Puka does expose only a sane subset of AMQP, as judged by the author.
 
 
 Puka is experimental
