@@ -19,16 +19,6 @@ logging.basicConfig(level=logging.DEBUG, format=FORMAT_CONS)
 
 
 
-TEST_NAMES = [f.rpartition('.')[0] for f in glob.glob("test_*.py")]
-TEST_NAMES.sort()
-
-pwd=os.getcwd()
-os.chdir(sys.argv[1])
-BAD_MODULES=[]
-MODULE_NAMES=[sys.argv[2] + '.' +f[0:-3] for f in glob.glob("*.py") if f not in BAD_MODULES]
-MODULE_NAMES.sort()
-os.chdir(pwd)
-
 VERBOSE=False
 
 def my_import(name):
@@ -39,6 +29,16 @@ def my_import(name):
     return mod
 
 def main_coverage(TESTS):
+    TEST_NAMES = [f.rpartition('.')[0] for f in glob.glob("test_*.py")]
+    TEST_NAMES.sort()
+
+    pwd=os.getcwd()
+    os.chdir(sys.argv[1])
+    BAD_MODULES=[]
+    MODULE_NAMES=[sys.argv[2] + '.' +f[0:-3] for f in glob.glob("*.py") if f not in BAD_MODULES]
+    MODULE_NAMES.sort()
+    os.chdir(pwd)
+
     modulenames = MODULE_NAMES
 
     cov = coverage.coverage(branch=True)

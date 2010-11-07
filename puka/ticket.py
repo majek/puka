@@ -76,6 +76,7 @@ class Ticket(object):
         self.done(result)
 
     def recv_method(self, result):
+        # log.debug('#%i recv_method %r', self.number, result)
         # In this order, to allow callback to re-register to the same method.
         callback = self.methods[result.method_id]
         del self.methods[result.method_id]
@@ -112,10 +113,11 @@ class Ticket(object):
         user_callback, user_data, result = self.callbacks.pop(0)
         if user_callback:
             user_callback(self.number, result, user_data)
+            # At this point, after callback, self might be already freed.
         if not self.callbacks:
             self.conn.tickets.unmark_ready(self)
 
-        self.release()
+        self.maybe_release()
         if raise_errors and result.is_error:
             raise result.exception
         return result
@@ -132,19 +134,24 @@ class Ticket(object):
     def refcnt_dec(self):
         self.refcnt -= 1
         if self.refcnt == 0:
-            self.release()
+            self.maybe_release()
 
-    def release(self):
-        if not self.callbacks and self.to_be_released and self.refcnt == 0:
-            # Release channel and free ticket.
-            if self.delay_release is None:
-                self.conn.channels.deallocate(self.channel)
-                self.conn.tickets.free(self)
-            elif self.delay_release is Ellipsis:
-                # Never free.
-                pass
-            else:
-                # TODO:
-                print "Unable to free channel %i (ticket %i)" % \
-                    (self.channel.number, self.number)
+    def maybe_release(self):
+        # If not released yet, not used by callbacks, and not refcounted.
+        if (self.channel and not self.callbacks and
+            self.to_be_released and self.refcnt == 0):
+            self._release()
+
+    def _release(self):
+        # Release channel and unlink self.
+        if self.delay_release is None:
+            self.conn.channels.deallocate(self.channel)
+            self.conn.tickets.free(self)
+        elif self.delay_release is Ellipsis:
+            # Never free.
+            pass
+        else:
+            # TODO:
+            print "Unable to free channel %i (ticket %i)" % \
+                (self.channel.number, self.number)
 

@@ -1,6 +1,10 @@
 import array
+import logging
 
 from . import machine
+
+log = logging.getLogger('puka')
+
 
 
 class ChannelCollection(object):

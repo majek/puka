@@ -165,12 +165,16 @@ class Connection(object):
                 self.on_write()
 
     def wait_for_any(self):
+        return self.loop()
+
+    def loop(self):
         '''
         Wait for any ticket. Block forever.
         '''
         fd = self.fileno()
-        while True:
-            self.run_any_callbacks()
+        self._loop_break = False
+        self.run_any_callbacks()
+        while not self._loop_break:
             r, w, e = select.select([fd],
                                     [fd] if self.needs_write() else [],
                                     [fd])
@@ -178,6 +182,10 @@ class Connection(object):
                 self.on_read()
             if w:
                 self.on_write()
+            self.run_any_callbacks()
+
+    def loop_break(self):
+        self._loop_break = True
 
     def run_any_callbacks(self):
         '''
