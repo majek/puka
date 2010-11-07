@@ -23,3 +23,6 @@ for i in range(1000):
 for i in range(1000):
     ticket = client.queue_delete(queue='a%04i' % i)
     client.wait(ticket)
+
+ticket = client.close()
+client.wait(ticket)

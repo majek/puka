@@ -100,6 +100,8 @@ class Ticket(object):
         self.callbacks.append( (self.user_callback, self.user_data, result) )
         self.to_be_released = True
         self.delay_release = delay_release
+        self.methods.clear()
+        self.restore_error_handler()
         self.conn.tickets.mark_ready(self)
 
     def ping(self, result):

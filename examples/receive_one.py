@@ -23,3 +23,6 @@ client.basic_ack(result)
 
 client.basic_cancel(consume_ticket)
 client.wait(consume_ticket)
+
+ticket = client.close()
+client.wait(ticket)

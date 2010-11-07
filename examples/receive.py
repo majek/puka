@@ -22,4 +22,6 @@ while True:
 
     client.basic_ack(result)
 
+ticket = client.close()
+client.wait(ticket)
 

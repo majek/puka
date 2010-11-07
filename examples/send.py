@@ -20,3 +20,6 @@ client.wait(ticket)
 
 print " [*] Message sent"
 
+ticket = client.close()
+client.wait(ticket)
+

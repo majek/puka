@@ -208,8 +208,8 @@ class Connection(object):
         # Sending is illegal
         self.send_buf = None
 
-    def close(self):
-        return machine.connection_close(self).number
+    def _close(self):
+        return machine.connection_close(self)
 
 def parse_amqp_url(amqp_url):
     '''

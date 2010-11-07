@@ -45,6 +45,10 @@ class Client(connection.Connection):
     def connect(self):
         return self._connect()
 
+    @machine_decorator
+    def close(self):
+        return self._close()
+
     def basic_ack(self, *args, **kwargs):
         machine.basic_ack(self, *args, **kwargs)
 

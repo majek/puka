@@ -21,3 +21,6 @@ def on_basic_publish(ticket, result, user_data):
 client = puka.Client("amqp://localhost/")
 client.connect(callback=on_connection)
 client.loop()
+
+ticket = client.close()
+client.wait(ticket)
