@@ -102,5 +102,34 @@ Puka is experimental
 
 Puka is a side project, written mostly to prove if it is possible to
 create a reasonable API on top of the AMQP protocol. It is not finshed
-and might be abandoned at any time.
+and may be abandoned at any time.
+
+
+I like it! Show me more!
+------------------------
+
+You can find more code in the [examples](./examples) directory. Some
+interesting bits:
+
+  - [send.py](./examples/send.py): sends one message
+  - [receive_one.py](./examples/receive_one.py): receives one message
+  - [stress_amqp_consume.py](./examples/receive_one.py): a script used to
+    benchmark the throughput of the server
+
+
+I want to run the examples
+--------------------------
+
+Great. Make sure you have `rabbitmq` server installed and follow this
+steps:
+
+    git clone https://github.com/rabbitmq/rabbitmq-codegen.git
+    git clone https://github.com/majek/puka.git
+    cd puka
+    make
+    cd examples
+
+Now you're ready to run the examples, start with:
+
+    ./send.py
 
