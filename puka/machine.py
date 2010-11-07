@@ -166,6 +166,7 @@ def basic_consume(conn, queue, prefetch_size=0, prefetch_count=0,
     t.x_frames = spec.encode_basic_qos(prefetch_size, prefetch_count, False)
     t.frames_consume = spec.encode_basic_consume(queue, '', no_local, no_ack,
                                                  exclusive, arguments)
+    t.x_no_ack = no_ack
     return t
 
 def _basic_qos(t):
@@ -183,13 +184,15 @@ def _basic_consume_ok(t, consume_result):
 def _basic_deliver(t, msg_result):
     t.register(spec.METHOD_BASIC_DELIVER, _basic_deliver)
     msg_result['ticket_number'] = t.number
-    t.refcnt_inc()
+    if t.x_no_ack is False:
+        t.refcnt_inc()
     t.ping( msg_result )
 
 ##
 def basic_ack(conn, msg_result):
     t = conn.tickets.by_number(msg_result['ticket_number'])
     t.send_frames( spec.encode_basic_ack(msg_result['delivery_tag'], False) )
+    assert t.x_no_ack is False
     t.refcnt_dec()
     return t
 
@@ -198,6 +201,7 @@ def basic_reject(conn, msg_result, requeue=True):
     t = conn.tickets.by_number(msg_result['ticket_number'])
     t.send_frames( spec.encode_basic_reject(msg_result['delivery_tag'],
                                             requeue) )
+    assert t.x_no_ack is False
     t.refcnt_dec()
     return t
 
@@ -217,6 +221,7 @@ def _basic_cancel_ok(t, result):
 def basic_get(conn, queue, no_ack=False):
     t = conn.tickets.new(_basic_get)
     t.x_frames = spec.encode_basic_get(queue, no_ack)
+    t.x_no_ack = no_ack
     return t
 
 def _basic_get(t):
@@ -226,7 +231,8 @@ def _basic_get(t):
 
 def _basic_get_ok(t, msg_result):
     msg_result['ticket_number'] = t.number
-    t.refcnt_inc()
+    if t.x_no_ack is False:
+        t.refcnt_inc()
     t.done(msg_result)
 
 def _basic_get_empty(t, result):

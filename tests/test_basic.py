@@ -337,6 +337,29 @@ class TestBasic(base.TestCase):
         ticket = client.close()
         client.wait(ticket)
 
+    def test_broken_ack_on_close(self):
+        client = puka.Client(self.amqp_url)
+        ticket = client.connect()
+        client.wait(ticket)
+
+        ticket = client.queue_declare()
+        qname = client.wait(ticket)['queue']
+
+        ticket = client.basic_publish(exchange='', routing_key=qname, body='a')
+        client.wait(ticket)
+
+        ticket = client.basic_get(queue=qname)
+        r = client.wait(ticket)
+        self.assertEquals(r['body'], 'a')
+
+        ticket = client.queue_delete(queue=qname)
+        client.wait(ticket)
+
+        ticket = client.close()
+        client.wait(ticket)
+
+
+
 if __name__ == '__main__':
     import tests
     tests.run_unittests(globals())

@@ -94,6 +94,7 @@ class Ticket(object):
 
 
     def done(self, result, delay_release=None):
+        # log.debug('#%i done %r', self.number, result)
         assert self.to_be_released == False
         if not self.reentrant:
             assert len(self.callbacks) == 0
