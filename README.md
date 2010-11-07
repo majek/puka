@@ -108,12 +108,12 @@ and may be abandoned at any time.
 I like it! Show me more!
 ------------------------
 
-You can find more code in the [examples](./examples) directory. Some
+You can find more code in the `./examples` directory. Some
 interesting bits:
 
-  - [send.py](./examples/send.py): sends one message
-  - [receive_one.py](./examples/receive_one.py): receives one message
-  - [stress_amqp_consume.py](./examples/receive_one.py): a script used to
+  - `./examples/send.py`: sends one message
+  - `./examples/receive_one.py`: receives one message
+  - `./examples/receive_one.py`: a script used to
     benchmark the throughput of the server
 
 
