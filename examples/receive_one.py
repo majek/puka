@@ -21,5 +21,5 @@ print " [x] Received message %r" % (result,)
 
 client.basic_ack(result)
 
-#client.cancel(consume_ticket)
-#client.wait(consume_ticket)
+client.basic_cancel(consume_ticket)
+client.wait(consume_ticket)

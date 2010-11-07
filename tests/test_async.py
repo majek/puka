@@ -1,9 +1,6 @@
 import os
 import puka
 import random
-import logging
-
-log = logging.getLogger('puka')
 
 import base
 

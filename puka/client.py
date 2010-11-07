@@ -50,3 +50,6 @@ class Client(connection.Connection):
 
     def basic_reject(self, *args, **kwargs):
         machine.basic_reject(self, *args, **kwargs)
+
+    def basic_cancel(self, *args, **kwargs):
+        machine.basic_cancel(self, *args, **kwargs)

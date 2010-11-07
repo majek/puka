@@ -165,7 +165,8 @@ def _basic_qos_ok(t, result):
     t.register(spec.METHOD_BASIC_CONSUME_OK, _basic_consume_ok)
     t.send_frames(t.frames_consume)
 
-def _basic_consume_ok(t, result):
+def _basic_consume_ok(t, consume_result):
+    t.x_consumer_tag = consume_result['consumer_tag']
     t.register(spec.METHOD_BASIC_DELIVER, _basic_deliver)
 
 def _basic_deliver(t, msg_result):
@@ -174,24 +175,31 @@ def _basic_deliver(t, msg_result):
     t.refcnt_inc()
     t.ping( msg_result )
 
-
-####
+##
 def basic_ack(conn, msg_result):
-    ticket_number = msg_result['ticket_number']
-    t = conn.tickets.by_number(ticket_number)
+    t = conn.tickets.by_number(msg_result['ticket_number'])
     t.send_frames( spec.encode_basic_ack(msg_result['delivery_tag'], False) )
     t.refcnt_dec()
     return t
 
-
-####
+##
 def basic_reject(conn, msg_result, requeue=True):
-    ticket_number = msg_result['ticket_number']
-    t = conn.tickets.by_number(ticket_number)
+    t = conn.tickets.by_number(msg_result['ticket_number'])
     t.send_frames( spec.encode_basic_reject(msg_result['delivery_tag'],
                                             requeue) )
     t.refcnt_dec()
     return t
+
+##
+def basic_cancel(conn, consume_ticket_number):
+    t = conn.tickets.by_number(consume_ticket_number)
+    t.register(spec.METHOD_BASIC_CANCEL_OK, _basic_cancel_ok)
+    t.send_frames( spec.encode_basic_cancel(t.x_consumer_tag) )
+    t.refcnt_clear()
+    return t
+
+def _basic_cancel_ok(t, result):
+    t.done(result)
 
 
 ####

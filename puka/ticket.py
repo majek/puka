@@ -132,9 +132,13 @@ class Ticket(object):
         self.refcnt += 1
 
     def refcnt_dec(self):
+        assert self.refcnt > 0
         self.refcnt -= 1
         if self.refcnt == 0:
             self.maybe_release()
+
+    def refcnt_clear(self):
+        self.refcnt = 0
 
     def maybe_release(self):
         # If not released yet, not used by callbacks, and not refcounted.
