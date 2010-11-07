@@ -33,7 +33,7 @@ class TestExchange(unittest.TestCase):
 
         ticket = client.exchange_declare(exchange=ename, type='fanout',
                                          suicidal=True)
-        with self.assertRaises(puka.exceptions.NotAllowed):
+        with self.assertRaises(puka.NotAllowed):
             client.wait(ticket)
 
         client = puka.Client(AMQP_URL)
@@ -50,6 +50,6 @@ class TestExchange(unittest.TestCase):
 
         ticket = client.exchange_delete(exchange='not_existing_exchange')
 
-        with self.assertRaises(puka.exceptions.NotFound):
+        with self.assertRaises(puka.NotFound):
             client.wait(ticket)
 

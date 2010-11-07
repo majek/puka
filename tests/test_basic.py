@@ -109,7 +109,7 @@ class TestBasic(unittest.TestCase):
             self.assertEqual(len(client.channels.free_channels), 0)
             self.assertEqual(client.channels.free_channel_numbers[-1], 2)
 
-            with self.assertRaises(puka.exceptions.NotFound) as cm:
+            with self.assertRaises(puka.NotFound) as cm:
                 client.wait(ticket)
 
             (r,) = cm.exception # unpack args of exception
@@ -129,7 +129,7 @@ class TestBasic(unittest.TestCase):
 
         ticket = client.basic_publish(exchange='', routing_key=qname,
                                       mandatory=True, body='')
-        with self.assertRaises(puka.exceptions.NoRoute):
+        with self.assertRaises(puka.NoRoute):
             client.wait(ticket)
 
         ticket = client.queue_declare(queue=qname)
@@ -141,7 +141,7 @@ class TestBasic(unittest.TestCase):
 
         ticket = client.basic_publish(exchange='', routing_key=qname,
                                       mandatory=True, immediate=True, body='')
-        with self.assertRaises(puka.exceptions.NoConsumers):
+        with self.assertRaises(puka.NoConsumers):
             client.wait(ticket)
 
 
@@ -266,5 +266,28 @@ class TestBasic(unittest.TestCase):
         client.wait(ticket)
 
 
+    def test_basic_ack_fail(self):
+        qname = 'test%s' % (random.random(),)
 
+        client = puka.Client(AMQP_URL)
+        ticket = client.connect()
+        client.wait(ticket)
+
+        ticket = client.queue_declare(queue=qname)
+        client.wait(ticket)
+
+        ticket = client.basic_publish(exchange='', routing_key=qname,
+                                      body='a')
+        client.wait(ticket)
+
+        ticket = client.basic_consume(queue=qname)
+        result = client.wait(ticket)
+        client.basic_ack(result)
+
+        client.basic_ack(result)
+        with self.assertRaises(puka.PreconditionFailed):
+            result = client.wait(ticket)
+
+        ticket = client.queue_delete(queue=qname)
+        client.wait(ticket)
 

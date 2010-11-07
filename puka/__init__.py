@@ -1,5 +1,4 @@
 
 from client import Client
 
-from . import exceptions
-
+from .spec_exceptions import *

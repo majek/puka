@@ -1,27 +1,10 @@
-from . import spec
-
-
-class PukaError(Exception): pass
-
-class AMQPError(PukaError): pass
-
-class NotFound(AMQPError): pass
-class NoRoute(AMQPError): pass
-class NoConsumers(AMQPError): pass
-class NotAllowed(AMQPError): pass
-
+from . import spec_exceptions
 
 def exception_from_frame(result):
-    if result['reply_code'] == 404:
-        return NotFound(result)
-    elif result['reply_code'] == 312:
-        return NoRoute(result)
-    elif result['reply_code'] == 313:
-        return NoConsumers(result)
-    elif result['reply_code'] == 530:
-        return NotAllowed(result)
-    else:
-        return AMQPError(result)
+    reply_code = result.get('reply_code', 0)
+    if reply_code in spec_exceptions.ERRORS:
+        return spec_exceptions.ERRORS[reply_code](result)
+    return spec_exceptions.AMQPError(result)
 
 def mark_frame(result):
     result.is_error = True

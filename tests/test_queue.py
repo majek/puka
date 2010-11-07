@@ -46,7 +46,7 @@ class TestQueue(unittest.TestCase):
 
         ticket = client.queue_declare(queue=qname, auto_delete=True,
                                       suicidal=True)
-        with self.assertRaises(puka.exceptions.NotAllowed):
+        with self.assertRaises(puka.NotAllowed):
             client.wait(ticket)
 
         client = puka.Client(AMQP_URL)
@@ -64,7 +64,7 @@ class TestQueue(unittest.TestCase):
 
         ticket = client.queue_delete(queue='not_existing_queue')
 
-        with self.assertRaises(puka.exceptions.NotFound):
+        with self.assertRaises(puka.NotFound):
             client.wait(ticket)
 
 

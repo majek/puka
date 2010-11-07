@@ -3,7 +3,7 @@ AMQP_JSON_SPEC=$(CODEGEN_DIR)/amqp-rabbitmq-0.9.1.json
 
 PYTHON=python
 
-all: puka/spec.py tests
+all: puka/spec.py puka/spec_exceptions.py tests
 
 $(AMQP_JSON_SPEC):
 	@echo "You need '$(CODEGEN_DIR)' package."
@@ -14,12 +14,19 @@ $(AMQP_JSON_SPEC):
 
 puka/spec.py: codegen.py $(CODEGEN_DIR)/amqp_codegen.py \
 		$(AMQP_JSON_SPEC) amqp-accepted-by-update.json
-	$(PYTHON) codegen.py framing $(AMQP_JSON_SPEC) puka/spec.py
+	$(PYTHON) codegen.py spec $(AMQP_JSON_SPEC) puka/spec.py
+
+puka/spec_exceptions.py: codegen.py $(CODEGEN_DIR)/amqp_codegen.py \
+		$(AMQP_JSON_SPEC) amqp-accepted-by-update.json
+	$(PYTHON) codegen.py spec_exceptions $(AMQP_JSON_SPEC) puka/spec_exceptions.py
 
 clean:
 	find . -name \*pyc|xargs --no-run-if-empty rm
 	rm -f tests/.coverage
 
+distclean: clean
+	rm -f puka/spec.py puka/spec_exceptions.py
+	
 
 .PHONY: tests prerequisites
 
