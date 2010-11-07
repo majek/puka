@@ -199,7 +199,11 @@ class Connection(object):
     def _shutdown(self, result):
         # Cancel all events.
         for ticket in self.tickets.all():
-            ticket.done(result)
+            # It's possible that a ticket may be already `done` but still not
+            # removed. For example due to `refcnt`. In that case don't run
+            # callbacks.
+            if ticket.to_be_released is False:
+                ticket.done(result)
 
         # And kill the socket
         self.sd.shutdown(socket.SHUT_RDWR)
