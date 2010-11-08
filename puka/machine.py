@@ -8,7 +8,8 @@ log = logging.getLogger('puka')
 
 ####
 def connection_handshake(conn):
-    conn._send(spec.PREAMBLE)
+    # Bypass conn._send, we want the socket to be writable first.
+    conn.send_buf.write(spec.PREAMBLE)
     t = conn.tickets.new(_connection_handshake, reentrant=True)
     conn.x_connection_ticket = t
     return t

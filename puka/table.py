@@ -117,10 +117,10 @@ def decode(encoded, offset):
     {}
     >>> decode(encode({'a':1, 'c':True, 'd':'x', 'e':{}}), 0)[0]
     {'a': 1, 'c': 1, 'e': {}, 'd': 'x'}
-    >>> decode(encode({'a':decimal.Decimal('1.01')}), 0)[0]
-    {'a': Decimal('1.01')}
-    >>> decode(encode({'a':decimal.Decimal('5E-30')}), 0)[0]
-    {'a': Decimal('5E-30')}
+    >>> decode(encode({'a':decimal.Decimal('1.01')}), 0)[0] # doctest: +ELLIPSIS
+    {'a': Decimal(...1.01...)}
+    >>> decode(encode({'a':decimal.Decimal('5E-30')}), 0)[0] # doctest: +ELLIPSIS
+    {'a': Decimal(...5E-30...)}
     >>> decode(encode({'a':datetime.datetime(2010,12,31,23,58,59)}), 0)[0]
     {'a': datetime.datetime(2010, 12, 31, 23, 58, 59)}
     '''
