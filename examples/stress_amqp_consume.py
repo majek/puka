@@ -11,7 +11,7 @@ import time
 counter = 0
 counter_t0 = time.time()
 
-headers={}
+headers={'persistent': False}
 
 def main():
     client = puka.Client("amqp://localhost/")
