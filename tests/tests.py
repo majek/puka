@@ -68,6 +68,7 @@ def main_coverage(TESTS):
     print "\n***** Coverage Python *****"
     cov.stop()
     cov.report(modules, ignore_errors=1, show_missing=1)
+    #cov.html_report(morfs=modules, directory='/tmp')
     cov.erase()
 
 

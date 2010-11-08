@@ -129,7 +129,7 @@ class Connection(object):
         try:
             r = self.sd.send(self.send_buf.read())
         except socket.error, e:
-            if hasattr(exn, 'errno') and (exn.errno == errno.EAGAIN):
+            if hasattr(e, 'errno') and (e.errno == errno.EAGAIN):
                 return
             else:
                 raise

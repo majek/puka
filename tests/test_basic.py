@@ -1,6 +1,8 @@
 import os
 import puka
 import random
+import socket
+
 import base
 
 
@@ -19,9 +21,8 @@ class TestBasic(base.TestCase):
                                       body=self.msg)
         client.wait(ticket)
 
-        consume_ticket = client.basic_consume(queue=self.name)
+        consume_ticket = client.basic_consume(queue=self.name, no_ack=True)
         result = client.wait(consume_ticket)
-        client.basic_ack(result)
         self.assertEqual(result['body'], self.msg)
 
         ticket = client.queue_delete(queue=self.name)
@@ -132,6 +133,9 @@ class TestBasic(base.TestCase):
                                       mandatory=True, immediate=True, body='')
         with self.assertRaises(puka.NoConsumers):
             client.wait(ticket)
+
+        ticket = client.queue_delete(queue=self.name)
+        client.wait(ticket)
 
 
     def test_persistent(self):
@@ -357,6 +361,25 @@ class TestBasic(base.TestCase):
 
         ticket = client.close()
         client.wait(ticket)
+
+
+    def test_broken_url(self):
+        client = puka.Client('amqp://does.not.resolve/')
+        with self.assertRaises(socket.gaierror):
+            ticket = client.connect()
+
+    def test_connection_refused(self):
+        with self.assertRaises(socket.error):
+            client = puka.Client('amqp://127.0.0.1:9999/')
+            ticket = client.connect()
+            client.wait(ticket)
+
+    def test_connection_refused(self):
+        with self.assertRaises(socket.error):
+            client = puka.Client('amqp://127.0.0.1:9999/')
+            ticket = client.connect()
+            client.wait(ticket)
+
 
 
 
