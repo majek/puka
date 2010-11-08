@@ -41,7 +41,10 @@ def main_coverage(TESTS):
 
     modulenames = MODULE_NAMES
 
-    cov = coverage.coverage(branch=True)
+    try:
+        cov = coverage.coverage(branch=True)
+    except TypeError:
+        cov = coverage
     cov.erase()
     cov.exclude('#pragma[: ]+[nN][oO] [cC][oO][vV][eE][rR]')
     cov.start()

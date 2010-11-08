@@ -3,6 +3,7 @@
 # This code is licensed on PSF.
 # Original source: Python-2.7/Lib/unittest/case.py
 #
+from __future__ import with_statement
 
 from unittest import *
 import unittest

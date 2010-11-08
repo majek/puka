@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 
 import os
-import simplejson as json
 import sys
 import string
+try:
+    import simplejson as json
+except ImportError:
+    print "No 'simplejson' module found. Try:"
+    print "     sudo apt-get install python-simplejson"
+    sys.exit(1)
 
 sys.path.append(os.path.join("..","rabbitmq-codegen"))
 from amqp_codegen import *

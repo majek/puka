@@ -3,6 +3,7 @@ import logging
 import select
 import socket
 import struct
+import urllib
 import urlparse
 
 from . import channel
@@ -232,10 +233,10 @@ def parse_amqp_url(amqp_url):
     # urlsplit doesn't know how to parse query when scheme is amqp,
     # we need to pretend we're http'
     o = urlparse.urlsplit('http://' + amqp_url[len('amqp://'):])
-    username = urlparse.unquote(o.username) if o.username else 'guest'
-    password = urlparse.unquote(o.password) if o.password else 'guest'
+    username = urllib.unquote(o.username) if o.username else 'guest'
+    password = urllib.unquote(o.password) if o.password else 'guest'
 
-    vhost = urlparse.unquote(o.path) if o.path else '/'
+    vhost = urllib.unquote(o.path) if o.path else '/'
     host = o.hostname or 'localhost'
     port = o.port if o.port else 5672
     return (username, password, vhost, host, port)
