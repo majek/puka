@@ -1,4 +1,6 @@
 
 from client import Client
 
-from .spec_exceptions import *
+# Should be relative, but python 2.5 doesn't support importing start from that.
+from spec_exceptions import *
+

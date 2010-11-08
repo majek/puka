@@ -117,6 +117,8 @@ def decode(encoded, offset):
     {}
     >>> decode(encode({'a':1, 'c':True, 'd':'x', 'e':{}}), 0)[0]
     {'a': 1, 'c': 1, 'e': {}, 'd': 'x'}
+
+    # python 2.5 reports Decimal("1.01"), python 2.6 Decimal('1.01')
     >>> decode(encode({'a':decimal.Decimal('1.01')}), 0)[0] # doctest: +ELLIPSIS
     {'a': Decimal(...1.01...)}
     >>> decode(encode({'a':decimal.Decimal('5E-30')}), 0)[0] # doctest: +ELLIPSIS
