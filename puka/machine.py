@@ -160,6 +160,29 @@ def _basic_publish_return(t, result):
 
 
 ####
+def basic_publish_async(conn, exchange, routing_key, mandatory=False,
+                        immediate=False, headers={}, body=''):
+    # Fix delivery_mode. Persistent by default.
+    nheaders = {}
+    nheaders.update(headers) # copy
+    if nheaders.get('persistent', True):
+        nheaders['delivery_mode'] = 2
+    # That's not a good idea.
+    assert 'headers' not in headers
+
+    t = conn.tickets.new(_basic_publish_async)
+    t.x_frames = spec.encode_basic_publish(exchange, routing_key, mandatory,
+                                           immediate, nheaders, body,
+                                           conn.frame_max)
+    return t
+
+def _basic_publish_async(t):
+    t.register(spec.METHOD_BASIC_RETURN, _basic_publish_return)
+    t.send_frames(t.x_frames)
+    t.done(spec.Frame())
+
+
+####
 def basic_consume(conn, queue, prefetch_size=0, prefetch_count=0,
                   no_local=False, no_ack=False, exclusive=False,
                   arguments={}):

@@ -31,6 +31,7 @@ class Client(connection.Connection):
         machine.queue_purge,
         machine.queue_delete,
         machine.basic_publish,
+        machine.basic_publish_async,
         machine.basic_consume,
         machine.basic_get,
         machine.exchange_declare,
