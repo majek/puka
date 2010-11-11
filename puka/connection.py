@@ -150,7 +150,6 @@ class Connection(object):
         '''
         Wait for selected tickets. Exit after ticket runs a callback.
         '''
-        fd = self.fileno()
         ticket_numbers = set(ticket_numbers)
         while True:
             while True:
@@ -160,9 +159,9 @@ class Connection(object):
                 ticket_number = list(ready)[0]
                 return self.tickets.run_callback(ticket_number)
 
-            r, w, e = select.select([fd],
-                                    [fd] if self.needs_write() else [],
-                                    [fd])
+            r, w, e = select.select([self],
+                                    [self] if self.needs_write() else [],
+                                    [self])
             if r or e:
                 self.on_read()
             if w:
@@ -175,13 +174,12 @@ class Connection(object):
         '''
         Wait for any ticket. Block forever.
         '''
-        fd = self.fileno()
         self._loop_break = False
         self.run_any_callbacks()
         while not self._loop_break:
-            r, w, e = select.select([fd],
-                                    [fd] if self.needs_write() else [],
-                                    [fd])
+            r, w, e = select.select([self],
+                                    [self] if self.needs_write() else [],
+                                    [self])
             if r or e:
                 self.on_read()
             if w:
