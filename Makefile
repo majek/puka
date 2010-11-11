@@ -12,11 +12,13 @@ $(AMQP_JSON_SPEC):
 	@echo "  hg clone http://hg.rabbitmq.com/rabbitmq-codegen"
 	@exit 1
 
-puka/spec.py: codegen.py $(CODEGEN_DIR)/amqp_codegen.py \
+puka/spec.py: codegen.py codegen_helpers.py \
+		$(CODEGEN_DIR)/amqp_codegen.py \
 		$(AMQP_JSON_SPEC) amqp-accepted-by-update.json
 	$(PYTHON) codegen.py spec $(AMQP_JSON_SPEC) puka/spec.py
 
-puka/spec_exceptions.py: codegen.py $(CODEGEN_DIR)/amqp_codegen.py \
+puka/spec_exceptions.py: codegen.py codegen_helpers.py \
+		$(CODEGEN_DIR)/amqp_codegen.py \
 		$(AMQP_JSON_SPEC) amqp-accepted-by-update.json
 	$(PYTHON) codegen.py spec_exceptions $(AMQP_JSON_SPEC) puka/spec_exceptions.py
 
@@ -26,7 +28,6 @@ clean:
 
 distclean: clean
 	rm -f puka/spec.py puka/spec_exceptions.py
-	
 
 .PHONY: tests prerequisites
 
