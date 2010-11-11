@@ -59,6 +59,36 @@ class TestQueue(unittest.TestCase):
         ticket = client.queue_delete(queue=qname)
         client.wait(ticket)
 
+
+    def test_queue_redeclare_args(self):
+        qname = 'test%s' % (random.random(),)
+
+        client = puka.Client(AMQP_URL)
+        ticket = client.connect()
+        client.wait(ticket)
+
+        ticket = client.queue_declare(queue=qname, arguments={})
+        r = client.wait(ticket)
+        self.assertTrue('exists' not in r)
+
+        ticket = client.queue_declare(queue=qname, arguments={'x-expires':100})
+        r = client.wait(ticket)
+        self.assertTrue(r['exists'])
+
+        # Unless you can sacrifice the connection...
+        ticket = client.queue_declare(queue=qname, arguments={'x-expires':101},
+                                      suicidal=True)
+        with self.assertRaises(puka.NotAllowed):
+            client.wait(ticket)
+
+        client = puka.Client(AMQP_URL)
+        ticket = client.connect()
+        client.wait(ticket)
+
+        ticket = client.queue_delete(queue=qname)
+        client.wait(ticket)
+
+
     def test_queue_delete_not_found(self):
         client = puka.Client(AMQP_URL)
         ticket = client.connect()

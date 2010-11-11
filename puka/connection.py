@@ -38,6 +38,9 @@ class Connection(object):
 
 
     def fileno(self):
+        return self.sd.fileno()
+
+    def socket(self):
         return self.sd
 
     def _connect(self):
