@@ -181,7 +181,7 @@ def print_encode_properties(c):
     print "    ))"
     print
     print "def %s(body_size, props):" % (c.encode,)
-    print "    pieces = []"
+    print "    pieces = ['']*%i" % (len(c.fields),)
     print "    flags = 0"
     print "    keys = %s_PROPS & set(props.keys())" % (c.name.upper(),)
     for i, f in enumerate(c.fields):
@@ -195,9 +195,13 @@ def print_encode_properties(c):
         fields = codegen_helpers.PackWrapper()
         fields.add(f.n, f.t)
         fields.close()
-        print ' '*8+'pieces.extend(['
-        fields.do_print(' '*16, '%s')
-        print ' '*8 + '])'
+        if len(fields.fields) > 1:
+            print ' '*8+"pieces[%i] = ''.join((" % (i,)
+            fields.do_print(' '*16, '%s')
+            print ' '*8 + '))'
+        else:
+            print ' '*8+"pieces[%i] =" % (i,),
+            fields.do_print('', '%s', comma=False)
 
     print "    return (0x02, ''.join(("
     print "        struct.pack('!HHQH',"

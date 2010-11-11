@@ -205,7 +205,7 @@ class PackWrapper(object):
                 immediate = False
             yield immediate, fmt, sizes, names
 
-    def do_print(self, prefix, _):
+    def do_print(self, prefix, _, comma=True):
         for immediate, fmt, sizes, names in self.groups():
             if immediate:
                 s = ""
@@ -215,9 +215,11 @@ class PackWrapper(object):
                                                 for p in re.findall('..', s)]),)
             else:
                 if fmt[0] is not None:
-                    print prefix+"struct.pack('!%s', %s)," % (''.join(fmt),
-                                                              ', '.join(names))
+                    print prefix+"struct.pack('!%s', %s)%s" % (''.join(fmt),
+                                                              ', '.join(names),
+                                                               ',' if comma else '')
                 else:
                     assert len(fmt) == 1
-                    print prefix+"%s," % (names[0],)
+                    print prefix+"%s%s" % (names[0],
+                                           ',' if comma else '')
 
