@@ -117,14 +117,12 @@ class Connection(object):
             self.on_write()
 
     def _send_frames(self, channel_number, frames):
-        decorate = lambda (frame_type, payload): \
-            ''.join((struct.pack('!BHI',
-                                 frame_type,
-                                 channel_number,
-                                 len(payload)),
-                     payload, '\xCE'))
-        self._send( ''.join(map(decorate, frames)) )
-
+        self._send( ''.join([''.join((struct.pack('!BHI',
+                                                  frame_type,
+                                                  channel_number,
+                                                  len(payload)),
+                                      payload, '\xCE')) \
+                                 for frame_type, payload in frames]) )
 
     def needs_write(self):
         return bool(self.send_buf)
