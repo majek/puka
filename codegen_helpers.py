@@ -111,9 +111,12 @@ class PackWrapper(object):
         self.fields = []
         self.bits = []
 
-    def add(self, n, t):
+    def add(self, n, t, nr=None):
         nl = 'len(%s)' % n
-        nr = '%s_raw' % n
+        if nr is None:
+            nr = '%s_raw' % n
+        else:
+            nr = nr % n
         nrl = 'len(%s)' % nr
         if n in BANNED_FIELDS:
             default = BANNED_FIELDS[n]

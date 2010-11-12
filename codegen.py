@@ -145,7 +145,7 @@ def print_encode_method(m):
         print "    %s_raw = table.encode(%s)" % (f.n, f.n)
 
     if m.hasContent:
-        print "    props, headers = split_headers(user_headers, %s_PROPS)" % (
+        print "    props, headers = split_headers(user_headers, %s_PROPS_SET)" % (
             m.klass.name.upper(),)
         print "    if headers:"
         print "        props['headers'] = headers"
@@ -175,34 +175,46 @@ def print_encode_method(m):
         print "        ] + encode_body(body, frame_size)"
 
 def print_encode_properties(c):
-    print "%s_PROPS = set(("% (c.name.upper(),)
+    print "%s_PROPS_SET = set(("% (c.name.upper(),)
     for f in c.fields:
         print '    "%s",' % (f.n,)
     print "    ))"
     print
+    print "ENCODE_PROPS_%s = {" % (c.name.upper(),)
+    for i, f in enumerate(c.fields):
+        pn = pyize(f.name)
+        print "    '%s': (" % (pn,)
+        print "        %i," % (i,)
+        print "        0x%04x, # (1 << %i)" % ( 1 << (15-i), 15-i,)
+
+        fields = codegen_helpers.PackWrapper()
+        if f.t not in ['table']:
+            fields.add("val", f.t)
+        else:
+            fields.add("table.encode(val)", f.t, nr='%s')
+        fields.close()
+        if len(fields.fields) > 1:
+            print ' '*8 + "lambda val: ''.join(("
+            fields.do_print(' '*16, '%s')
+            print ' '*8 + ')) ),'
+        else:
+            print '  '*4 + 'lambda val:',
+            fields.do_print('', '%s', comma=False)
+            print '        ),'
+
+    print "}"
+    print
     print "def %s(body_size, props):" % (c.encode,)
     print "    pieces = ['']*%i" % (len(c.fields),)
     print "    flags = 0"
-    print "    keys = %s_PROPS & set(props.keys())" % (c.name.upper(),)
-    for i, f in enumerate(c.fields):
-        pn = pyize(f.name)
-        print "    if '%s' in keys:" % (pn,)
-        print "        %s = props['%s']" % (pn, pn)
-        print "        flags |= 0x%04x # (1 << %i)" % ( 1 << (15-i), 15-i,)
-
-        if f.t in ['table']:
-            print "        %s_raw = table.encode(%s)" % (f.n, f.n)
-        fields = codegen_helpers.PackWrapper()
-        fields.add(f.n, f.t)
-        fields.close()
-        if len(fields.fields) > 1:
-            print ' '*8+"pieces[%i] = ''.join((" % (i,)
-            fields.do_print(' '*16, '%s')
-            print ' '*8 + '))'
-        else:
-            print ' '*8+"pieces[%i] =" % (i,),
-            fields.do_print('', '%s', comma=False)
-
+    print "    enc = ENCODE_PROPS_%s" % (c.name.upper(),)
+    print
+    print "    for key in %s_PROPS_SET & set(props.iterkeys()):" % \
+        (c.name.upper(),)
+    print "        i, f, fun = enc[key]"
+    print "        flags |= f"
+    print "        pieces[i] = fun(props[key])"
+    print ""
     print "    return (0x02, ''.join(("
     print "        struct.pack('!HHQH',"
     print "                    %s, 0, body_size, flags)," % (c.u,)
