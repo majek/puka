@@ -99,7 +99,9 @@ class Ticket(object):
             assert len(self.callbacks) == 0
         if not no_callback:
             self.callbacks.append( (self.user_callback, result) )
-            self.conn.tickets.mark_ready(self)
+        else:
+            self.callbacks.append( (None, result) )
+        self.conn.tickets.mark_ready(self)
         self.to_be_released = True
         self.delay_release = delay_release
         self.methods.clear()

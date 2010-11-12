@@ -333,11 +333,15 @@ class TestBasic(base.TestCase):
         consume_ticket = client.basic_consume(queue=self.name)
         msg_result = client.wait(consume_ticket)
 
-        ticket = client.queue_delete(queue=self.name)
+
+    def test_basic_consume_fail(self):
+        client = puka.Client(self.amqp_url)
+        ticket = client.connect()
         client.wait(ticket)
 
-        self.assertEqual(msg_result['body'], self.msg)
-        client.basic_ack(msg_result)
+        consume_ticket = client.basic_consume(queue='bad_q_name')
+        with self.assertRaises(puka.NotFound):
+            msg_result = client.wait(consume_ticket)
 
         ticket = client.close()
         client.wait(ticket)
