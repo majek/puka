@@ -46,10 +46,8 @@ class Connection(object):
     def _connect(self):
         try:
             self.sd.connect((self.host, self.port))
-        except socket.error, (err, msg):
-            if err == errno.EINPROGRESS:
-                pass
-            else:
+        except socket.error, e:
+            if e.errno not in (errno.EINPROGRESS, errno.EWOULDBLOCK):
                 raise
         return machine.connection_handshake(self)
 
@@ -57,8 +55,8 @@ class Connection(object):
     def on_read(self):
         try:
             r = self.sd.recv(131072)
-        except socket.error, (err, msg):
-            if err == errno.EAGAIN:
+        except socket.error, e:
+            if e.errno == errno.EAGAIN:
                 return
             else:
                 raise
@@ -129,9 +127,10 @@ class Connection(object):
 
     def on_write(self):
         try:
-            r = self.sd.send(self.send_buf.read())
-        except socket.error, (err, msg):
-            if err == errno.EAGAIN:
+            # On windows socket.send blows up if the buffer is too large.
+            r = self.sd.send(self.send_buf.read(128*1024))
+        except socket.error, e:
+            if e.errno == errno.EAGAIN:
                 return
             else:
                 raise

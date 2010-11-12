@@ -1,3 +1,5 @@
+import functools
+
 from . import connection
 from . import machine
 
@@ -9,16 +11,13 @@ def meta_attach_methods(name, bases, cls):
 
 
 def machine_decorator(method):
+    @functools.wraps(method)
     def wrapper(*args, **kwargs):
         callback = kwargs.get('callback')
         if callback is not None:
             del kwargs['callback']
-        user_data = kwargs.get('user_data')
-        if user_data is not None:
-            del kwargs['user_data']
         t = method(*args, **kwargs)
         t.user_callback = callback
-        t.user_data = user_data
         t.after_machine()
         return t.number
     return wrapper

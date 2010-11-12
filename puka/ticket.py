@@ -45,7 +45,6 @@ class Ticket(object):
     to_be_released = False
     delay_release = None
     user_callback = None
-    user_data = None
     after_machine_callback = None
     refcnt = 0
 
@@ -98,7 +97,7 @@ class Ticket(object):
         assert self.to_be_released == False
         if not self.reentrant:
             assert len(self.callbacks) == 0
-        self.callbacks.append( (self.user_callback, self.user_data, result) )
+        self.callbacks.append( (self.user_callback, result) )
         self.to_be_released = True
         self.delay_release = delay_release
         self.methods.clear()
@@ -108,14 +107,14 @@ class Ticket(object):
     def ping(self, result):
         assert self.to_be_released == False
         assert self.reentrant
-        self.callbacks.append( (self.user_callback, self.user_data, result) )
+        self.callbacks.append( (self.user_callback, result) )
         self.conn.tickets.mark_ready(self)
 
 
     def run_callback(self, raise_errors=True):
-        user_callback, user_data, result = self.callbacks.pop(0)
+        user_callback, result = self.callbacks.pop(0)
         if user_callback:
-            user_callback(self.number, result, user_data)
+            user_callback(self.number, result)
             # At this point, after callback, self might be already freed.
         if not self.callbacks:
             self.conn.tickets.unmark_ready(self)
