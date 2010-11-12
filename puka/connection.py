@@ -156,7 +156,7 @@ class Connection(object):
                 ready = ticket_numbers & self.tickets.ready
                 if not ready:
                     break
-                ticket_number = list(ready)[0]
+                ticket_number = ready.pop()
                 return self.tickets.run_callback(ticket_number)
 
             r, w, e = select.select([self],
@@ -194,8 +194,8 @@ class Connection(object):
         Run any callbacks, any tickets, but do not block.
         '''
         while self.tickets.ready:
-            ticket_number = list(self.tickets.ready)[0]
-            self.tickets.run_callback(ticket_number, raise_errors=False)
+            [self.tickets.run_callback(ticket, raise_errors=False) \
+                 for ticket in list(self.tickets.ready)]
 
 
     def _shutdown(self, result):
