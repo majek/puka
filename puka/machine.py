@@ -231,14 +231,24 @@ def basic_reject(conn, msg_result, requeue=True):
 
 ##
 def basic_cancel(conn, consume_ticket_number):
-    t = conn.tickets.by_number(consume_ticket_number)
-    t.register(spec.METHOD_BASIC_CANCEL_OK, _basic_cancel_ok)
-    t.send_frames( spec.encode_basic_cancel(t.x_consumer_tag) )
-    t.refcnt_clear()
+    # TODO: new channel not required
+    # TODO: race?
+    t = conn.tickets.new(_basic_cancel)
+    t.x_ct = conn.tickets.by_number(consume_ticket_number)
+    t.x_frames = spec.encode_basic_cancel(t.x_ct.x_consumer_tag)
     return t
 
-def _basic_cancel_ok(t, result):
-    t.done(result)
+def _basic_cancel(t):
+    t.x_ct.register(spec.METHOD_BASIC_CANCEL_OK, _basic_cancel_ok)
+    t.x_ct.send_frames( t.x_frames )
+    t.x_ct.refcnt_clear()
+    t.x_ct.x_mt = t
+    t.x_ct = None
+
+def _basic_cancel_ok(ct, result):
+    ct.x_mt.done(result)
+    ct.x_mt = None
+    ct.done(None, no_callback=True)
 
 
 ####

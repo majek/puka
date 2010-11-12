@@ -306,9 +306,8 @@ class TestBasic(base.TestCase):
         self.assertEqual(msg1['body'], 'a')
         client.basic_ack(msg1)
 
-        client.basic_cancel(consume_ticket)
-        msg2 = client.wait(consume_ticket)
-        result = client.wait(consume_ticket)
+        ticket = client.basic_cancel(consume_ticket)
+        result = client.wait(ticket)
         self.assertTrue('consumer_tag' in result)
 
         ticket = client.basic_publish(exchange='', routing_key=self.name,

@@ -32,6 +32,7 @@ class Client(connection.Connection):
         machine.basic_publish,
         machine.basic_publish_async,
         machine.basic_consume,
+        machine.basic_cancel,
         machine.basic_get,
         machine.exchange_declare,
         machine.exchange_delete,
@@ -54,6 +55,3 @@ class Client(connection.Connection):
 
     def basic_reject(self, *args, **kwargs):
         machine.basic_reject(self, *args, **kwargs)
-
-    def basic_cancel(self, *args, **kwargs):
-        machine.basic_cancel(self, *args, **kwargs)

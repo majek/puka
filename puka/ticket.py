@@ -92,17 +92,18 @@ class Ticket(object):
         self.conn._send_frames(self.channel.number, frames)
 
 
-    def done(self, result, delay_release=None):
+    def done(self, result, delay_release=None, no_callback=False):
         # log.debug('#%i done %r', self.number, result)
         assert self.to_be_released == False
         if not self.reentrant:
             assert len(self.callbacks) == 0
-        self.callbacks.append( (self.user_callback, result) )
+        if not no_callback:
+            self.callbacks.append( (self.user_callback, result) )
+            self.conn.tickets.mark_ready(self)
         self.to_be_released = True
         self.delay_release = delay_release
         self.methods.clear()
         self.restore_error_handler()
-        self.conn.tickets.mark_ready(self)
 
     def ping(self, result):
         assert self.to_be_released == False
