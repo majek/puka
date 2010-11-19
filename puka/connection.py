@@ -143,10 +143,12 @@ class Connection(object):
         return self.frame_max
 
 
-    def wait(self, *ticket_numbers):
+    def wait(self, ticket_numbers, timeout=None):
         '''
         Wait for selected tickets. Exit after ticket runs a callback.
         '''
+        if isinstance(ticket_numbers, int):
+            ticket_numbers = [ticket_numbers]
         ticket_numbers = set(ticket_numbers)
         while True:
             while True:
@@ -158,11 +160,15 @@ class Connection(object):
 
             r, w, e = select.select([self],
                                     [self] if self.needs_write() else [],
-                                    [self])
+                                    [self],
+                                    timeout)
             if r or e:
                 self.on_read()
             if w:
                 self.on_write()
+            if not r and not e and not w:
+                # timeout
+                return None
 
     def wait_for_any(self):
         return self.loop()

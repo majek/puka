@@ -233,27 +233,27 @@ def _basic_publish_return(t, result):
 def basic_consume(conn, queue, prefetch_size=0, prefetch_count=0,
                   no_local=False, no_ack=False, exclusive=False,
                   arguments={}):
-    t = conn.tickets.new(_basic_qos, reentrant=True)
+    t = conn.tickets.new(_bc_basic_qos, reentrant=True)
     t.x_frames = spec.encode_basic_qos(prefetch_size, prefetch_count, False)
     t.frames_consume = spec.encode_basic_consume(queue, '', no_local, no_ack,
                                                  exclusive, arguments)
     t.x_no_ack = no_ack
     return t
 
-def _basic_qos(t):
-    t.register(spec.METHOD_BASIC_QOS_OK, _basic_qos_ok)
+def _bc_basic_qos(t):
+    t.register(spec.METHOD_BASIC_QOS_OK, _bc_basic_qos_ok)
     t.send_frames(t.x_frames)
 
-def _basic_qos_ok(t, result):
-    t.register(spec.METHOD_BASIC_CONSUME_OK, _basic_consume_ok)
+def _bc_basic_qos_ok(t, result):
+    t.register(spec.METHOD_BASIC_CONSUME_OK, _bc_basic_consume_ok)
     t.send_frames(t.frames_consume)
 
-def _basic_consume_ok(t, consume_result):
+def _bc_basic_consume_ok(t, consume_result):
     t.x_consumer_tag = consume_result['consumer_tag']
-    t.register(spec.METHOD_BASIC_DELIVER, _basic_deliver)
+    t.register(spec.METHOD_BASIC_DELIVER, _bc_basic_deliver)
 
-def _basic_deliver(t, msg_result):
-    t.register(spec.METHOD_BASIC_DELIVER, _basic_deliver)
+def _bc_basic_deliver(t, msg_result):
+    t.register(spec.METHOD_BASIC_DELIVER, _bc_basic_deliver)
     msg_result['ticket_number'] = t.number
     if t.x_no_ack is False:
         t.refcnt_inc()
@@ -268,13 +268,32 @@ def basic_ack(conn, msg_result):
     return t
 
 ##
-def basic_reject(conn, msg_result, requeue=True):
+def basic_reject(conn, msg_result):
     t = conn.tickets.by_number(msg_result['ticket_number'])
-    t.send_frames( spec.encode_basic_reject(msg_result['delivery_tag'],
-                                            requeue) )
+    # For basic.reject requeue must be True.
+    t.send_frames( spec.encode_basic_reject(msg_result['delivery_tag'], True) )
     assert t.x_no_ack is False
     t.refcnt_dec()
     return t
+
+##
+def basic_qos(conn, consume_ticket_number, prefetch_size=0, prefetch_count=0):
+    # TODO: new channel not required
+    # TODO: race?
+    t = conn.tickets.new(_basic_qos)
+    t.x_ct = conn.tickets.by_number(consume_ticket_number)
+    t.x_frames = spec.encode_basic_qos(prefetch_size, prefetch_count, False)
+    return t
+
+def _basic_qos(t):
+    ct = t.x_ct
+    ct.register(spec.METHOD_BASIC_QOS_OK, _basic_qos_ok)
+    ct.send_frames( t.x_frames )
+    ct.x_qos_ticket = t
+
+def _basic_qos_ok(ct, result):
+    t = ct.x_qos_ticket
+    t.done(result)
 
 ##
 def basic_cancel(conn, consume_ticket_number):

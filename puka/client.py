@@ -33,6 +33,7 @@ class Client(connection.Connection):
         machine.basic_publish_async,
         machine.basic_consume,
         machine.basic_cancel,
+        machine.basic_qos,
         machine.basic_get,
         machine.exchange_declare,
         machine.exchange_delete,

@@ -199,11 +199,6 @@ class TestBasic(base.TestCase):
         r = client.wait(t)
         self.assertEqual(r['body'], 'a')
         self.assertTrue(r['redelivered'])
-        client.basic_reject(r, False)
-
-        t = client.basic_get(queue=self.name)
-        r = client.wait(t)
-        self.assertTrue(r['empty'])
 
         ticket = client.queue_delete(queue=self.name)
         client.wait(ticket)
@@ -366,8 +361,39 @@ class TestBasic(base.TestCase):
         ticket = client.close()
         client.wait(ticket)
 
+    @base.connect
+    def test_basic_qos(self, client):
+        ticket = client.queue_declare(queue=self.name)
+        client.wait(ticket)
 
+        ticket = client.basic_publish(exchange='', routing_key=self.name,
+                                      body='a')
+        client.wait(ticket)
+        ticket = client.basic_publish(exchange='', routing_key=self.name,
+                                      body='b')
+        client.wait(ticket)
+        ticket = client.basic_publish(exchange='', routing_key=self.name,
+                                      body='c')
+        client.wait(ticket)
 
+        consume_ticket = client.basic_consume(queue=self.name, prefetch_count=1)
+        result = client.wait(consume_ticket, timeout=0.1)
+        self.assertEqual(result['body'], 'a')
+
+        result = client.wait(consume_ticket, timeout=0.1)
+        self.assertEqual(result, None)
+
+        ticket = client.basic_qos(consume_ticket, prefetch_count=2)
+        result = client.wait(ticket)
+
+        result = client.wait(consume_ticket, timeout=0.1)
+        self.assertEqual(result['body'], 'b')
+
+        result = client.wait(consume_ticket, timeout=0.1)
+        self.assertEqual(result, None)
+
+        ticket = client.queue_delete(queue=self.name)
+        client.wait(ticket)
 
 
 
