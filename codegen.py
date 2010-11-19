@@ -4,7 +4,7 @@ import os
 import sys
 import string
 
-sys.path.append(os.path.join("..","rabbitmq-codegen"))
+sys.path.append(os.path.join("vendor", "rabbitmq-codegen"))
 from amqp_codegen import *
 
 import codegen_helpers
