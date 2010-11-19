@@ -37,10 +37,87 @@ def _connection_tune(t, result):
     f2 = spec.encode_connection_open(t.conn.vhost)
     t.send_frames(list(f1) + list(f2))
 
-def _connection_open_ok(t, result):
+def _connection_open_ok(ct, result):
+    ct.register(spec.METHOD_CONNECTION_CLOSE, _connection_close)
     # Never free the ticket and channel.
-    t.ping(t.x_cached_result)
-    t.register(spec.METHOD_CONNECTION_CLOSE, _connection_close)
+    ct.ping(ct.x_cached_result)
+    ct.conn.x_connection_ticket = ct
+    publish_ticket(ct.conn)
+
+def publish_ticket(conn):
+    pt = conn.tickets.new(_pt_channel_open_ok)
+    pt.x_async_id = 0
+    pt.x_async_map = {}
+    conn.x_publish_ticket = pt
+
+def _pt_channel_open_ok(pt, _result=None):
+    pt.register(spec.METHOD_CHANNEL_CLOSE, _pt_channel_close)
+    pt.register(spec.METHOD_BASIC_RETURN, _pt_basic_return)
+
+def fix_basic_publish_headers(headers):
+    nheaders = {}
+    nheaders.update(headers) # copy
+    if nheaders.get('persistent', True):
+        nheaders['delivery_mode'] = 2
+    # That's not a good idea.
+    assert 'headers' not in headers
+    return nheaders
+
+def basic_publish_async(conn, exchange, routing_key, mandatory=False,
+                        immediate=False, headers={}, body=''):
+    pt = conn.x_publish_ticket
+    async_id = pt.x_async_id
+    pt.x_async_id += 1
+
+    nheaders = fix_basic_publish_headers(headers)
+    assert 'x-puka-async-id' not in nheaders
+    nheaders['x-puka-async-id'] = async_id
+    eheaders = {'x-puka-async-id': async_id, 'x-puka-footer': True}
+
+    # TODO: channel not needed.
+    t = conn.tickets.new(_basic_publish_async)
+    t.x_frames = (list(spec.encode_basic_publish(exchange, routing_key,
+                                                 mandatory, immediate, nheaders,
+                                                 body, conn.frame_max)) +
+                  list(spec.encode_basic_publish("", "", False, True, eheaders,
+                                                 "", conn.frame_max)))
+    pt.x_async_map[async_id] = t
+    return t
+
+def _basic_publish_async(t):
+    pt = t.conn.x_publish_ticket
+    pt.send_frames(t.x_frames)
+
+def _pt_basic_return(pt, result):
+    pt.register(spec.METHOD_BASIC_RETURN, _pt_basic_return)
+    async_id = result['headers']['x-puka-async-id']
+    if 'x-puka-footer' in result['headers']:
+        if async_id in pt.x_async_map:
+            # Success
+            t = pt.x_async_map[async_id]
+            t.done(spec.Frame())
+            del pt.x_async_map[async_id]
+        else:
+            # Failure was already handled before
+            pass
+    else: # Failure, user message returned.
+        assert async_id in pt.x_async_map, "Oops. Ordering went realy wrong."
+        t = pt.x_async_map[async_id]
+        exceptions.mark_frame(result)
+        t.done(result)
+        del pt.x_async_map[async_id]
+
+def _pt_channel_close(pt, result):
+    # Start off with reestablishing the channel
+    pt.register(spec.METHOD_CHANNEL_OPEN_OK, _pt_channel_open_ok)
+    pt.send_frames( list(spec.encode_channel_close_ok()) +
+                    list(spec.encode_channel_open('')))
+    # All the publishes need to be marked as failed.
+    exceptions.mark_frame(result)
+    for async_id, t in pt.x_async_map.items():
+        t.done(result)
+        del pt.x_async_map[async_id]
+
 
 def _connection_close(t, result):
     exceptions.mark_frame(result)
@@ -126,14 +203,7 @@ def basic_publish(conn, exchange, routing_key, mandatory=False, immediate=False,
     #   - channel_flow_ok (ok)
     #   - channel-close  (error)
     #   - basic_return (not delivered)
-
-    # Fix delivery_mode. Persistent by default.
-    nheaders = {}
-    nheaders.update(headers) # copy
-    if nheaders.get('persistent', True):
-        nheaders['delivery_mode'] = 2
-    # That's not a good idea.
-    assert 'headers' not in headers
+    nheaders = fix_basic_publish_headers(headers)
 
     t = conn.tickets.new(_basic_publish)
     t.x_frames = spec.encode_basic_publish(exchange, routing_key, mandatory,
@@ -160,33 +230,10 @@ def _basic_publish_return(t, result):
 
 
 ####
-def basic_publish_async(conn, exchange, routing_key, mandatory=False,
-                        immediate=False, headers={}, body=''):
-    # Fix delivery_mode. Persistent by default.
-    nheaders = {}
-    nheaders.update(headers) # copy
-    if nheaders.get('persistent', True):
-        nheaders['delivery_mode'] = 2
-    # That's not a good idea.
-    assert 'headers' not in headers
-
-    t = conn.tickets.new(_basic_publish_async)
-    t.x_frames = spec.encode_basic_publish(exchange, routing_key, mandatory,
-                                           immediate, nheaders, body,
-                                           conn.frame_max)
-    return t
-
-def _basic_publish_async(t):
-    t.register(spec.METHOD_BASIC_RETURN, _basic_publish_return)
-    t.send_frames(t.x_frames)
-    t.done(spec.Frame())
-
-
-####
 def basic_consume(conn, queue, prefetch_size=0, prefetch_count=0,
                   no_local=False, no_ack=False, exclusive=False,
                   arguments={}):
-    t = conn.tickets.new(_basic_qos, reentrant = True)
+    t = conn.tickets.new(_basic_qos, reentrant=True)
     t.x_frames = spec.encode_basic_qos(prefetch_size, prefetch_count, False)
     t.frames_consume = spec.encode_basic_consume(queue, '', no_local, no_ack,
                                                  exclusive, arguments)
@@ -210,7 +257,7 @@ def _basic_deliver(t, msg_result):
     msg_result['ticket_number'] = t.number
     if t.x_no_ack is False:
         t.refcnt_inc()
-    t.ping( msg_result )
+    t.ping(msg_result)
 
 ##
 def basic_ack(conn, msg_result):

@@ -81,11 +81,11 @@ class TestBasic(base.TestCase):
         self.assertEqual('body' in result, False)
 
         self.assertEqual(len(client.channels.free_channels), 1)
-        self.assertEqual(client.channels.free_channel_numbers[-1], 6)
+        self.assertEqual(client.channels.free_channel_numbers[-1], 7)
         for msg in msgs:
             client.basic_ack(msg)
         self.assertEqual(len(client.channels.free_channels), 5)
-        self.assertEqual(client.channels.free_channel_numbers[-1], 6)
+        self.assertEqual(client.channels.free_channel_numbers[-1], 7)
 
         ticket = client.queue_delete(queue=self.name)
         client.wait(ticket)
@@ -101,7 +101,7 @@ class TestBasic(base.TestCase):
                                           routing_key='xxx', body='')
 
             self.assertEqual(len(client.channels.free_channels), 0)
-            self.assertEqual(client.channels.free_channel_numbers[-1], 2)
+            self.assertEqual(client.channels.free_channel_numbers[-1], 3)
 
             with self.assertRaises(puka.NotFound) as cm:
                 client.wait(ticket)
@@ -111,7 +111,7 @@ class TestBasic(base.TestCase):
             self.assertEqual(r['reply_code'], 404)
 
             self.assertEqual(len(client.channels.free_channels), 0)
-            self.assertEqual(client.channels.free_channel_numbers[-1], 1)
+            self.assertEqual(client.channels.free_channel_numbers[-1], 2)
 
 
     def test_basic_return(self):
