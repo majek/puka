@@ -2,13 +2,9 @@ from __future__ import with_statement
 
 import os
 import puka
-import random
-import socket
 
 import base
 
-
-AMQP_URL=os.getenv('AMQP_URL')
 
 class TestBasic(base.TestCase):
     def test_simple_roundtrip(self):
@@ -333,6 +329,9 @@ class TestBasic(base.TestCase):
         consume_ticket = client.basic_consume(queue=self.name)
         msg_result = client.wait(consume_ticket)
 
+        ticket = client.close()
+        client.wait(ticket)
+
 
     def test_basic_consume_fail(self):
         client = puka.Client(self.amqp_url)
@@ -368,22 +367,6 @@ class TestBasic(base.TestCase):
         client.wait(ticket)
 
 
-    def test_broken_url(self):
-        client = puka.Client('amqp://does.not.resolve/')
-        with self.assertRaises(socket.gaierror):
-            ticket = client.connect()
-
-    def test_connection_refused(self):
-        with self.assertRaises(socket.error):
-            client = puka.Client('amqp://127.0.0.1:9999/')
-            ticket = client.connect()
-            client.wait(ticket)
-
-    def test_connection_refused(self):
-        with self.assertRaises(socket.error):
-            client = puka.Client('amqp://127.0.0.1:9999/')
-            ticket = client.connect()
-            client.wait(ticket)
 
 
 
