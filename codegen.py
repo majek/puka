@@ -177,7 +177,7 @@ def print_encode_method(m):
 def print_encode_properties(c):
     print "%s_PROPS_SET = set(("% (c.name.upper(),)
     for f in c.fields:
-        print '    "%s",' % (f.n,)
+        print '    "%s", %s # %s' % (f.n, ' '*(16-len(f.n)), f.t)
     print "    ))"
     print
     print "ENCODE_PROPS_%s = {" % (c.name.upper(),)
