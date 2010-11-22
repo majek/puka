@@ -1,0 +1,370 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>puka — An opinionated RabbitMQ client &mdash; Python v documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Python v documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="#">Python v documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-puka">
+<span id="puka-an-opinionated-rabbitmq-client"></span><h1><a class="reference internal" href="#module-puka" title="puka: An opinionated RabbitMQ client."><tt class="xref py py-mod docutils literal"><span class="pre">puka</span></tt></a> &#8212; An opinionated RabbitMQ client<a class="headerlink" href="#module-puka" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#module-puka" title="puka: An opinionated RabbitMQ client."><tt class="xref py py-mod docutils literal"><span class="pre">puka</span></tt></a> module implements a client for AMQP 0-9-1
+protocol. It&#8217;s tuned to work with RabbitMQ broker, but should work
+fine with other message brokers that support this protocol.</p>
+<p>AMQP defines:</p>
+<div class="highlight-python"><pre>Exchange ---binding---&gt; Queue</pre>
+</div>
+<p>The <a class="reference internal" href="#module-puka" title="puka: An opinionated RabbitMQ client."><tt class="xref py py-mod docutils literal"><span class="pre">puka</span></tt></a> module defines one class:</p>
+<dl class="class">
+<dt id="puka.Client">
+<em class="property">class </em><tt class="descclassname">puka.</tt><tt class="descname">Client</tt><big>(</big><em>amqp_url='amqp:///'</em><big>)</big><a class="headerlink" href="#puka.Client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor of ...</p>
+</dd></dl>
+
+<div class="section" id="exceptions">
+<h2>Exceptions<a class="headerlink" href="#exceptions" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="#module-puka" title="puka: An opinionated RabbitMQ client."><tt class="xref py py-mod docutils literal"><span class="pre">puka</span></tt></a> module defines the following exceptions, as defined by
+AMQP protocol.</p>
+<dl class="exception">
+<dt id="puka.ContentTooLarge">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">ContentTooLarge</tt><a class="headerlink" href="#puka.ContentTooLarge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.NoRoute">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">NoRoute</tt><a class="headerlink" href="#puka.NoRoute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.NoConsumers">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">NoConsumers</tt><a class="headerlink" href="#puka.NoConsumers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.AccessRefused">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">AccessRefused</tt><a class="headerlink" href="#puka.AccessRefused" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.NotFound">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">NotFound</tt><a class="headerlink" href="#puka.NotFound" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.ResourceLocked">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">ResourceLocked</tt><a class="headerlink" href="#puka.ResourceLocked" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.PreconditionFailed">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">PreconditionFailed</tt><a class="headerlink" href="#puka.PreconditionFailed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.ConnectionForced">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">ConnectionForced</tt><a class="headerlink" href="#puka.ConnectionForced" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.InvalidPath">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">InvalidPath</tt><a class="headerlink" href="#puka.InvalidPath" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.FrameError">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">FrameError</tt><a class="headerlink" href="#puka.FrameError" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.AMQPSyntaxError">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">AMQPSyntaxError</tt><a class="headerlink" href="#puka.AMQPSyntaxError" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.CommandInvalid">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">CommandInvalid</tt><a class="headerlink" href="#puka.CommandInvalid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.ChannelError">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">ChannelError</tt><a class="headerlink" href="#puka.ChannelError" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.UnexpectedFrame">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">UnexpectedFrame</tt><a class="headerlink" href="#puka.UnexpectedFrame" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.ResourceError">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">ResourceError</tt><a class="headerlink" href="#puka.ResourceError" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.NotAllowed">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">NotAllowed</tt><a class="headerlink" href="#puka.NotAllowed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.AMQPNotImplemented">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">AMQPNotImplemented</tt><a class="headerlink" href="#puka.AMQPNotImplemented" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="puka.InternalError">
+<em class="property">exception </em><tt class="descclassname">puka.</tt><tt class="descname">InternalError</tt><a class="headerlink" href="#puka.InternalError" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="client-objects">
+<h2>Client Objects<a class="headerlink" href="#client-objects" title="Permalink to this headline">¶</a></h2>
+<p>Client object (<a class="reference internal" href="#puka.Client" title="puka.Client"><tt class="xref py py-class docutils literal"><span class="pre">Client</span></tt></a>) provides the public methiods described below.</p>
+<div class="section" id="connection-interface">
+<h3>Connection interface<a class="headerlink" href="#connection-interface" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="puka.Client.connect">
+<tt class="descclassname">Client.</tt><tt class="descname">connect</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.connect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.close">
+<tt class="descclassname">Client.</tt><tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.fileno">
+<tt class="descclassname">Client.</tt><tt class="descname">fileno</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.fileno" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.socket">
+<tt class="descclassname">Client.</tt><tt class="descname">socket</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.socket" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.on_read">
+<tt class="descclassname">Client.</tt><tt class="descname">on_read</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.on_read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.on_write">
+<tt class="descclassname">Client.</tt><tt class="descname">on_write</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.on_write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.needs_write">
+<tt class="descclassname">Client.</tt><tt class="descname">needs_write</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.needs_write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.wait">
+<tt class="descclassname">Client.</tt><tt class="descname">wait</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.wait" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.run_any_callbacks">
+<tt class="descclassname">Client.</tt><tt class="descname">run_any_callbacks</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.run_any_callbacks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.loop">
+<tt class="descclassname">Client.</tt><tt class="descname">loop</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.loop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.loop_break">
+<tt class="descclassname">Client.</tt><tt class="descname">loop_break</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.loop_break" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="amqp-interface">
+<h3>AMQP interface<a class="headerlink" href="#amqp-interface" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="puka.Client.exchange_declare">
+<tt class="descclassname">Client.</tt><tt class="descname">exchange_declare</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.exchange_declare" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.exchange_delete">
+<tt class="descclassname">Client.</tt><tt class="descname">exchange_delete</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.exchange_delete" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.exchange_bind">
+<tt class="descclassname">Client.</tt><tt class="descname">exchange_bind</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.exchange_bind" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.exchange_unbind">
+<tt class="descclassname">Client.</tt><tt class="descname">exchange_unbind</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.exchange_unbind" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.queue_declare">
+<tt class="descclassname">Client.</tt><tt class="descname">queue_declare</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.queue_declare" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.queue_purge">
+<tt class="descclassname">Client.</tt><tt class="descname">queue_purge</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.queue_purge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.queue_delete">
+<tt class="descclassname">Client.</tt><tt class="descname">queue_delete</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.queue_delete" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.queue_bind">
+<tt class="descclassname">Client.</tt><tt class="descname">queue_bind</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.queue_bind" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.queue_unbind">
+<tt class="descclassname">Client.</tt><tt class="descname">queue_unbind</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.queue_unbind" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.basic_publish">
+<tt class="descclassname">Client.</tt><tt class="descname">basic_publish</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.basic_publish" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.basic_publish_async">
+<tt class="descclassname">Client.</tt><tt class="descname">basic_publish_async</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.basic_publish_async" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.basic_get">
+<tt class="descclassname">Client.</tt><tt class="descname">basic_get</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.basic_get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.basic_consume">
+<tt class="descclassname">Client.</tt><tt class="descname">basic_consume</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.basic_consume" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.basic_qos">
+<tt class="descclassname">Client.</tt><tt class="descname">basic_qos</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.basic_qos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.basic_ack">
+<tt class="descclassname">Client.</tt><tt class="descname">basic_ack</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.basic_ack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.basic_reject">
+<tt class="descclassname">Client.</tt><tt class="descname">basic_reject</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.basic_reject" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="puka.Client.basic_cancel">
+<tt class="descclassname">Client.</tt><tt class="descname">basic_cancel</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.basic_cancel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+<div class="section" id="basic-examples">
+<h2>Basic Examples<a class="headerlink" href="#basic-examples" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><tt class="docutils literal"><span class="pre">puka</span></tt> &#8212; An opinionated RabbitMQ client</a><ul>
+<li><a class="reference internal" href="#exceptions">Exceptions</a></li>
+<li><a class="reference internal" href="#client-objects">Client Objects</a><ul>
+<li><a class="reference internal" href="#connection-interface">Connection interface</a></li>
+<li><a class="reference internal" href="#amqp-interface">AMQP interface</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#basic-examples">Basic Examples</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/puka.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="#">Python v documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright .
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+  </body>
+</html>
