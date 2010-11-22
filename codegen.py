@@ -7,8 +7,6 @@ import string
 sys.path.append(os.path.join("vendor", "rabbitmq-codegen"))
 from amqp_codegen import *
 
-import codegen_helpers
-
 AMQP_ACCEPTED_BY_UPDATE_JSON="amqp-accepted-by-update.json"
 
 BANNED_CLASSES=['access', 'tx']
@@ -20,6 +18,9 @@ BANNED_FIELDS= {
     'out_of_band': '',
     'known_hosts': '',
 }
+
+import codegen_helpers
+
 
 def pyize(*args):
     a = ' '.join(args).replace('-', '_').replace(' ', '_')
