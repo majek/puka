@@ -3,9 +3,9 @@ AMQP_JSON_SPEC=$(CODEGEN_DIR)/amqp-rabbitmq-0.9.1.json
 
 PYTHON=python
 
-all: vendor/rabbitmq-codegen puka/spec.py puka/spec_exceptions.py tests
+all: vendor/rabbitmq-codegen/amqp_codegen.py puka/spec.py puka/spec_exceptions.py tests
 
-vendor/rabbitmq-codegen:
+vendor/rabbitmq-codegen/amqp_codegen.py:
 	git submodule init
 	git submodule update
 
