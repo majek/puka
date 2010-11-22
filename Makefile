@@ -43,6 +43,11 @@ tests: puka/spec.py
 venv:
 	virtualenv --no-site-packages venv
 	./venv/bin/easy_install coverage
+	./venv/bin/easy_install nose
 	./venv/bin/easy_install sphinx
+
+sphinx: venv
 	./venv/bin/sphinx-build -b html . /tmp/html
 
+nose: venv
+	AMQP_URL=amqp:/// ./venv/bin/nosetests --cover-erase --with-coverage --cover-package puka --with-doctest
