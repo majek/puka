@@ -1,4 +1,4 @@
-CODEGEN_DIR=vendor/rabbitmq-codegen
+CODEGEN_DIR=../rabbitmq-codegen
 AMQP_JSON_SPEC=$(CODEGEN_DIR)/amqp-rabbitmq-0.9.1.json
 
 PYTHON=python
@@ -46,8 +46,23 @@ venv:
 	./venv/bin/easy_install nose
 	./venv/bin/easy_install sphinx
 
-sphinx: venv
-	./venv/bin/sphinx-build -b html . /tmp/html
+DOCS=../puka-gh-pages
+$(DOCS):
+	mkdir $(DOCS)
+	git clone git@github.com:majek/puka.git $(DOCS)
+	cd $(DOCS) && \
+		git branch -f gh-pages origin/gh-pages && \
+		git checkout gh-pages
+
+generate-docs: $(DOCS) venv
+	./venv/bin/sphinx-build -b html docs $(DOCS)
+	echo '<meta http-equiv="refresh" content="0;url=./puka.html">' > \
+		$(DOCS)/index.html
+	echo > $(DOCS)/.nojekyll
+	cd $(DOCS) && \
+		git add . && \
+	    	git commit -m "Generated documentation" && \
+		git push origin gh-pages:gh-pages
 
 nose: venv
 	AMQP_URL=amqp:/// ./venv/bin/nosetests --cover-erase --with-coverage --cover-package puka --with-doctest
