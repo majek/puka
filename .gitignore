@@ -1,4 +1,0 @@
-*.pyc
-tests/.coverage
-puka/spec.py
-puka/spec_exceptions.py
