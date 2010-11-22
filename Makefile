@@ -1,4 +1,4 @@
-CODEGEN_DIR=../rabbitmq-codegen
+CODEGEN_DIR=vendor/rabbitmq-codegen
 AMQP_JSON_SPEC=$(CODEGEN_DIR)/amqp-rabbitmq-0.9.1.json
 
 PYTHON=python
@@ -8,8 +8,7 @@ all: puka/spec.py puka/spec_exceptions.py tests
 $(AMQP_JSON_SPEC):
 	@echo "You need '$(CODEGEN_DIR)' package."
 	@echo "Try one of the following:"
-	@echo "  git clone git://github.com/rabbitmq/rabbitmq-codegen.git"
-	@echo "  hg clone http://hg.rabbitmq.com/rabbitmq-codegen"
+	@echo "  git submodule init && git submodule update"
 	@exit 1
 
 puka/spec.py: codegen.py codegen_helpers.py \

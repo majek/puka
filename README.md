@@ -123,7 +123,6 @@ I want to run the examples
 Great. Make sure you have `rabbitmq` server installed and follow this
 steps:
 
-    git clone https://github.com/rabbitmq/rabbitmq-codegen.git
     git clone https://github.com/majek/puka.git
     cd puka
     make
