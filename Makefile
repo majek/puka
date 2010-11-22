@@ -55,6 +55,7 @@ $(DOCS):
 		git checkout gh-pages
 
 generate-docs: $(DOCS) venv
+	cd $(DOCS) && git pull
 	./venv/bin/sphinx-build -b html docs $(DOCS)
 	echo '<meta http-equiv="refresh" content="0;url=./puka.html">' > \
 		$(DOCS)/index.html
@@ -63,6 +64,7 @@ generate-docs: $(DOCS) venv
 		git add . && \
 	    	git commit -m "Generated documentation" && \
 		git push origin gh-pages:gh-pages
+	git pull
 
 nose: venv
 	AMQP_URL=amqp:/// ./venv/bin/nosetests --cover-erase --with-coverage --cover-package puka --with-doctest
