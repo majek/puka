@@ -117,6 +117,19 @@ interesting bits:
     benchmark the throughput of the server
 
 
+I want to install Puka
+----------------------
+
+To install Puka system-wide type:
+
+    sudo pip install -e git+http://github.com/majek/puka.git#egg=puka
+
+Even better is to use `virtualenv` local environment:
+
+     virtualenv my_venv
+     pip -E my_venv install -e git+http://github.com/majek/puka.git#egg=puka
+
+
 I want to run the examples
 --------------------------
 
@@ -132,3 +145,15 @@ Now you're ready to run the examples, start with:
 
     ./send.py
 
+
+I want to see the API documentation
+-----------------------------------
+
+The easiest way to get started is to take a look at the examples and
+tweak them to your needs. You can't see more detailed documentation,
+as it doesn't exist right now. If it existed it would live here:
+
+[http://majek.github.com/puka/](http://majek.github.com/puka/)
+
+There is also a bunch of fairly complicated examples hidden in the
+tests.
