@@ -19,7 +19,7 @@ log = logging.getLogger('puka')
 class Connection(object):
     frame_max = 131072
 
-    def __init__(self, amqp_url):
+    def __init__(self, amqp_url='amqp:///'):
         self.channels = channel.ChannelCollection()
         self.tickets = ticket.TicketCollection(self)
 
@@ -137,7 +137,7 @@ class Connection(object):
         self.send_buf.consume(r)
 
 
-    def tune_frame_max(self, new_frame_max):
+    def _tune_frame_max(self, new_frame_max):
         new_frame_max = new_frame_max if new_frame_max != 0 else 2**19
         self.frame_max = min(self.frame_max, new_frame_max)
         return self.frame_max

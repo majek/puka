@@ -29,7 +29,7 @@ def _connection_start(t, result):
     t.x_cached_result = result
 
 def _connection_tune(t, result):
-    frame_max = t.conn.tune_frame_max(result['frame_max'])
+    frame_max = t.conn._tune_frame_max(result['frame_max'])
     channel_max = t.conn.channels.tune_channel_max(result['channel_max'])
 
     t.register(spec.METHOD_CONNECTION_OPEN_OK, _connection_open_ok)
@@ -233,31 +233,60 @@ def _basic_publish_return(t, result):
 def basic_consume(conn, queue, prefetch_size=0, prefetch_count=0,
                   no_local=False, no_ack=False, exclusive=False,
                   arguments={}):
-    t = conn.tickets.new(_bc_basic_qos, reentrant=True)
+    q = {'queue': queue,
+         'no_local': no_local,
+         'exclusive': exclusive,
+         'arguments': arguments,
+         }
+    return basic_consume_multi(conn, [q], prefetch_size, prefetch_count, no_ack)
+
+####
+def basic_consume_multi(conn, queues, prefetch_size=0, prefetch_count=0,
+                        no_ack=False):
+    t = conn.tickets.new(_bcm_basic_qos, reentrant=True)
     t.x_frames = spec.encode_basic_qos(prefetch_size, prefetch_count, False)
-    t.frames_consume = spec.encode_basic_consume(queue, '', no_local, no_ack,
-                                                 exclusive, arguments)
+    t.x_consumes = []
+    for item in queues:
+        if isinstance(item, str):
+            queue = item
+            no_local = exclusive = False
+            arguments = {}
+        else:
+            queue = item['queue']
+            no_local = item.get('no_local', False)
+            exclusive = item.get('exclusive', False)
+            arguments = item.get('arguments', {})
+        t.x_consumes.append( (queue, spec.encode_basic_consume(
+                    queue, '', no_local, no_ack, exclusive, arguments)) )
     t.x_no_ack = no_ack
+    t.x_consumer_tag = {}
+    t.register(spec.METHOD_BASIC_DELIVER, _bcm_basic_deliver)
     return t
 
-def _bc_basic_qos(t):
-    t.register(spec.METHOD_BASIC_QOS_OK, _bc_basic_qos_ok)
+def _bcm_basic_qos(t):
+    t.register(spec.METHOD_BASIC_QOS_OK, _bcm_basic_qos_ok)
     t.send_frames(t.x_frames)
 
-def _bc_basic_qos_ok(t, result):
-    t.register(spec.METHOD_BASIC_CONSUME_OK, _bc_basic_consume_ok)
-    t.send_frames(t.frames_consume)
+def _bcm_basic_qos_ok(t, result):
+    _bcm_send_basic_consume(t)
 
-def _bc_basic_consume_ok(t, consume_result):
-    t.x_consumer_tag = consume_result['consumer_tag']
-    t.register(spec.METHOD_BASIC_DELIVER, _bc_basic_deliver)
+def _bcm_send_basic_consume(t):
+    t.register(spec.METHOD_BASIC_CONSUME_OK, _bcm_basic_consume_ok)
+    t.x_queue, frames = t.x_consumes.pop()
+    t.send_frames(frames)
 
-def _bc_basic_deliver(t, msg_result):
-    t.register(spec.METHOD_BASIC_DELIVER, _bc_basic_deliver)
+def _bcm_basic_consume_ok(t, consume_result):
+    t.x_consumer_tag[t.x_queue] = consume_result['consumer_tag']
+    if t.x_consumes:
+        _bcm_send_basic_consume(t)
+
+def _bcm_basic_deliver(t, msg_result):
+    t.register(spec.METHOD_BASIC_DELIVER, _bcm_basic_deliver)
     msg_result['ticket_number'] = t.number
     if t.x_no_ack is False:
         t.refcnt_inc()
     t.ping(msg_result)
+
 
 ##
 def basic_ack(conn, msg_result):
@@ -301,21 +330,25 @@ def basic_cancel(conn, consume_ticket_number):
     # TODO: race?
     t = conn.tickets.new(_basic_cancel)
     t.x_ct = conn.tickets.by_number(consume_ticket_number)
-    t.x_frames = spec.encode_basic_cancel(t.x_ct.x_consumer_tag)
     return t
 
 def _basic_cancel(t):
-    t.x_ct.register(spec.METHOD_BASIC_CANCEL_OK, _basic_cancel_ok)
-    t.x_ct.send_frames( t.x_frames )
-    t.x_ct.refcnt_clear()
     t.x_ct.x_mt = t
-    t.x_ct = None
+    _basic_cancel_one(t.x_ct)
+
+def _basic_cancel_one(ct):
+    consumer_tag = ct.x_consumer_tag.pop(ct.x_consumer_tag.keys()[0])
+    ct.register(spec.METHOD_BASIC_CANCEL_OK, _basic_cancel_ok)
+    ct.send_frames( spec.encode_basic_cancel(consumer_tag) )
 
 def _basic_cancel_ok(ct, result):
-    ct.x_mt.done(result)
-    ct.x_mt = None
-    ct.done(None, no_callback=True)
-
+    if ct.x_consumer_tag:
+        _basic_cancel_one(ct)
+    else:
+        ct.x_mt.done(result)
+        ct.x_mt = None
+        ct.done(None, no_callback=True)
+        ct.refcnt_clear()
 
 ####
 def basic_get(conn, queue, no_ack=False):

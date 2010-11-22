@@ -324,6 +324,9 @@ class TestBasic(base.TestCase):
         consume_ticket = client.basic_consume(queue=self.name)
         msg_result = client.wait(consume_ticket)
 
+        ticket = client.queue_delete(self.name)
+        client.wait(ticket)
+
         ticket = client.close()
         client.wait(ticket)
 
