@@ -25,6 +25,7 @@ puka/spec_exceptions.py: codegen.py codegen_helpers.py \
 clean:
 	find . -name \*pyc|xargs --no-run-if-empty rm
 	rm -f tests/.coverage
+	rm -rf venv
 
 distclean: clean
 	rm -f puka/spec.py puka/spec_exceptions.py
@@ -34,3 +35,11 @@ distclean: clean
 test: tests
 tests: puka/spec.py
 	cd tests && AMQP_URL=amqp:/// PYTHONPATH=.. $(PYTHON) tests.py ../puka puka
+
+
+venv:
+	virtualenv --no-site-packages venv
+	./venv/bin/easy_install coverage
+	./venv/bin/easy_install sphinx
+	./venv/bin/sphinx-build -b html . /tmp/html
+
