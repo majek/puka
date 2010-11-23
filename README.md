@@ -96,6 +96,14 @@ Puka is sane
 
 Puka does expose only a sane subset of AMQP, as judged by the author.
 
+The major differences between Puka and normal AMQP libraries include:
+
+  - Puka doesn't expose AMQP channels to the users.
+  - Puka treats `basic_publish` as a synchronous method (you can wait
+    on it and make sure that your data is delivered).
+  - Puka tries to cope with the AMQP exceptions and expose them
+    to the users in predictable way.
+
 
 Puka is experimental
 --------------------
@@ -143,7 +151,7 @@ steps:
 
 Now you're ready to run the examples, start with:
 
-    ./send.py
+    python send.py
 
 
 I want to see the API documentation
