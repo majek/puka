@@ -13,49 +13,56 @@ counter_t0 = time.time()
 
 headers={'persistent': False}
 
+
+class Worker(object):
+    def __init__(self, client, q, inc):
+        self.client = client
+        self.q = q
+        self.inc = inc
+        self.body='\x00'
+        self.ct = 100
+        self.prefetch = 3
+        self.client.queue_declare(queue=self.q, callback=self.cbk1)
+
+    def cbk1(self, t, result):
+        self.client.queue_purge(queue=self.q, callback=self.cbk_fill)
+
+    def cbk_fill(self, t, result):
+        if self.ct > 0:
+            self.ct -= 1
+            self.client.basic_publish(exchange='', routing_key=self.q,
+                                      body=self.body, headers=headers,
+                                      callback=self.cbk_fill)
+        else:
+            self.cbk3()
+
+    def cbk3(self):
+        self.client.basic_consume(queue=self.q, prefetch_count=self.prefetch,
+                             callback=self.cbk_consume)
+
+    def cbk_consume(self, t, msg):
+        self.client.basic_publish(exchange='', routing_key=self.q,
+                                  body=self.body, headers=headers,
+                             callback= \
+                                 lambda t, result:self.cbk_ack(t, result, msg))
+
+    def cbk_ack(self, t, result, msg):
+        self.client.basic_ack(msg)
+        self.inc()
+
+
 def main():
     client = puka.Client("amqp://localhost/")
     ticket = client.connect()
     client.wait(ticket)
 
-    body='\x00'
-
-
-    def cbk0(q):
-        client.queue_declare(queue=q, callback=cbk1, user_data=q)
-
-    def cbk1(t, result, q):
-        client.queue_purge(queue=q, callback=cbk_fill, user_data=(q, 4096))
-
-    def cbk_fill(t, result, ud):
-        q, ct = ud
-        if ct > 0:
-            client.basic_publish(exchange='', routing_key=q, body=body,
-                                 headers=headers,
-                                 callback=cbk_fill, user_data=(q, ct-1))
-        else:
-            cbk3(q)
-
-    def cbk3(q):
-        client.basic_consume(queue=q, prefetch_count=10,
-                             callback=cbk_consume, user_data=q)
-
-    def cbk_consume(t, msg, q):
-        client.basic_publish(exchange='', routing_key=q, body=body,
-                             headers=headers,
-                             callback=cbk_ack, user_data=(q, msg))
-
-    def cbk_ack(t, result, ud):
-        q, msg = ud
-        client.basic_ack(msg)
-
+    def inc():
         global counter
         # got message.
         counter += 1
 
-
-    for q in ['q%02i' % i for i in range(64)]:
-        cbk0(q)
+    for q in ['q%02i' % i for i in range(51)]:
+        Worker(client, q, inc)
 
     def print_counter():
         global counter, counter_t0
