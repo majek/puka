@@ -19,8 +19,8 @@ class TestPublishAsync(base.TestCase):
         ticket = client.queue_declare(queue=self.name)
         client.wait(ticket)
 
-        ticket = client.basic_publish_async(exchange='', routing_key=self.name,
-                                            body=self.msg)
+        ticket = client.basic_publish(exchange='', routing_key=self.name,
+                                      body=self.msg)
         client.wait(ticket)
 
         consume_ticket = client.basic_consume(queue=self.name, no_ack=True)
@@ -35,21 +35,21 @@ class TestPublishAsync(base.TestCase):
         ticket = client.connect()
         client.wait(ticket)
 
-        ticket1 = client.basic_publish_async(exchange='', routing_key='',
-                                            body=self.msg)
-        ticket2 = client.basic_publish_async(exchange='wrong_exchange',
-                                            routing_key='',
-                                            body=self.msg)
-        ticket3 = client.basic_publish_async(exchange='', routing_key='',
-                                            body=self.msg)
+        ticket1 = client.basic_publish(exchange='', routing_key='',
+                                       body=self.msg)
+        ticket2 = client.basic_publish(exchange='wrong_exchange',
+                                       routing_key='',
+                                       body=self.msg)
+        ticket3 = client.basic_publish(exchange='', routing_key='',
+                                       body=self.msg)
         client.wait(ticket1)
         with self.assertRaises(puka.NotFound):
             client.wait(ticket2)
         with self.assertRaises(puka.NotFound):
             client.wait(ticket3)
 
-        ticket = client.basic_publish_async(exchange='', routing_key='',
-                                            body=self.msg)
+        ticket = client.basic_publish(exchange='', routing_key='',
+                                      body=self.msg)
         client.wait(ticket)
 
 
@@ -58,8 +58,8 @@ class TestPublishAsync(base.TestCase):
         ticket = client.connect()
         client.wait(ticket)
 
-        ticket = client.basic_publish_async(exchange='', routing_key='',
-                                            body=self.msg, immediate=True)
+        ticket = client.basic_publish(exchange='', routing_key='',
+                                      body=self.msg, immediate=True)
         with self.assertRaises(puka.NoConsumers):
             client.wait(ticket)
 

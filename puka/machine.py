@@ -63,7 +63,7 @@ def fix_basic_publish_headers(headers):
     assert 'headers' not in headers
     return nheaders
 
-def basic_publish_async(conn, exchange, routing_key, mandatory=False,
+def basic_publish(conn, exchange, routing_key, mandatory=False,
                         immediate=False, headers={}, body=''):
     pt = conn.x_publish_ticket
     async_id = pt.x_async_id
@@ -75,7 +75,7 @@ def basic_publish_async(conn, exchange, routing_key, mandatory=False,
     eheaders = {'x-puka-async-id': async_id, 'x-puka-footer': True}
 
     # TODO: channel not needed.
-    t = conn.tickets.new(_basic_publish_async)
+    t = conn.tickets.new(_basic_publish)
     t.x_frames = (list(spec.encode_basic_publish(exchange, routing_key,
                                                  mandatory, immediate, nheaders,
                                                  body, conn.frame_max)) +
@@ -84,7 +84,7 @@ def basic_publish_async(conn, exchange, routing_key, mandatory=False,
     pt.x_async_map[async_id] = t
     return t
 
-def _basic_publish_async(t):
+def _basic_publish(t):
     pt = t.conn.x_publish_ticket
     pt.send_frames(t.x_frames)
 
@@ -191,42 +191,6 @@ def _queue_declare_suicidal(t, result=None):
 
 def _queue_declare_ok(t, result):
     t.done(result)
-
-
-####
-def basic_publish(conn, exchange, routing_key, mandatory=False, immediate=False,
-                  headers={}, body=''):
-    # After the publish there is a need to synchronize state. Currently,
-    # we're using dummy channel.flow, in future that should be dropped
-    # in favor for publisher-acks.
-    # There are three return-paths:
-    #   - channel_flow_ok (ok)
-    #   - channel-close  (error)
-    #   - basic_return (not delivered)
-    nheaders = fix_basic_publish_headers(headers)
-
-    t = conn.tickets.new(_basic_publish)
-    t.x_frames = spec.encode_basic_publish(exchange, routing_key, mandatory,
-                                           immediate, nheaders, body,
-                                           conn.frame_max)
-    t.x_result = spec.Frame()
-    t.x_result['empty'] = True
-    return t
-
-def _basic_publish(t):
-    t.register(spec.METHOD_CHANNEL_FLOW_OK, _basic_publish_channel_flow_ok)
-    t.register(spec.METHOD_BASIC_RETURN, _basic_publish_return)
-    t.send_frames(
-        list(t.x_frames) +
-        list(spec.encode_channel_flow(True)) )
-
-def _basic_publish_channel_flow_ok(t, result):
-    # Publish went fine or we're after basic_return.
-    t.done(t.x_result)
-
-def _basic_publish_return(t, result):
-    exceptions.mark_frame(result)
-    t.x_result = result
 
 
 ####

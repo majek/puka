@@ -106,8 +106,8 @@ class TestBasic(base.TestCase):
             self.assertTrue(r.is_error)
             self.assertEqual(r['reply_code'], 404)
 
-            self.assertEqual(len(client.channels.free_channels), 0)
-            self.assertEqual(client.channels.free_channel_numbers[-1], 2)
+            self.assertEqual(len(client.channels.free_channels), 1)
+            self.assertEqual(client.channels.free_channel_numbers[-1], 3)
 
 
     def test_basic_return(self):
@@ -240,6 +240,7 @@ class TestBasic(base.TestCase):
         recv_headers = r['headers']
         del recv_headers['delivery_mode']
         del recv_headers['persistent']
+        del recv_headers['x-puka-async-id']
 
         self.assertEqual(headers, recv_headers)
 

@@ -53,8 +53,9 @@ Client Objects
 
 Client object (:class:`Client`) provides the public methiods described below.
 
+
 Connection interface
-....................
+++++++++++++++++++++
 
 .. method:: Client.connect()
 .. method:: Client.close()
@@ -70,27 +71,28 @@ Connection interface
 
 
 AMQP interface
-..............
+++++++++++++++
 
-.. method:: Client.exchange_declare
-.. method:: Client.exchange_delete
-.. method:: Client.exchange_bind
-.. method:: Client.exchange_unbind
-.. method:: Client.queue_declare
-.. method:: Client.queue_purge
-.. method:: Client.queue_delete
-.. method:: Client.queue_bind
-.. method:: Client.queue_unbind
-.. method:: Client.basic_publish
-.. method:: Client.basic_publish_async
-.. method:: Client.basic_get
-.. method:: Client.basic_consume
-.. method:: Client.basic_qos
+
+.. method:: Client.exchange_declare()
+.. method:: Client.exchange_delete()
+.. method:: Client.exchange_bind()
+.. method:: Client.exchange_unbind()
+.. method:: Client.queue_declare()
+.. method:: Client.queue_purge()
+.. method:: Client.queue_delete()
+.. method:: Client.queue_bind()
+.. method:: Client.queue_unbind()
+.. method:: Client.basic_publish()
+.. method:: Client.basic_get()
+
+.. method:: Client.basic_consume()
+.. method:: Client.basic_qos()
 .. method:: Client.basic_ack()
 .. method:: Client.basic_reject()
-.. method:: Client.basic_cancel
+.. method:: Client.basic_cancel()
+
 
 Basic Examples
 --------------
-
 
