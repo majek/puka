@@ -61,6 +61,28 @@ class TestBasic(base.TestCase):
         ticket = client.close()
         client.wait(ticket)
 
+
+    def test_consume_close(self):
+        def on_connection(ticket, result):
+            client.queue_declare(queue=self.name, auto_delete=True,
+                                 callback=on_queue_declare)
+
+        def on_queue_declare(ticket, result):
+            client.basic_consume(queue=self.name, callback=on_basic_consume)
+            client.loop_break()
+
+        def on_basic_consume(ticket, result):
+            self.assertTrue(result.is_error)
+
+        client = puka.Client(self.amqp_url)
+        client.connect(callback=on_connection)
+        client.loop()
+
+        ticket = client.close()
+        client.wait(ticket)
+
+        client.run_any_callbacks()
+
 if __name__ == '__main__':
     import tests
     tests.run_unittests(globals())

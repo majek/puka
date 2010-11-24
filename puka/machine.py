@@ -1,3 +1,4 @@
+import copy
 import logging
 
 from . import exceptions
@@ -133,7 +134,10 @@ def connection_close(conn):
     return t
 
 def _connection_close_ok(t, result):
-    t.ping(result)
+    # Ping this ticket with success.
+    t.ping(copy.copy(result))
+    # Cancel all our tickets with failure.
+    exceptions.mark_frame(result)
     t.conn._shutdown(result)
 
 

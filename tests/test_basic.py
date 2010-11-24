@@ -128,7 +128,7 @@ class TestBasic(base.TestCase):
         client.wait(ticket) # no error
 
         ticket = client.basic_publish(exchange='', routing_key=self.name,
-                                      mandatory=True, immediate=True, body='')
+                                      immediate=True, body='')
         with self.assertRaises(puka.NoConsumers):
             client.wait(ticket)
 

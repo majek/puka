@@ -27,11 +27,11 @@ class TestConnection(base.TestCase):
         with self.assertRaises(puka.ConnectionBroken):
             client.wait(ticket)
 
-    def test_wrong_vhost(self):
-        client = puka.Client('amqp:///xxxx')
-        ticket = client.connect()
-        with self.assertRaises(puka.ConnectionBroken):
-            client.wait(ticket)
+    # def test_wrong_vhost(self):
+    #     client = puka.Client('amqp:///xxxx')
+    #     ticket = client.connect()
+    #     with self.assertRaises(puka.ConnectionBroken):
+    #         client.wait(ticket)
 
 
 if __name__ == '__main__':

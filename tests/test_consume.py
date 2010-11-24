@@ -46,3 +46,24 @@ class TestBasicConsumeMulti(base.TestCase):
         ticket = client.queue_delete(queue=self.name2)
         client.wait(ticket)
 
+
+    @base.connect
+    def test_access_refused(self, client):
+        ticket = client.queue_declare(queue=self.name, exclusive=True)
+        client.wait(ticket)
+
+        ticket = client.queue_declare(queue=self.name)
+        with self.assertRaises(puka.ResourceLocked):
+            client.wait(ticket)
+
+        ticket = client.basic_consume(queue=self.name, exclusive=True)
+        client.wait(ticket, timeout=0.01)
+
+        ticket = client.basic_consume(queue=self.name)
+        with self.assertRaises(puka.AccessRefused):
+            client.wait(ticket)
+
+        ticket = client.queue_delete(queue=self.name)
+        client.wait(ticket)
+
+
