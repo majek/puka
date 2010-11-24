@@ -63,7 +63,9 @@ class Connection(object):
                 raise
 
         if len(r) == 0:
-            self._shutdown(exceptions.mark_frame_connection_error(spec.Frame()))
+            # a = self.sd.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+            self._shutdown(exceptions.mark_frame(spec.Frame(),
+                                                 exceptions.ConnectionBroken()))
 
         self.recv_buf.write(r)
 

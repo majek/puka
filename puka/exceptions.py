@@ -1,8 +1,7 @@
 import socket
 from . import spec_exceptions
 
-class ConnectionError(socket.error): pass
-
+class ConnectionBroken(socket.error): pass
 
 
 def exception_from_frame(result):
@@ -11,12 +10,10 @@ def exception_from_frame(result):
         return spec_exceptions.ERRORS[reply_code](result)
     return spec_exceptions.AMQPError(result)
 
-def mark_frame(result):
+def mark_frame(result, exception=None):
     result.is_error = True
-    result.exception = exception_from_frame(result)
-    return result
-
-def mark_frame_connection_error(result):
-    result.is_error = True
-    result.exception = ConnectionError()
+    if exception is None:
+        result.exception = exception_from_frame(result)
+    else:
+        result.exception = exception
     return result

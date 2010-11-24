@@ -24,13 +24,13 @@ class TestConnection(base.TestCase):
     def test_wrong_user(self):
         client = puka.Client('amqp://xxx:bbb@127.0.0.1/')
         ticket = client.connect()
-        with self.assertRaises(puka.ConnectionError):
+        with self.assertRaises(puka.ConnectionBroken):
             client.wait(ticket)
 
     def test_wrong_vhost(self):
         client = puka.Client('amqp:///xxxx')
         ticket = client.connect()
-        with self.assertRaises(puka.ConnectionError):
+        with self.assertRaises(puka.ConnectionBroken):
             client.wait(ticket)
 
 
