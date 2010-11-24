@@ -60,6 +60,8 @@ generate-docs: $(DOCS) venv
 	echo '<meta http-equiv="refresh" content="0;url=./puka.html">' > \
 		$(DOCS)/index.html
 	echo > $(DOCS)/.nojekyll
+
+push-docs:
 	cd $(DOCS) && \
 		git add . && \
 	    	git commit -m "Generated documentation" && \
