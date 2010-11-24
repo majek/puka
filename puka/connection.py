@@ -7,6 +7,7 @@ import urllib
 import urlparse
 
 from . import channel
+from . import exceptions
 from . import machine
 from . import simplebuffer
 from . import spec
@@ -27,7 +28,6 @@ class Connection(object):
         self.sd.setblocking(False)
         set_ridiculously_high_buffers(self.sd)
 
-        self._init_buffers()
         (self.username, self.password, self.vhost, self.host, self.port) = \
             parse_amqp_url(amqp_url)
 
@@ -44,6 +44,7 @@ class Connection(object):
         return self.sd
 
     def _connect(self):
+        self._init_buffers()
         try:
             self.sd.connect((self.host, self.port))
         except socket.error, e:
@@ -62,8 +63,7 @@ class Connection(object):
                 raise
 
         if len(r) == 0:
-            # TODO
-            raise Exception('conn died')
+            self._shutdown(exceptions.mark_frame_connection_error(spec.Frame()))
 
         self.recv_buf.write(r)
 
