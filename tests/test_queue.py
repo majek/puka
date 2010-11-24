@@ -30,31 +30,13 @@ class TestQueue(unittest.TestCase):
 
         ticket = client.queue_declare(queue=qname, auto_delete=False)
         r = client.wait(ticket)
-        self.assertTrue('exists' not in r)
 
         ticket = client.queue_declare(queue=qname, auto_delete=False)
         r = client.wait(ticket)
-        self.assertTrue(r['exists'])
 
-        # Puka can't verify if the queue has the same properties.
         ticket = client.queue_declare(queue=qname, auto_delete=True)
-        r = client.wait(ticket)
-        self.assertTrue(r['exists'])
-
-        # Unless you can sacrifice the connection...
-        ticket = client.queue_declare(queue=qname, auto_delete=False,
-                                      suicidal=True)
-        client.wait(ticket)
-
-        ticket = client.queue_declare(queue=qname, auto_delete=True,
-                                      suicidal=True)
         with self.assertRaises(puka.PreconditionFailed):
             client.wait(ticket)
-
-        client = puka.Client(AMQP_URL)
-        ticket = client.connect()
-        client.wait(ticket)
-
 
         ticket = client.queue_delete(queue=qname)
         client.wait(ticket)
@@ -69,21 +51,10 @@ class TestQueue(unittest.TestCase):
 
         ticket = client.queue_declare(queue=qname, arguments={})
         r = client.wait(ticket)
-        self.assertTrue('exists' not in r)
 
-        ticket = client.queue_declare(queue=qname, arguments={'x-expires':100})
-        r = client.wait(ticket)
-        self.assertTrue(r['exists'])
-
-        # Unless you can sacrifice the connection...
-        ticket = client.queue_declare(queue=qname, arguments={'x-expires':101},
-                                      suicidal=True)
+        ticket = client.queue_declare(queue=qname, arguments={'x-expires':101})
         with self.assertRaises(puka.PreconditionFailed):
             client.wait(ticket)
-
-        client = puka.Client(AMQP_URL)
-        ticket = client.connect()
-        client.wait(ticket)
 
         ticket = client.queue_delete(queue=qname)
         client.wait(ticket)

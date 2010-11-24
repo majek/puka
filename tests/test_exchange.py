@@ -15,29 +15,10 @@ class TestExchange(base.TestCase):
 
         ticket = client.exchange_declare(exchange=self.name)
         r = client.wait(ticket)
-        self.assertTrue('exists' not in r)
 
-        ticket = client.exchange_declare(exchange=self.name)
-        r = client.wait(ticket)
-        self.assertTrue(r['exists'])
-
-        # Puka can't verify if the exchange has the same properties.
         ticket = client.exchange_declare(exchange=self.name, type='fanout')
-        r = client.wait(ticket)
-        self.assertTrue(r['exists'])
-
-        # Unless you can sacrifice the connection...
-        ticket = client.exchange_declare(exchange=self.name, suicidal=True)
-        client.wait(ticket)
-
-        ticket = client.exchange_declare(exchange=self.name, type='fanout',
-                                         suicidal=True)
         with self.assertRaises(puka.PreconditionFailed):
             client.wait(ticket)
-
-        client = puka.Client(self.amqp_url)
-        ticket = client.connect()
-        client.wait(ticket)
 
         ticket = client.exchange_delete(exchange=self.name)
         client.wait(ticket)
