@@ -1,0 +1,48 @@
+from __future__ import with_statement
+
+import os
+import puka
+
+import base
+
+
+class TestBasicConsumeMulti(base.TestCase):
+    @base.connect
+    def test_shared_qos(self, client):
+        ticket = client.queue_declare(queue=self.name1)
+        client.wait(ticket)
+
+        ticket = client.queue_declare(queue=self.name2)
+        client.wait(ticket)
+
+
+        ticket = client.basic_publish(exchange='', routing_key=self.name1,
+                                      body='a')
+        client.wait(ticket)
+        ticket = client.basic_publish(exchange='', routing_key=self.name2,
+                                      body='b')
+        client.wait(ticket)
+
+
+        consume_ticket = client.basic_consume_multi([self.name1, self.name2],
+                                                    prefetch_count=1)
+        result = client.wait(consume_ticket, timeout=0.1)
+        r1 = result['body']
+        self.assertTrue(r1 in ['a', 'b'])
+
+        result = client.wait(consume_ticket, timeout=0.1)
+        self.assertEqual(result, None)
+
+        ticket = client.basic_qos(consume_ticket, prefetch_count=2)
+        result = client.wait(ticket)
+
+        result = client.wait(consume_ticket, timeout=0.1)
+        r2 = result['body']
+        self.assertEqual(sorted([r1, r2]), ['a', 'b'])
+
+        ticket = client.queue_delete(queue=self.name1)
+        client.wait(ticket)
+
+        ticket = client.queue_delete(queue=self.name2)
+        client.wait(ticket)
+

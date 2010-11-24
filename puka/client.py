@@ -31,6 +31,7 @@ class Client(connection.Connection):
         machine.queue_delete,
         machine.basic_publish,
         machine.basic_consume,
+        machine.basic_consume_multi,
         machine.basic_cancel,
         machine.basic_qos,
         machine.basic_get,
