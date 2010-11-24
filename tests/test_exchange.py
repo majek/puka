@@ -32,7 +32,7 @@ class TestExchange(base.TestCase):
 
         ticket = client.exchange_declare(exchange=self.name, type='fanout',
                                          suicidal=True)
-        with self.assertRaises(puka.NotAllowed):
+        with self.assertRaises(puka.PreconditionFailed):
             client.wait(ticket)
 
         client = puka.Client(self.amqp_url)

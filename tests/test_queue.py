@@ -48,7 +48,7 @@ class TestQueue(unittest.TestCase):
 
         ticket = client.queue_declare(queue=qname, auto_delete=True,
                                       suicidal=True)
-        with self.assertRaises(puka.NotAllowed):
+        with self.assertRaises(puka.PreconditionFailed):
             client.wait(ticket)
 
         client = puka.Client(AMQP_URL)
@@ -78,7 +78,7 @@ class TestQueue(unittest.TestCase):
         # Unless you can sacrifice the connection...
         ticket = client.queue_declare(queue=qname, arguments={'x-expires':101},
                                       suicidal=True)
-        with self.assertRaises(puka.NotAllowed):
+        with self.assertRaises(puka.PreconditionFailed):
             client.wait(ticket)
 
         client = puka.Client(AMQP_URL)
