@@ -251,11 +251,11 @@ def basic_reject(conn, msg_result):
     return t
 
 ##
-def basic_qos(conn, consume_ticket_number, prefetch_size=0, prefetch_count=0):
+def basic_qos(conn, consume_ticket, prefetch_size=0, prefetch_count=0):
     # TODO: new channel not required
     # TODO: race?
     t = conn.tickets.new(_basic_qos)
-    t.x_ct = conn.tickets.by_number(consume_ticket_number)
+    t.x_ct = conn.tickets.by_number(consume_ticket)
     t.x_frames = spec.encode_basic_qos(prefetch_size, prefetch_count, False)
     return t
 
@@ -270,11 +270,11 @@ def _basic_qos_ok(ct, result):
     t.done(result)
 
 ##
-def basic_cancel(conn, consume_ticket_number):
+def basic_cancel(conn, consume_ticket):
     # TODO: new channel not required
     # TODO: race?
     t = conn.tickets.new(_basic_cancel)
-    t.x_ct = conn.tickets.by_number(consume_ticket_number)
+    t.x_ct = conn.tickets.by_number(consume_ticket)
     return t
 
 def _basic_cancel(t):
