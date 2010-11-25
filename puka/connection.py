@@ -3,6 +3,7 @@ import logging
 import select
 import socket
 import struct
+import time
 import urllib
 import urlparse
 
@@ -51,7 +52,6 @@ class Connection(object):
             if e.errno not in (errno.EINPROGRESS, errno.EWOULDBLOCK):
                 raise
         return machine.connection_handshake(self)
-
 
     def on_read(self):
         try:
@@ -175,16 +175,26 @@ class Connection(object):
     def wait_for_any(self):
         return self.loop()
 
-    def loop(self):
+    def loop(self, timeout=None):
         '''
         Wait for any ticket. Block forever.
         '''
+        if timeout is not None:
+            t1 = time.time() + timeout
+        else:
+            td = None
         self._loop_break = False
         self.run_any_callbacks()
         while not self._loop_break:
+            if timeout is not None:
+                t0 = time.time()
+                td = t1 - t0
+                if td < 0:
+                    break
             r, w, e = select.select([self],
                                     [self] if self.needs_write() else [],
-                                    [self])
+                                    [self],
+                                    td)
             if r or e:
                 self.on_read()
             if w:
@@ -221,6 +231,11 @@ class Connection(object):
 
     def _close(self):
         return machine.connection_close(self)
+
+    def set_callback(self, ticket_number, callback):
+        ticket = self.tickets.by_number(ticket_number)
+        ticket.user_callback = callback
+
 
 def parse_amqp_url(amqp_url):
     '''
