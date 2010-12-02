@@ -75,8 +75,7 @@ def basic_publish(conn, exchange, routing_key, mandatory=False,
     nheaders['x-puka-async-id'] = async_id
     eheaders = {'x-puka-async-id': async_id, 'x-puka-footer': True}
 
-    # TODO: channel not needed.
-    t = conn.tickets.new(_basic_publish)
+    t = conn.tickets.new(_basic_publish, no_channel=True)
     t.x_frames = (list(spec.encode_basic_publish(exchange, routing_key,
                                                  mandatory, immediate, nheaders,
                                                  body, conn.frame_max)) +
@@ -252,9 +251,8 @@ def basic_reject(conn, msg_result):
 
 ##
 def basic_qos(conn, consume_ticket, prefetch_size=0, prefetch_count=0):
-    # TODO: new channel not required
     # TODO: race?
-    t = conn.tickets.new(_basic_qos)
+    t = conn.tickets.new(_basic_qos, no_channel=True)
     t.x_ct = conn.tickets.by_number(consume_ticket)
     t.x_frames = spec.encode_basic_qos(prefetch_size, prefetch_count, False)
     return t
@@ -271,9 +269,8 @@ def _basic_qos_ok(ct, result):
 
 ##
 def basic_cancel(conn, consume_ticket):
-    # TODO: new channel not required
     # TODO: race?
-    t = conn.tickets.new(_basic_cancel)
+    t = conn.tickets.new(_basic_cancel, no_channel=True)
     t.x_ct = conn.tickets.by_number(consume_ticket)
     return t
 

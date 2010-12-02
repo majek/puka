@@ -48,7 +48,8 @@ class Ticket(object):
     after_machine_callback = None
     refcnt = 0
 
-    def __init__(self, conn, number, on_channel, reentrant=False):
+    def __init__(self, conn, number, on_channel, reentrant=False,
+                 no_channel=False):
         self.number = number
         self.conn = conn
         self.on_channel = on_channel
@@ -57,13 +58,18 @@ class Ticket(object):
         self.methods = {}
         self.callbacks = []
 
-        self.conn.channels.allocate(self, self._on_channel)
+        if not no_channel:
+            self.conn.channels.allocate(self, self._on_channel)
+        else:
+            self.channel = None
+            self.after_machine_callback = self._on_channel
 
     def restore_error_handler(self):
         self.register(spec.METHOD_CHANNEL_CLOSE, self._on_channel_close)
 
     def _on_channel(self):
-        self.channel.alive = True
+        if self.channel:
+            self.channel.alive = True
         self.restore_error_handler()
         self.on_channel(self)
 
@@ -71,7 +77,8 @@ class Ticket(object):
         # log.warn('channel %i died %r', self.channel.number, result)
         exceptions.mark_frame(result)
         self.send_frames(spec.encode_channel_close_ok())
-        self.channel.alive = False
+        if self.channel:
+            self.channel.alive = False
         self.done(result)
 
     def recv_method(self, result):
@@ -147,14 +154,14 @@ class Ticket(object):
 
     def maybe_release(self):
         # If not released yet, not used by callbacks, and not refcounted.
-        if (self.channel and not self.callbacks and
-            self.to_be_released and self.refcnt == 0):
+        if (not self.callbacks and self.to_be_released and self.refcnt == 0):
             self._release()
 
     def _release(self):
         # Release channel and unlink self.
         if self.delay_release is None:
-            self.conn.channels.deallocate(self.channel)
+            if self.channel:
+                self.conn.channels.deallocate(self.channel)
             self.conn.tickets.free(self)
         elif self.delay_release is Ellipsis:
             # Never free.
