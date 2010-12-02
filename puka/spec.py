@@ -59,6 +59,8 @@ METHOD_BASIC_REJECT             = 0x003C005A 	# 60,90 3932250
 METHOD_BASIC_RECOVER_ASYNC      = 0x003C0064 	# 60,100 3932260
 METHOD_BASIC_RECOVER            = 0x003C006E 	# 60,110 3932270
 METHOD_BASIC_RECOVER_OK         = 0x003C006F 	# 60,111 3932271
+METHOD_CONFIRM_SELECT           = 0x0055000A 	# 85,10 5570570
+METHOD_CONFIRM_SELECT_OK        = 0x0055000B 	# 85,11 5570571
 
 CLASS_BASIC             = 0x003C
 
@@ -433,12 +435,34 @@ def decode_basic_get_empty(data, offset):
     return frame, offset
 
 
+class FrameBasicAck(Frame):
+    name = 'basic.ack'
+    method_id = METHOD_BASIC_ACK
+
+def decode_basic_ack(data, offset):
+    frame = FrameBasicAck()
+    (frame['delivery_tag'],
+     bits) = struct.unpack_from('!QB', data, offset)
+    frame['multiple'] = bool(bits & 0x1)
+    offset += 8+1
+    return frame, offset
+
+
 class FrameBasicRecoverOk(Frame):
     name = 'basic.recover_ok'
     method_id = METHOD_BASIC_RECOVER_OK
 
 def decode_basic_recover_ok(data, offset):
     frame = FrameBasicRecoverOk()
+    return frame, offset
+
+
+class FrameConfirmSelectOk(Frame):
+    name = 'confirm.select_ok'
+    method_id = METHOD_CONFIRM_SELECT_OK
+
+def decode_confirm_select_ok(data, offset):
+    frame = FrameConfirmSelectOk()
     return frame, offset
 
 
@@ -471,7 +495,9 @@ METHODS = {
     METHOD_BASIC_DELIVER:           decode_basic_deliver,
     METHOD_BASIC_GET_OK:            decode_basic_get_ok,
     METHOD_BASIC_GET_EMPTY:         decode_basic_get_empty,
+    METHOD_BASIC_ACK:               decode_basic_ack,
     METHOD_BASIC_RECOVER_OK:        decode_basic_recover_ok,
+    METHOD_CONFIRM_SELECT_OK:       decode_confirm_select_ok,
 }
 
 
@@ -838,6 +864,12 @@ def encode_basic_recover_async(requeue):
 def encode_basic_recover(requeue):
     return ( (0x01,
                 struct.pack('!IB', METHOD_BASIC_RECOVER, (requeue and 0x1 or 0)),
+           ), )
+
+# multiple=False nowait=False
+def encode_confirm_select(multiple):
+    return ( (0x01,
+                struct.pack('!IB', METHOD_CONFIRM_SELECT, (multiple and 0x1 or 0)),
            ), )
 
 BASIC_PROPS_SET = set((
