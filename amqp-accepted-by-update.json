@@ -125,7 +125,8 @@
             "server"
         ],
         "ack": [
-            "server"
+            "server",
+            "client"
         ],
         "get-ok": [
             "client"
@@ -186,6 +187,14 @@
         ],
         "open": [
             "server"
+        ]
+    },
+    "confirm": {
+        "select": [
+           "server"
+        ],
+        "select-ok": [
+           "client"
         ]
     }
 }
