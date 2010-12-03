@@ -90,7 +90,6 @@ example, this snippet creates 1000 queues in parallel:
     for ticket in tickets:
         client.wait(ticket)
 
-
 Puka is sane
 ------------
 
@@ -102,7 +101,7 @@ The major differences between Puka and normal AMQP libraries include:
   - Puka treats `basic_publish` as a synchronous method (you can wait
     on it and make sure that your data is delivered).
   - Puka tries to cope with the AMQP exceptions and expose them
-    to the users in predictable way.
+    to the user in a predictable way.
 
 
 Puka is experimental
@@ -121,7 +120,7 @@ interesting bits:
 
   - `./examples/send.py`: sends one message
   - `./examples/receive_one.py`: receives one message
-  - `./examples/receive_one.py`: a script used to
+  - `./examples/stress_amqp_consume.py`: a script used to
     benchmark the throughput of the server
 
 
