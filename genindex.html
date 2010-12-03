@@ -47,16 +47,12 @@
    <h1 id="index">Index</h1>
 
    <div class="genindex-jumpbox">
-   <a href="#A"><strong>A</strong></a> | <a href="#B"><strong>B</strong></a> | <a href="#C"><strong>C</strong></a> | <a href="#E"><strong>E</strong></a> | <a href="#F"><strong>F</strong></a> | <a href="#I"><strong>I</strong></a> | <a href="#L"><strong>L</strong></a> | <a href="#N"><strong>N</strong></a> | <a href="#O"><strong>O</strong></a> | <a href="#P"><strong>P</strong></a> | <a href="#Q"><strong>Q</strong></a> | <a href="#R"><strong>R</strong></a> | <a href="#S"><strong>S</strong></a> | <a href="#U"><strong>U</strong></a> | <a href="#W"><strong>W</strong></a> 
+   <a href="#A"><strong>A</strong></a> | <a href="#B"><strong>B</strong></a> | <a href="#C"><strong>C</strong></a> | <a href="#E"><strong>E</strong></a> | <a href="#F"><strong>F</strong></a> | <a href="#L"><strong>L</strong></a> | <a href="#N"><strong>N</strong></a> | <a href="#O"><strong>O</strong></a> | <a href="#P"><strong>P</strong></a> | <a href="#Q"><strong>Q</strong></a> | <a href="#R"><strong>R</strong></a> | <a href="#S"><strong>S</strong></a> | <a href="#W"><strong>W</strong></a> 
    </div>
 <h2 id="A">A</h2>
 <table width="100%" class="indextable genindextable"><tr>
   <td width="33%" valign="top"><dl>
     <dt><a href="puka.html#puka.AccessRefused">AccessRefused</a></dt>
-    <dt><a href="puka.html#puka.AMQPNotImplemented">AMQPNotImplemented</a></dt>
-</dl></td>
-  <td width="33%" valign="top"><dl>
-    <dt><a href="puka.html#puka.AMQPSyntaxError">AMQPSyntaxError</a></dt>
 </dl></td>
 </tr></table>
 
@@ -66,11 +62,11 @@
     <dt><a href="puka.html#puka.Client.basic_ack">basic_ack() (puka.Client method)</a></dt>
     <dt><a href="puka.html#puka.Client.basic_cancel">basic_cancel() (puka.Client method)</a></dt>
     <dt><a href="puka.html#puka.Client.basic_consume">basic_consume() (puka.Client method)</a></dt>
-    <dt><a href="puka.html#puka.Client.basic_get">basic_get() (puka.Client method)</a></dt>
+    <dt><a href="puka.html#puka.Client.basic_consume_multi">basic_consume_multi() (puka.Client method)</a></dt>
 </dl></td>
   <td width="33%" valign="top"><dl>
+    <dt><a href="puka.html#puka.Client.basic_get">basic_get() (puka.Client method)</a></dt>
     <dt><a href="puka.html#puka.Client.basic_publish">basic_publish() (puka.Client method)</a></dt>
-    <dt><a href="puka.html#puka.Client.basic_publish_async">basic_publish_async() (puka.Client method)</a></dt>
     <dt><a href="puka.html#puka.Client.basic_qos">basic_qos() (puka.Client method)</a></dt>
     <dt><a href="puka.html#puka.Client.basic_reject">basic_reject() (puka.Client method)</a></dt>
 </dl></td>
@@ -79,15 +75,12 @@
 <h2 id="C">C</h2>
 <table width="100%" class="indextable genindextable"><tr>
   <td width="33%" valign="top"><dl>
-    <dt><a href="puka.html#puka.ChannelError">ChannelError</a></dt>
     <dt><a href="puka.html#puka.Client">Client (class in puka)</a></dt>
     <dt><a href="puka.html#puka.Client.close">close() (puka.Client method)</a></dt>
-    <dt><a href="puka.html#puka.CommandInvalid">CommandInvalid</a></dt>
 </dl></td>
   <td width="33%" valign="top"><dl>
     <dt><a href="puka.html#puka.Client.connect">connect() (puka.Client method)</a></dt>
-    <dt><a href="puka.html#puka.ConnectionForced">ConnectionForced</a></dt>
-    <dt><a href="puka.html#puka.ContentTooLarge">ContentTooLarge</a></dt>
+    <dt><a href="puka.html#puka.ConnectionBroken">ConnectionBroken</a></dt>
 </dl></td>
 </tr></table>
 
@@ -108,19 +101,6 @@
   <td width="33%" valign="top"><dl>
     <dt><a href="puka.html#puka.Client.fileno">fileno() (puka.Client method)</a></dt>
 </dl></td>
-  <td width="33%" valign="top"><dl>
-    <dt><a href="puka.html#puka.FrameError">FrameError</a></dt>
-</dl></td>
-</tr></table>
-
-<h2 id="I">I</h2>
-<table width="100%" class="indextable genindextable"><tr>
-  <td width="33%" valign="top"><dl>
-    <dt><a href="puka.html#puka.InternalError">InternalError</a></dt>
-</dl></td>
-  <td width="33%" valign="top"><dl>
-    <dt><a href="puka.html#puka.InvalidPath">InvalidPath</a></dt>
-</dl></td>
 </tr></table>
 
 <h2 id="L">L</h2>
@@ -138,10 +118,9 @@
   <td width="33%" valign="top"><dl>
     <dt><a href="puka.html#puka.Client.needs_write">needs_write() (puka.Client method)</a></dt>
     <dt><a href="puka.html#puka.NoConsumers">NoConsumers</a></dt>
-    <dt><a href="puka.html#puka.NoRoute">NoRoute</a></dt>
 </dl></td>
   <td width="33%" valign="top"><dl>
-    <dt><a href="puka.html#puka.NotAllowed">NotAllowed</a></dt>
+    <dt><a href="puka.html#puka.NoRoute">NoRoute</a></dt>
     <dt><a href="puka.html#puka.NotFound">NotFound</a></dt>
 </dl></td>
 </tr></table>
@@ -182,7 +161,6 @@
 <h2 id="R">R</h2>
 <table width="100%" class="indextable genindextable"><tr>
   <td width="33%" valign="top"><dl>
-    <dt><a href="puka.html#puka.ResourceError">ResourceError</a></dt>
     <dt><a href="puka.html#puka.ResourceLocked">ResourceLocked</a></dt>
 </dl></td>
   <td width="33%" valign="top"><dl>
@@ -194,13 +172,6 @@
 <table width="100%" class="indextable genindextable"><tr>
   <td width="33%" valign="top"><dl>
     <dt><a href="puka.html#puka.Client.socket">socket() (puka.Client method)</a></dt>
-</dl></td>
-</tr></table>
-
-<h2 id="U">U</h2>
-<table width="100%" class="indextable genindextable"><tr>
-  <td width="33%" valign="top"><dl>
-    <dt><a href="puka.html#puka.UnexpectedFrame">UnexpectedFrame</a></dt>
 </dl></td>
 </tr></table>
 
