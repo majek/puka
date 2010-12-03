@@ -151,18 +151,11 @@ def _channel_open_ok(t, result):
 
 
 ####
-def queue_declare(conn, queue='', auto_delete=False, exclusive=False,
-                  arguments={}):
-    # Don't use AMQP auto-delete. Use RabbitMQ queue-leases instead:
-    # http://www.rabbitmq.com/extensions.html#queue-leases
-    # durable = not auto_delete
+def queue_declare(conn, queue='', durable=False, exclusive=False,
+                  auto_delete=False, arguments={}):
     t = conn.tickets.new(_queue_declare)
-    args = {}
-    if auto_delete:
-        args['x-expires'] = 5000
-    args.update( arguments )
-    t.x_frames = spec.encode_queue_declare(queue, False, not auto_delete,
-                                           exclusive, False, args)
+    t.x_frames = spec.encode_queue_declare(queue, False, durable, exclusive,
+                                           auto_delete, arguments)
     return t
 
 def _queue_declare(t, result=None):
@@ -316,13 +309,13 @@ def _basic_get_empty(t, result):
 
 
 ####
-def exchange_declare(conn, exchange, type='direct', arguments={}):
+def exchange_declare(conn, exchange, type='direct', durable=False,
+                     auto_delete=False, arguments={}):
     # Exchanges don't support 'x-expires', so we support only durable exchanges.
     auto_delete = False
     t = conn.tickets.new(_exchange_declare)
 
-    t.x_frames = spec.encode_exchange_declare(exchange, type, False,
-                                              not auto_delete,
+    t.x_frames = spec.encode_exchange_declare(exchange, type, False, durable,
                                               auto_delete, False, arguments)
     return t
 
