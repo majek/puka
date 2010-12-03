@@ -97,7 +97,7 @@ class TestBasic(base.TestCase):
                                           routing_key='xxx', body='')
 
             self.assertEqual(len(client.channels.free_channels), 0)
-            self.assertEqual(client.channels.free_channel_numbers[-1], 3)
+            self.assertEqual(client.channels.free_channel_numbers[-1], 2)
 
             with self.assertRaises(puka.NotFound) as cm:
                 client.wait(ticket)
@@ -106,8 +106,8 @@ class TestBasic(base.TestCase):
             self.assertTrue(r.is_error)
             self.assertEqual(r['reply_code'], 404)
 
-            self.assertEqual(len(client.channels.free_channels), 1)
-            self.assertEqual(client.channels.free_channel_numbers[-1], 3)
+            self.assertEqual(len(client.channels.free_channels), 0)
+            self.assertEqual(client.channels.free_channel_numbers[-1], 2)
 
 
     def test_basic_return(self):
