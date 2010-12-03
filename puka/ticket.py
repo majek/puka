@@ -123,11 +123,12 @@ class Ticket(object):
 
     def run_callback(self, raise_errors=True):
         user_callback, result = self.callbacks.pop(0)
-        if user_callback:
-            user_callback(self.number, result)
-            # At this point, after callback, self might be already freed.
         if not self.callbacks:
             self.conn.tickets.unmark_ready(self)
+        if user_callback:
+            user_callback(self.number, result)
+            # We may be already freed now.
+            # (consider basic_get + basic_ack inside callback)
 
         self.maybe_release()
         if raise_errors and result.is_error:
@@ -154,7 +155,8 @@ class Ticket(object):
 
     def maybe_release(self):
         # If not released yet, not used by callbacks, and not refcounted.
-        if (not self.callbacks and self.to_be_released and self.refcnt == 0):
+        if ( self.number is not None and not self.callbacks and
+             self.to_be_released and self.refcnt == 0):
             self._release()
 
     def _release(self):
@@ -170,4 +172,4 @@ class Ticket(object):
             # TODO:
             print "Unable to free channel %i (ticket %i)" % \
                 (self.channel.number, self.number)
-
+        self.number = None
