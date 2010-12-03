@@ -167,21 +167,19 @@ def _queue_declare_ok(t, result):
 
 
 ####
-def basic_consume(conn, queue, prefetch_size=0, prefetch_count=0,
-                  no_local=False, no_ack=False, exclusive=False,
-                  arguments={}):
+def basic_consume(conn, queue, prefetch_count=0, no_local=False, no_ack=False,
+                  exclusive=False, arguments={}):
     q = {'queue': queue,
          'no_local': no_local,
          'exclusive': exclusive,
          'arguments': arguments,
          }
-    return basic_consume_multi(conn, [q], prefetch_size, prefetch_count, no_ack)
+    return basic_consume_multi(conn, [q], prefetch_count, no_ack)
 
 ####
-def basic_consume_multi(conn, queues, prefetch_size=0, prefetch_count=0,
-                        no_ack=False):
+def basic_consume_multi(conn, queues, prefetch_count=0, no_ack=False):
     t = conn.tickets.new(_bcm_basic_qos, reentrant=True)
-    t.x_frames = spec.encode_basic_qos(prefetch_size, prefetch_count, False)
+    t.x_frames = spec.encode_basic_qos(0, prefetch_count, False)
     t.x_consumes = []
     for item in queues:
         if isinstance(item, str):
@@ -243,11 +241,11 @@ def basic_reject(conn, msg_result):
     return t
 
 ##
-def basic_qos(conn, consume_ticket, prefetch_size=0, prefetch_count=0):
+def basic_qos(conn, consume_ticket, prefetch_count=0):
     # TODO: race?
     t = conn.tickets.new(_basic_qos, no_channel=True)
     t.x_ct = conn.tickets.by_number(consume_ticket)
-    t.x_frames = spec.encode_basic_qos(prefetch_size, prefetch_count, False)
+    t.x_frames = spec.encode_basic_qos(0, prefetch_count, False)
     return t
 
 def _basic_qos(t):
