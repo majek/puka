@@ -40,6 +40,10 @@ class TestBasicConsumeMulti(base.TestCase):
         r2 = result['body']
         self.assertEqual(sorted([r1, r2]), ['a', 'b'])
 
+
+        ticket = client.basic_cancel(consume_ticket)
+        client.wait(ticket)
+
         ticket = client.queue_delete(queue=self.name1)
         client.wait(ticket)
 
