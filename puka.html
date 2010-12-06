@@ -150,14 +150,14 @@ the socket.</p>
 <dl class="method">
 <dt id="puka.Client.run_any_callbacks">
 <tt class="descclassname">Client.</tt><tt class="descname">run_any_callbacks</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.run_any_callbacks" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run any outstanding user callbacks for any of the <cite>tickets</cite>.</p>
+<dd><p>Run any outstanding user callbacks for any of the <cite>promises</cite>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="puka.Client.wait">
-<tt class="descclassname">Client.</tt><tt class="descname">wait</tt><big>(</big><em>ticket</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#puka.Client.wait" title="Permalink to this definition">¶</a></dt>
-<dd><p>Wait up to <cite>timeout</cite> seconds for an event on given <cite>ticket</cite>. If the event
-was received before <cite>timeout</cite>, run the callback for the <cite>ticket</cite> and
+<tt class="descclassname">Client.</tt><tt class="descname">wait</tt><big>(</big><em>primise</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#puka.Client.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait up to <cite>timeout</cite> seconds for an event on given <cite>primise</cite>. If the event
+was received before <cite>timeout</cite>, run the callback for the <cite>primise</cite> and
 return AMQP <cite>response</cite>.</p>
 </dd></dl>
 
@@ -175,10 +175,10 @@ callbacks for up to <cite>timeout</cite> seconds.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="ticket-interface">
-<h3>Ticket interface<a class="headerlink" href="#ticket-interface" title="Permalink to this headline">¶</a></h3>
-<p>Functions below return a <cite>ticket</cite>. It&#8217;s a small number, that identifies
-an asynchronous request. You can wait for a <cite>ticket</cite> to be done and
+<div class="section" id="primise-interface">
+<h3>Primise interface<a class="headerlink" href="#primise-interface" title="Permalink to this headline">¶</a></h3>
+<p>Functions below return a <cite>primise</cite>. It&#8217;s a small number, that identifies
+an asynchronous request. You can wait for a <cite>primise</cite> to be done and
 receive a <cite>response</cite> for it.</p>
 <div class="section" id="connection-handling-methods">
 <h4>Connection handling methods:<a class="headerlink" href="#connection-handling-methods" title="Permalink to this headline">¶</a></h4>
@@ -193,7 +193,7 @@ forbidden to do any other action before this step is finished.</p>
 <dt id="puka.Client.close">
 <tt class="descclassname">Client.</tt><tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#puka.Client.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Immediately closes the connection. All buffered data will be lost. All
-outstanding tickets will be closed with an error.</p>
+outstanding promises will be closed with an error.</p>
 </dd></dl>
 
 </div>
@@ -264,41 +264,41 @@ outstanding tickets will be closed with an error.</p>
 <dl class="method">
 <dt id="puka.Client.basic_consume">
 <tt class="descclassname">Client.</tt><tt class="descname">basic_consume</tt><big>(</big><em>queue</em>, <em>prefetch_count=0</em>, <em>no_local=False</em>, <em>no_ack=False</em>, <em>exclusive=False</em>, <em>arguments={}</em><big>)</big><a class="headerlink" href="#puka.Client.basic_consume" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a <cite>consume_ticket</cite>.</p>
+<dd><p>Return a <cite>consume_primise</cite>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="puka.Client.basic_consume_multi">
 <tt class="descclassname">Client.</tt><tt class="descname">basic_consume_multi</tt><big>(</big><em>queues</em>, <em>prefetch_count=0</em>, <em>no_ack=False</em><big>)</big><a class="headerlink" href="#puka.Client.basic_consume_multi" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a <cite>consume_ticket</cite>.</p>
+<dd><p>Return a <cite>consume_primise</cite>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="puka.Client.basic_qos">
-<tt class="descclassname">Client.</tt><tt class="descname">basic_qos</tt><big>(</big><em>consume_ticket</em>, <em>prefetch_count=0</em><big>)</big><a class="headerlink" href="#puka.Client.basic_qos" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given a <cite>consume_ticket</cite> returned by <a class="reference internal" href="#puka.Client.basic_consume" title="puka.Client.basic_consume"><tt class="xref py py-meth docutils literal"><span class="pre">basic_consume()</span></tt></a> or
+<tt class="descclassname">Client.</tt><tt class="descname">basic_qos</tt><big>(</big><em>consume_primise</em>, <em>prefetch_count=0</em><big>)</big><a class="headerlink" href="#puka.Client.basic_qos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a <cite>consume_primise</cite> returned by <a class="reference internal" href="#puka.Client.basic_consume" title="puka.Client.basic_consume"><tt class="xref py py-meth docutils literal"><span class="pre">basic_consume()</span></tt></a> or
 <a class="reference internal" href="#puka.Client.basic_consume_multi" title="puka.Client.basic_consume_multi"><tt class="xref py py-meth docutils literal"><span class="pre">basic_consume_multi()</span></tt></a> changes the <cite>prefetch_count</cite> for that
 consumes.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="puka.Client.basic_cancel">
-<tt class="descclassname">Client.</tt><tt class="descname">basic_cancel</tt><big>(</big><em>consume_ticket</em><big>)</big><a class="headerlink" href="#puka.Client.basic_cancel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given a <cite>consume_ticket</cite> returned by <a class="reference internal" href="#puka.Client.basic_consume" title="puka.Client.basic_consume"><tt class="xref py py-meth docutils literal"><span class="pre">basic_consume()</span></tt></a> or
+<tt class="descclassname">Client.</tt><tt class="descname">basic_cancel</tt><big>(</big><em>consume_primise</em><big>)</big><a class="headerlink" href="#puka.Client.basic_cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a <cite>consume_primise</cite> returned by <a class="reference internal" href="#puka.Client.basic_consume" title="puka.Client.basic_consume"><tt class="xref py py-meth docutils literal"><span class="pre">basic_consume()</span></tt></a> or
 <a class="reference internal" href="#puka.Client.basic_consume_multi" title="puka.Client.basic_consume_multi"><tt class="xref py py-meth docutils literal"><span class="pre">basic_consume_multi()</span></tt></a> cancels the consume.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="puka.Client.basic_ack">
 <tt class="descclassname">Client.</tt><tt class="descname">basic_ack</tt><big>(</big><em>msg_result</em><big>)</big><a class="headerlink" href="#puka.Client.basic_ack" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given a result of <cite>basic_consume</cite> or <cite>basic_consume_multi</cite> ticket
+<dd><p>Given a result of <cite>basic_consume</cite> or <cite>basic_consume_multi</cite> primise
 (ie: a message) acknowledges it. It&#8217;s an asynchronous method.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="puka.Client.basic_reject">
 <tt class="descclassname">Client.</tt><tt class="descname">basic_reject</tt><big>(</big><em>msg_result</em><big>)</big><a class="headerlink" href="#puka.Client.basic_reject" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given a result of <cite>basic_consume</cite> or <cite>basic_consume_multi</cite> ticket
+<dd><p>Given a result of <cite>basic_consume</cite> or <cite>basic_consume_multi</cite> primise
 (ie: a message) rejects it. It&#8217;s an asynchronous method.</p>
 </dd></dl>
 
@@ -311,56 +311,56 @@ consumes.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">puka</span>
 
 <span class="n">client</span> <span class="o">=</span> <span class="n">puka</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="s">&quot;amqp://localhost/&quot;</span><span class="p">)</span>
-<span class="n">ticket</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">ticket</span><span class="p">)</span>
+<span class="n">primise</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">primise</span><span class="p">)</span>
 
-<span class="n">ticket</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">queue_declare</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">)</span>
-<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">ticket</span><span class="p">)</span>
+<span class="n">primise</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">queue_declare</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">)</span>
+<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">primise</span><span class="p">)</span>
 
-<span class="n">ticket</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">basic_publish</span><span class="p">(</span><span class="n">exchange</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">routing_key</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">,</span>
+<span class="n">primise</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">basic_publish</span><span class="p">(</span><span class="n">exchange</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">routing_key</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">,</span>
                               <span class="n">body</span><span class="o">=</span><span class="s">&quot;Hello world!&quot;</span><span class="p">)</span>
-<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">ticket</span><span class="p">)</span>
+<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">primise</span><span class="p">)</span>
 
-<span class="n">ticket</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">ticket</span><span class="p">)</span>
+<span class="n">primise</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">primise</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Synchronously receive three messages:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">puka</span>
 
 <span class="n">client</span> <span class="o">=</span> <span class="n">puka</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="s">&quot;amqp://localhost/&quot;</span><span class="p">)</span>
-<span class="n">ticket</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">ticket</span><span class="p">)</span>
+<span class="n">primise</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">primise</span><span class="p">)</span>
 
-<span class="n">ticket</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">queue_declare</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">)</span>
-<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">ticket</span><span class="p">)</span>
+<span class="n">primise</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">queue_declare</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">)</span>
+<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">primise</span><span class="p">)</span>
 
-<span class="n">consume_ticket</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">basic_consume</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">)</span>
+<span class="n">consume_primise</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">basic_consume</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">consume_ticket</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">consume_primise</span><span class="p">)</span>
     <span class="k">print</span> <span class="s">&quot; [x] Received message </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">result</span><span class="p">,)</span>
 
     <span class="n">client</span><span class="o">.</span><span class="n">basic_ack</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 
-<span class="n">client</span><span class="o">.</span><span class="n">basic_cancel</span><span class="p">(</span><span class="n">consume_ticket</span><span class="p">)</span>
-<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">consume_ticket</span><span class="p">)</span>
+<span class="n">client</span><span class="o">.</span><span class="n">basic_cancel</span><span class="p">(</span><span class="n">consume_primise</span><span class="p">)</span>
+<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">consume_primise</span><span class="p">)</span>
 
-<span class="n">ticket</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">ticket</span><span class="p">)</span>
+<span class="n">primise</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">primise</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Asynchronously send a message:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">puka</span>
 
-<span class="k">def</span> <span class="nf">on_connection</span><span class="p">(</span><span class="n">ticket</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">on_connection</span><span class="p">(</span><span class="n">primise</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
     <span class="n">client</span><span class="o">.</span><span class="n">queue_declare</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">on_queue_declare</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">on_queue_declare</span><span class="p">(</span><span class="n">ticket</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">on_queue_declare</span><span class="p">(</span><span class="n">primise</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
     <span class="n">client</span><span class="o">.</span><span class="n">basic_publish</span><span class="p">(</span><span class="n">exchange</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">routing_key</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">,</span>
                          <span class="n">body</span><span class="o">=</span><span class="s">&quot;Hello world!&quot;</span><span class="p">,</span>
                          <span class="n">callback</span><span class="o">=</span><span class="n">on_basic_publish</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">on_basic_publish</span><span class="p">(</span><span class="n">ticket</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">on_basic_publish</span><span class="p">(</span><span class="n">primise</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
     <span class="k">print</span> <span class="s">&quot; [*] Message sent&quot;</span>
     <span class="n">client</span><span class="o">.</span><span class="n">loop_break</span><span class="p">()</span>
 
@@ -368,8 +368,8 @@ consumes.</p>
 <span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">callback</span><span class="o">=</span><span class="n">on_connection</span><span class="p">)</span>
 <span class="n">client</span><span class="o">.</span><span class="n">loop</span><span class="p">()</span>
 
-<span class="n">ticket</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">ticket</span><span class="p">)</span>
+<span class="n">primise</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">primise</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -387,7 +387,7 @@ consumes.</p>
 <li><a class="reference internal" href="#exceptions">Exceptions</a></li>
 <li><a class="reference internal" href="#client-objects">Client Objects</a><ul>
 <li><a class="reference internal" href="#connection-interface">Connection interface</a></li>
-<li><a class="reference internal" href="#ticket-interface">Ticket interface</a><ul>
+<li><a class="reference internal" href="#primise-interface">Primise interface</a><ul>
 <li><a class="reference internal" href="#connection-handling-methods">Connection handling methods:</a></li>
 <li><a class="reference internal" href="#amqp-methods-used-to-manage-exchanges">AMQP methods used to manage exchanges:</a></li>
 <li><a class="reference internal" href="#amqp-methods-used-to-manage-queues">AMQP methods used to manage queues:</a></li>
