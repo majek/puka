@@ -34,52 +34,52 @@ class TestBasic(base.TestCase):
         client.connect(callback=on_connect)
         client.loop()
 
-        primise = client.close()
-        client.wait(primise)
+        promise = client.close()
+        client.wait(promise)
 
 
     def test_close(self):
-        def on_connection(primise, result):
+        def on_connection(promise, result):
             client.queue_declare(queue=self.name, callback=on_queue_declare)
 
-        def on_queue_declare(primise, result):
+        def on_queue_declare(promise, result):
             client.basic_publish(exchange='', routing_key=self.name,
                                  body="Hello world!",
                                  callback=on_basic_publish)
 
-        def on_basic_publish(primise, result):
+        def on_basic_publish(promise, result):
             client.queue_delete(queue=self.name,
                                 callback=on_queue_delete)
 
-        def on_queue_delete(primise, result):
+        def on_queue_delete(promise, result):
             client.loop_break()
 
         client = puka.Client(self.amqp_url)
         client.connect(callback=on_connection)
         client.loop()
 
-        primise = client.close()
-        client.wait(primise)
+        promise = client.close()
+        client.wait(promise)
 
 
     def test_consume_close(self):
-        def on_connection(primise, result):
+        def on_connection(promise, result):
             client.queue_declare(queue=self.name, auto_delete=True,
                                  callback=on_queue_declare)
 
-        def on_queue_declare(primise, result):
+        def on_queue_declare(promise, result):
             client.basic_consume(queue=self.name, callback=on_basic_consume)
             client.loop_break()
 
-        def on_basic_consume(primise, result):
+        def on_basic_consume(promise, result):
             self.assertTrue(result.is_error)
 
         client = puka.Client(self.amqp_url)
         client.connect(callback=on_connection)
         client.loop()
 
-        primise = client.close()
-        client.wait(primise)
+        promise = client.close()
+        client.wait(promise)
 
         client.run_any_callbacks()
 

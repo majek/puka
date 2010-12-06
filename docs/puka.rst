@@ -83,10 +83,10 @@ handling.
 
    Run any outstanding user callbacks for any of the `promises`.
 
-.. method:: Client.wait(primise, timeout=None)
+.. method:: Client.wait(promise, timeout=None)
 
-   Wait up to `timeout` seconds for an event on given `primise`. If the event
-   was received before `timeout`, run the callback for the `primise` and
+   Wait up to `timeout` seconds for an event on given `promise`. If the event
+   was received before `timeout`, run the callback for the `promise` and
    return AMQP `response`.
 
 .. method:: Client.loop(timeout=None)
@@ -102,8 +102,8 @@ handling.
 Primise interface
 +++++++++++++++++
 
-Functions below return a `primise`. It's a small number, that identifies
-an asynchronous request. You can wait for a `primise` to be done and
+Functions below return a `promise`. It's a small number, that identifies
+an asynchronous request. You can wait for a `promise` to be done and
 receive a `response` for it.
 
 Connection handling methods:
@@ -151,31 +151,31 @@ AMQP methods used to handle messages:
 
 .. method:: Client.basic_consume(queue, prefetch_count=0, no_local=False, no_ack=False, exclusive=False, arguments={})
 
-   Return a `consume_primise`.
+   Return a `consume_promise`.
 
 .. method:: Client.basic_consume_multi(queues, prefetch_count=0, no_ack=False)
 
-   Return a `consume_primise`.
+   Return a `consume_promise`.
 
-.. method:: Client.basic_qos(consume_primise, prefetch_count=0)
+.. method:: Client.basic_qos(consume_promise, prefetch_count=0)
 
-   Given a `consume_primise` returned by :meth:`basic_consume` or
+   Given a `consume_promise` returned by :meth:`basic_consume` or
    :meth:`basic_consume_multi` changes the `prefetch_count` for that
    consumes.
 
-.. method:: Client.basic_cancel(consume_primise)
+.. method:: Client.basic_cancel(consume_promise)
 
-   Given a `consume_primise` returned by :meth:`basic_consume` or
+   Given a `consume_promise` returned by :meth:`basic_consume` or
    :meth:`basic_consume_multi` cancels the consume.
 
 .. method:: Client.basic_ack(msg_result)
 
-   Given a result of `basic_consume` or `basic_consume_multi` primise
+   Given a result of `basic_consume` or `basic_consume_multi` promise
    (ie: a message) acknowledges it. It's an asynchronous method.
 
 .. method:: Client.basic_reject(msg_result)
 
-   Given a result of `basic_consume` or `basic_consume_multi` primise
+   Given a result of `basic_consume` or `basic_consume_multi` promise
    (ie: a message) rejects it. It's an asynchronous method.
 
 
@@ -189,18 +189,18 @@ Synchronously send a message:
   import puka
 
   client = puka.Client("amqp://localhost/")
-  primise = client.connect()
-  client.wait(primise)
+  promise = client.connect()
+  client.wait(promise)
 
-  primise = client.queue_declare(queue='test')
-  client.wait(primise)
+  promise = client.queue_declare(queue='test')
+  client.wait(promise)
 
-  primise = client.basic_publish(exchange='', routing_key='test',
+  promise = client.basic_publish(exchange='', routing_key='test',
                                 body="Hello world!")
-  client.wait(primise)
+  client.wait(promise)
 
-  primise = client.close()
-  client.wait(primise)
+  promise = client.close()
+  client.wait(promise)
 
 
 Synchronously receive three messages:
@@ -210,24 +210,24 @@ Synchronously receive three messages:
   import puka
 
   client = puka.Client("amqp://localhost/")
-  primise = client.connect()
-  client.wait(primise)
+  promise = client.connect()
+  client.wait(promise)
 
-  primise = client.queue_declare(queue='test')
-  client.wait(primise)
+  promise = client.queue_declare(queue='test')
+  client.wait(promise)
 
-  consume_primise = client.basic_consume(queue='test')
+  consume_promise = client.basic_consume(queue='test')
   for i in range(3):
-      result = client.wait(consume_primise)
+      result = client.wait(consume_promise)
       print " [x] Received message %r" % (result,)
 
       client.basic_ack(result)
 
-  client.basic_cancel(consume_primise)
-  client.wait(consume_primise)
+  client.basic_cancel(consume_promise)
+  client.wait(consume_promise)
 
-  primise = client.close()
-  client.wait(primise)
+  promise = client.close()
+  client.wait(promise)
 
 
 Asynchronously send a message:
@@ -236,15 +236,15 @@ Asynchronously send a message:
 
   import puka
 
-  def on_connection(primise, result):
+  def on_connection(promise, result):
       client.queue_declare(queue='test', callback=on_queue_declare)
 
-  def on_queue_declare(primise, result):
+  def on_queue_declare(promise, result):
       client.basic_publish(exchange='', routing_key='test',
                            body="Hello world!",
                            callback=on_basic_publish)
 
-  def on_basic_publish(primise, result):
+  def on_basic_publish(promise, result):
       print " [*] Message sent"
       client.loop_break()
 
@@ -252,5 +252,5 @@ Asynchronously send a message:
   client.connect(callback=on_connection)
   client.loop()
 
-  primise = client.close()
-  client.wait(primise)
+  promise = client.close()
+  client.wait(promise)

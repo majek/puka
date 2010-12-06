@@ -53,8 +53,8 @@ class Worker(object):
 
 def main():
     client = puka.Client("amqp://localhost/")
-    primise = client.connect()
-    client.wait(primise)
+    promise = client.connect()
+    client.wait(promise)
 
     def inc():
         global counter

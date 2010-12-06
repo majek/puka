@@ -13,16 +13,16 @@ import puka
 
 client = puka.Client("amqp://localhost/")
 
-primise = client.connect()
-client.wait(primise)
+promise = client.connect()
+client.wait(promise)
 
 for i in range(1000):
-    primise = client.queue_declare(queue='a%04i' % i)
-    client.wait(primise)
+    promise = client.queue_declare(queue='a%04i' % i)
+    client.wait(promise)
 
 for i in range(1000):
-    primise = client.queue_delete(queue='a%04i' % i)
-    client.wait(primise)
+    promise = client.queue_delete(queue='a%04i' % i)
+    client.wait(promise)
 
-primise = client.close()
-client.wait(primise)
+promise = client.close()
+client.wait(promise)

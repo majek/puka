@@ -8,18 +8,18 @@ import puka
 
 client = puka.Client("amqp://localhost/")
 
-primise = client.connect()
-client.wait(primise)
+promise = client.connect()
+client.wait(promise)
 
-primise = client.queue_declare(queue='test')
-client.wait(primise)
+promise = client.queue_declare(queue='test')
+client.wait(promise)
 
-primise = client.basic_publish(exchange='', routing_key='test',
+promise = client.basic_publish(exchange='', routing_key='test',
                               body="Hello world!")
-client.wait(primise)
+client.wait(promise)
 
 print " [*] Message sent"
 
-primise = client.close()
-client.wait(primise)
+promise = client.close()
+client.wait(promise)
 

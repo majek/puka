@@ -9,71 +9,71 @@ import base
 class TestBasic(base.TestCase):
     def test_simple_roundtrip(self):
         client = puka.Client(self.amqp_url)
-        primise = client.connect()
-        client.wait(primise)
+        promise = client.connect()
+        client.wait(promise)
 
-        primise = client.queue_declare(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body=self.msg)
-        client.wait(primise)
+        client.wait(promise)
 
-        consume_primise = client.basic_consume(queue=self.name, no_ack=True)
-        result = client.wait(consume_primise)
+        consume_promise = client.basic_consume(queue=self.name, no_ack=True)
+        result = client.wait(consume_promise)
         self.assertEqual(result['body'], self.msg)
 
-        primise = client.queue_delete(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
 
     def test_purge(self):
         client = puka.Client(self.amqp_url)
-        primise = client.connect()
-        client.wait(primise)
+        promise = client.connect()
+        client.wait(promise)
 
-        primise = client.queue_declare(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body=self.msg)
-        client.wait(primise)
+        client.wait(promise)
 
-        primise = client.queue_purge(queue=self.name)
-        r = client.wait(primise)
+        promise = client.queue_purge(queue=self.name)
+        r = client.wait(promise)
         self.assertEqual(r['message_count'], 1)
 
-        primise = client.queue_purge(queue=self.name)
-        r = client.wait(primise)
+        promise = client.queue_purge(queue=self.name)
+        r = client.wait(promise)
         self.assertEqual(r['message_count'], 0)
 
-        primise = client.queue_delete(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
 
     def test_basic_get_ack(self):
         client = puka.Client(self.amqp_url)
-        primise = client.connect()
-        client.wait(primise)
+        promise = client.connect()
+        client.wait(promise)
 
-        primise = client.queue_declare(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
         for i in range(4):
-            primise = client.basic_publish(exchange='', routing_key=self.name,
+            promise = client.basic_publish(exchange='', routing_key=self.name,
                                           body=self.msg+str(i))
-            client.wait(primise)
+            client.wait(promise)
 
         msgs = []
         for i in range(4):
-            primise = client.basic_get(queue=self.name)
-            result = client.wait(primise)
+            promise = client.basic_get(queue=self.name)
+            result = client.wait(promise)
             self.assertEqual(result['body'], self.msg+str(i))
             self.assertEqual(result['redelivered'], False)
             msgs.append( result )
 
-        primise = client.basic_get(queue=self.name)
-        result = client.wait(primise)
+        promise = client.basic_get(queue=self.name)
+        result = client.wait(promise)
         self.assertEqual('body' in result, False)
 
         self.assertEqual(len(client.channels.free_channels), 1)
@@ -83,24 +83,24 @@ class TestBasic(base.TestCase):
         self.assertEqual(len(client.channels.free_channels), 5)
         self.assertEqual(client.channels.free_channel_numbers[-1], 7)
 
-        primise = client.queue_delete(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
 
     def test_basic_publish_bad_exchange(self):
         client = puka.Client(self.amqp_url)
-        primise = client.connect()
-        client.wait(primise)
+        promise = client.connect()
+        client.wait(promise)
 
         for i in range(2):
-            primise = client.basic_publish(exchange='invalid_exchange',
+            promise = client.basic_publish(exchange='invalid_exchange',
                                           routing_key='xxx', body='')
 
             self.assertEqual(len(client.channels.free_channels), 0)
             self.assertEqual(client.channels.free_channel_numbers[-1], 2)
 
             with self.assertRaises(puka.NotFound) as cm:
-                client.wait(primise)
+                client.wait(promise)
 
             (r,) = cm.exception # unpack args of exception
             self.assertTrue(r.is_error)
@@ -112,82 +112,82 @@ class TestBasic(base.TestCase):
 
     def test_basic_return(self):
         client = puka.Client(self.amqp_url)
-        primise = client.connect()
-        client.wait(primise)
+        promise = client.connect()
+        client.wait(promise)
 
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       mandatory=True, body='')
         with self.assertRaises(puka.NoRoute):
-            client.wait(primise)
+            client.wait(promise)
 
-        primise = client.queue_declare(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       mandatory=True, body='')
-        client.wait(primise) # no error
+        client.wait(promise) # no error
 
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       immediate=True, body='')
         with self.assertRaises(puka.NoConsumers):
-            client.wait(primise)
+            client.wait(promise)
 
-        primise = client.queue_delete(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
 
     def test_persistent(self):
         client = puka.Client(self.amqp_url)
-        primise = client.connect()
-        client.wait(primise)
+        promise = client.connect()
+        client.wait(promise)
 
-        primise = client.queue_declare(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body=self.msg) # persistence=default
-        client.wait(primise)
+        client.wait(promise)
 
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body=self.msg,
                                       headers={'persistent':True})
-        client.wait(primise)
+        client.wait(promise)
 
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body=self.msg,
                                       headers={'persistent':False})
-        client.wait(primise)
+        client.wait(promise)
 
-        primise = client.basic_get(queue=self.name, no_ack=True)
-        result = client.wait(primise)
+        promise = client.basic_get(queue=self.name, no_ack=True)
+        result = client.wait(promise)
         self.assertTrue(result['headers']['persistent'])
         self.assertEquals(result['headers']['delivery_mode'], 2)
 
-        primise = client.basic_get(queue=self.name, no_ack=True)
-        result = client.wait(primise)
+        promise = client.basic_get(queue=self.name, no_ack=True)
+        result = client.wait(promise)
         self.assertTrue(result['headers']['persistent'])
         self.assertEquals(result['headers']['delivery_mode'], 2)
 
-        primise = client.basic_get(queue=self.name, no_ack=True)
-        result = client.wait(primise)
+        promise = client.basic_get(queue=self.name, no_ack=True)
+        result = client.wait(promise)
         self.assertTrue(not result['headers']['persistent'])
         self.assertTrue('delivery_mode' not in result['headers'])
 
-        primise = client.queue_delete(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
 
     def test_basic_reject(self):
         client = puka.Client(self.amqp_url)
-        primise = client.connect()
-        client.wait(primise)
+        promise = client.connect()
+        client.wait(promise)
 
-        primise = client.queue_declare(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body='a')
-        client.wait(primise)
+        client.wait(promise)
 
         t = client.basic_get(queue=self.name)
         r = client.wait(t)
@@ -200,14 +200,14 @@ class TestBasic(base.TestCase):
         self.assertEqual(r['body'], 'a')
         self.assertTrue(r['redelivered'])
 
-        primise = client.queue_delete(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
 
     def test_properties(self):
         client = puka.Client(self.amqp_url)
-        primise = client.connect()
-        client.wait(primise)
+        promise = client.connect()
+        client.wait(promise)
 
         t = client.queue_declare(queue=self.name)
         client.wait(t)
@@ -244,160 +244,160 @@ class TestBasic(base.TestCase):
 
         self.assertEqual(headers, recv_headers)
 
-        primise = client.queue_delete(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
 
     def test_basic_ack_fail(self):
         client = puka.Client(self.amqp_url)
-        primise = client.connect()
-        client.wait(primise)
+        promise = client.connect()
+        client.wait(promise)
 
-        primise = client.queue_declare(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body='a')
-        client.wait(primise)
+        client.wait(promise)
 
-        primise = client.basic_consume(queue=self.name)
-        result = client.wait(primise)
+        promise = client.basic_consume(queue=self.name)
+        result = client.wait(promise)
 
         with self.assertRaises(puka.PreconditionFailed):
             r2 = result.copy()
             r2['delivery_tag'] = 999
             client.basic_ack(r2)
-            client.wait(primise)
+            client.wait(promise)
 
-        primise = client.basic_consume(queue=self.name)
-        result = client.wait(primise)
+        promise = client.basic_consume(queue=self.name)
+        result = client.wait(promise)
         client.basic_ack(result)
 
         with self.assertRaises(AssertionError):
             client.basic_ack(result)
 
-        primise = client.queue_delete(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
 
     def test_basic_cancel(self):
         client = puka.Client(self.amqp_url)
-        primise = client.connect()
-        client.wait(primise)
+        promise = client.connect()
+        client.wait(promise)
 
-        primise = client.queue_declare(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
         for i in range(2):
-            primise = client.basic_publish(exchange='', routing_key=self.name,
+            promise = client.basic_publish(exchange='', routing_key=self.name,
                                           body='a')
-            client.wait(primise)
+            client.wait(promise)
 
-        consume_primise = client.basic_consume(queue=self.name)
-        msg1 = client.wait(consume_primise)
+        consume_promise = client.basic_consume(queue=self.name)
+        msg1 = client.wait(consume_promise)
         self.assertEqual(msg1['body'], 'a')
         client.basic_ack(msg1)
 
-        primise = client.basic_cancel(consume_primise)
-        result = client.wait(primise)
+        promise = client.basic_cancel(consume_promise)
+        result = client.wait(promise)
         self.assertTrue('consumer_tag' in result)
 
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body='b')
-        client.wait(primise)
+        client.wait(promise)
 
-        primise = client.queue_delete(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
 
     def test_close(self):
         client = puka.Client(self.amqp_url)
-        primise = client.connect()
-        client.wait(primise)
+        promise = client.connect()
+        client.wait(promise)
 
-        primise = client.queue_declare(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body=self.msg)
-        client.wait(primise)
+        client.wait(promise)
 
-        consume_primise = client.basic_consume(queue=self.name)
-        msg_result = client.wait(consume_primise)
+        consume_promise = client.basic_consume(queue=self.name)
+        msg_result = client.wait(consume_promise)
 
-        primise = client.queue_delete(self.name)
-        client.wait(primise)
+        promise = client.queue_delete(self.name)
+        client.wait(promise)
 
-        primise = client.close()
-        client.wait(primise)
+        promise = client.close()
+        client.wait(promise)
 
 
     def test_basic_consume_fail(self):
         client = puka.Client(self.amqp_url)
-        primise = client.connect()
-        client.wait(primise)
+        promise = client.connect()
+        client.wait(promise)
 
-        consume_primise = client.basic_consume(queue='bad_q_name')
+        consume_promise = client.basic_consume(queue='bad_q_name')
         with self.assertRaises(puka.NotFound):
-            msg_result = client.wait(consume_primise)
+            msg_result = client.wait(consume_promise)
 
-        primise = client.close()
-        client.wait(primise)
+        promise = client.close()
+        client.wait(promise)
 
     def test_broken_ack_on_close(self):
         client = puka.Client(self.amqp_url)
-        primise = client.connect()
-        client.wait(primise)
+        promise = client.connect()
+        client.wait(promise)
 
-        primise = client.queue_declare()
-        qname = client.wait(primise)['queue']
+        promise = client.queue_declare()
+        qname = client.wait(promise)['queue']
 
-        primise = client.basic_publish(exchange='', routing_key=qname, body='a')
-        client.wait(primise)
+        promise = client.basic_publish(exchange='', routing_key=qname, body='a')
+        client.wait(promise)
 
-        primise = client.basic_get(queue=qname)
-        r = client.wait(primise)
+        promise = client.basic_get(queue=qname)
+        r = client.wait(promise)
         self.assertEquals(r['body'], 'a')
 
-        primise = client.queue_delete(queue=qname)
-        client.wait(primise)
+        promise = client.queue_delete(queue=qname)
+        client.wait(promise)
 
-        primise = client.close()
-        client.wait(primise)
+        promise = client.close()
+        client.wait(promise)
 
     @base.connect
     def test_basic_qos(self, client):
-        primise = client.queue_declare(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body='a')
-        client.wait(primise)
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        client.wait(promise)
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body='b')
-        client.wait(primise)
-        primise = client.basic_publish(exchange='', routing_key=self.name,
+        client.wait(promise)
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body='c')
-        client.wait(primise)
+        client.wait(promise)
 
-        consume_primise = client.basic_consume(queue=self.name, prefetch_count=1)
-        result = client.wait(consume_primise, timeout=0.1)
+        consume_promise = client.basic_consume(queue=self.name, prefetch_count=1)
+        result = client.wait(consume_promise, timeout=0.1)
         self.assertEqual(result['body'], 'a')
 
-        result = client.wait(consume_primise, timeout=0.1)
+        result = client.wait(consume_promise, timeout=0.1)
         self.assertEqual(result, None)
 
-        primise = client.basic_qos(consume_primise, prefetch_count=2)
-        result = client.wait(primise)
+        promise = client.basic_qos(consume_promise, prefetch_count=2)
+        result = client.wait(promise)
 
-        result = client.wait(consume_primise, timeout=0.1)
+        result = client.wait(consume_promise, timeout=0.1)
         self.assertEqual(result['body'], 'b')
 
-        result = client.wait(consume_primise, timeout=0.1)
+        result = client.wait(consume_promise, timeout=0.1)
         self.assertEqual(result, None)
 
-        primise = client.queue_delete(queue=self.name)
-        client.wait(primise)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
 
 

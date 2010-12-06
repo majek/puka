@@ -13,8 +13,8 @@ counter_t0 = time.time()
 
 def main():
     client = puka.Client("amqp://localhost/")
-    primise = client.connect()
-    client.wait(primise)
+    promise = client.connect()
+    client.wait(promise)
 
     body='\x00'
 

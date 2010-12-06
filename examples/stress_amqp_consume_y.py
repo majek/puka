@@ -27,17 +27,17 @@ PRIMISES = {}
 def blah(method):
     def wrapper(client, *args, **kwargs):
         gen = method(client, *args, **kwargs)
-        primise = gen.next()
-        client.set_callback(primise, lambda t, result: \
+        promise = gen.next()
+        client.set_callback(promise, lambda t, result: \
                                 callback_wrapper(client, gen, t, result))
-        PRIMISES[gen] = primise
+        PRIMISES[gen] = promise
     return wrapper
 
 def callback_wrapper(client, gen, t, result):
-    primise = gen.send(result)
-    client.set_callback(primise, lambda t, result: \
+    promise = gen.send(result)
+    client.set_callback(promise, lambda t, result: \
                             callback_wrapper(client, gen, t, result))
-    PRIMISES[gen] = primise
+    PRIMISES[gen] = promise
 
 
 @blah
@@ -48,14 +48,14 @@ def worker(client, q, msg_cnt, body, prefetch_cnt, inc, avg):
     while fill > 0:
         fill -= BURST_SIZE
         for i in xrange(BURST_SIZE):
-            primise = client.basic_publish(exchange='', routing_key=q,
+            promise = client.basic_publish(exchange='', routing_key=q,
                                           body=body, headers=headers)
-        yield primise # Wait only for one in burst (the last one).
+        yield promise # Wait only for one in burst (the last one).
         inc(BURST_SIZE)
 
-    consume_primise = client.basic_consume(queue=q, prefetch_count=prefetch_cnt)
+    consume_promise = client.basic_consume(queue=q, prefetch_count=prefetch_cnt)
     while True:
-        msg = (yield consume_primise)
+        msg = (yield consume_promise)
         t0 = time.time()
         yield client.basic_publish(exchange='', routing_key=q,
                                    body=body, headers=headers)
@@ -68,8 +68,8 @@ average = average_count = 0.0
 
 def main():
     client = puka.Client(AMQP_URL)
-    primise = client.connect()
-    client.wait(primise)
+    promise = client.connect()
+    client.wait(promise)
 
     def inc(value=1):
         global counter

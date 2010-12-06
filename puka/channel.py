@@ -32,21 +32,21 @@ class ChannelCollection(object):
         self.channels[number] = channel
         return channel
 
-    def allocate(self, primise, on_channel):
+    def allocate(self, promise, on_channel):
         if self.free_channels:
             channel = self.free_channels.pop()
-            channel.primise = primise
-            primise.channel = channel
-            primise.after_machine_callback = on_channel
+            channel.promise = promise
+            promise.channel = channel
+            promise.after_machine_callback = on_channel
         else:
             channel = self.new()
-            channel.primise = primise
-            primise.channel = channel
-            machine.channel_open(primise, on_channel)
+            channel.promise = promise
+            promise.channel = channel
+            machine.channel_open(promise, on_channel)
         return channel
 
     def deallocate(self, channel):
-        channel.primise.channel = channel.primise = None
+        channel.promise.channel = channel.promise = None
         if channel.alive:
             self.free_channels.append( channel )
         else:
@@ -60,7 +60,7 @@ class Channel(object):
 
     def __init__(self, number):
         self.number = number
-        self.primise = None
+        self.promise = None
         self._clear_inbound_state()
 
     def _clear_inbound_state(self):
@@ -102,5 +102,5 @@ class Channel(object):
             return self._handle_inbound(result)
 
     def _handle_inbound(self, result):
-        self.primise.recv_method(result)
+        self.promise.recv_method(result)
 

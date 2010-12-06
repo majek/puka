@@ -17,15 +17,15 @@ Puka exposes a simple, easy to understand API. Take a look at the
 
     client = puka.Puka("amqp://localhost/")
 
-    primise = client.connect()
-    client.wait(primise)
+    promise = client.connect()
+    client.wait(promise)
 
-    primise = client.queue_declare(queue='test')
-    client.wait(primise)
+    promise = client.queue_declare(queue='test')
+    client.wait(promise)
 
-    primise = client.basic_publish(exchange='', routing_key='test',
+    promise = client.basic_publish(exchange='', routing_key='test',
                                   body='Hello world!')
-    client.wait(primise)
+    client.wait(promise)
 
 
 Puka is asynchronous
@@ -39,15 +39,15 @@ Here's the same code written in an asynchronous way:
 
     import puka
 
-    def on_connection(primise, result):
+    def on_connection(promise, result):
         client.queue_declare(queue='test', callback=on_queue_declare)
 
-    def on_queue_declare(primise, result):
+    def on_queue_declare(promise, result):
         client.basic_publish(exchange='', routing_key='test',
                              body="Hello world!",
                              callback=on_basic_publish)
 
-    def on_basic_publish(primise, result):
+    def on_basic_publish(promise, result):
         print " [*] Message sent"
         client.loop_break()
 
@@ -87,8 +87,8 @@ time. This can be exploited to achieve a degree of parallelism. For
 example, this snippet creates 1000 queues in parallel:
 
     promises = [client.queue_declare(queue='a%04i' % i) for i in range(1000)]
-    for primise in promises:
-        client.wait(primise)
+    for promise in promises:
+        client.wait(promise)
 
 Puka is sane
 ------------
