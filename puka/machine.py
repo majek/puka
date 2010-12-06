@@ -6,6 +6,8 @@ from . import spec
 
 log = logging.getLogger('puka')
 
+def _nothing(t):
+    pass
 
 ####
 def connection_handshake(conn):
@@ -47,13 +49,18 @@ def _connection_open_ok(ct, result):
 
 def publish_ticket(conn):
     pt = conn.tickets.new(_pt_channel_open_ok)
+    pt.x_async_enabled = False
     pt.x_async_id = 0
-    pt.x_async_map = {}
+    pt.x_async_inflight = {}
+    pt.x_async_next = []
     conn.x_publish_ticket = pt
 
 def _pt_channel_open_ok(pt, _result=None):
+    pt.x_async_enabled = True
     pt.register(spec.METHOD_CHANNEL_CLOSE, _pt_channel_close)
     pt.register(spec.METHOD_BASIC_RETURN, _pt_basic_return)
+    # Send remaining messages.
+    _pt_async_flush(pt)
 
 def fix_basic_publish_headers(headers):
     nheaders = {}
@@ -73,51 +80,66 @@ def basic_publish(conn, exchange, routing_key, mandatory=False,
     nheaders = fix_basic_publish_headers(headers)
     assert 'x-puka-async-id' not in nheaders
     nheaders['x-puka-async-id'] = async_id
-    eheaders = {'x-puka-async-id': async_id, 'x-puka-footer': True}
 
-    t = conn.tickets.new(_basic_publish, no_channel=True)
-    t.x_frames = (list(spec.encode_basic_publish(exchange, routing_key,
-                                                 mandatory, immediate, nheaders,
-                                                 body, conn.frame_max)) +
-                  list(spec.encode_basic_publish("", "", False, True, eheaders,
-                                                 "", conn.frame_max)))
-    pt.x_async_map[async_id] = t
+    t = conn.tickets.new(_nothing, no_channel=True)
+    frames = spec.encode_basic_publish(exchange, routing_key, mandatory,
+                                       immediate, nheaders, body,
+                                       conn.frame_max)
+    pt.x_async_next.append( (async_id, (_pt_basic_return_user, t), frames) )
+    _pt_async_flush(pt)
     return t
 
-def _basic_publish(t):
-    pt = t.conn.x_publish_ticket
-    pt.send_frames(t.x_frames)
+def _pt_async_flush(pt):
+    if not pt.x_async_inflight and pt.x_async_next and pt.x_async_enabled:
+        frames_acc = []
+        for async_id, cb_t, frames in pt.x_async_next:
+            pt.x_async_inflight[async_id] = cb_t
+            frames_acc.extend( frames )
+        pt.x_async_next = []
+
+        async_id = pt.x_async_id
+        pt.x_async_id += 1
+        pt.x_async_inflight[async_id] = (_pt_basic_return_footer, None)
+        eheaders = {'x-puka-async-id': async_id, 'x-puka-footer': True}
+        frames = spec.encode_basic_publish('', '', False, True, eheaders, '',
+                                           pt.conn.frame_max)
+        frames_acc.extend( frames )
+        pt.send_frames(frames_acc)
 
 def _pt_basic_return(pt, result):
     pt.register(spec.METHOD_BASIC_RETURN, _pt_basic_return)
     async_id = result['headers']['x-puka-async-id']
-    if 'x-puka-footer' in result['headers']:
-        if async_id in pt.x_async_map:
-            # Success
-            t = pt.x_async_map[async_id]
-            t.done(spec.Frame())
-            del pt.x_async_map[async_id]
-        else:
-            # Failure was already handled before
-            pass
-    else: # Failure, user message returned.
-        assert async_id in pt.x_async_map, "Oops. Ordering went realy wrong."
-        t = pt.x_async_map[async_id]
+    cb, t = pt.x_async_inflight[async_id]
+    del pt.x_async_inflight[async_id]
+    cb(pt, t, result)
+
+def _pt_basic_return_footer(pt, _t, result):
+    # Ack all other messages.
+    ack = spec.Frame()
+    for cb, t in pt.x_async_inflight.itervalues():
+        cb(pt, t, ack)
+    pt.x_async_inflight.clear()
+    # Send remaining messages.
+    _pt_async_flush(pt)
+
+def _pt_basic_return_user(pt, t, result):
+    # Handle the direct case - when we just received a 'immediate' return.
+    if not result.is_error and 'reply_code' in result:
         exceptions.mark_frame(result)
-        t.done(result)
-        del pt.x_async_map[async_id]
+    t.done(result)
 
 def _pt_channel_close(pt, result):
+    pt.x_async_enabled = False
     # Start off with reestablishing the channel
     pt.register(spec.METHOD_CHANNEL_OPEN_OK, _pt_channel_open_ok)
     pt.send_frames( list(spec.encode_channel_close_ok()) +
                     list(spec.encode_channel_open('')))
-    # All the publishes need to be marked as failed.
+    # All the publishes are marked as failed.
     exceptions.mark_frame(result)
-    for async_id, t in pt.x_async_map.items():
-        t.done(result)
-        del pt.x_async_map[async_id]
-
+    for cb, t in pt.x_async_inflight.itervalues():
+        if t: # Not footer handler
+            cb(pt, t, result)
+    pt.x_async_inflight.clear()
 
 def _connection_close(t, result):
     exceptions.mark_frame(result)

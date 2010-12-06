@@ -145,10 +145,15 @@ class Connection(object):
         return self.frame_max
 
 
-    def wait(self, ticket_numbers, timeout=None):
+    def wait(self, ticket_numbers, timeout=None, raise_errors=True):
         '''
         Wait for selected tickets. Exit after ticket runs a callback.
         '''
+        if timeout is not None:
+            t1 = time.time() + timeout
+        else:
+            td = None
+
         if isinstance(ticket_numbers, int):
             ticket_numbers = [ticket_numbers]
         ticket_numbers = set(ticket_numbers)
@@ -158,12 +163,19 @@ class Connection(object):
                 if not ready:
                     break
                 ticket_number = ready.pop()
-                return self.tickets.run_callback(ticket_number)
+                return self.tickets.run_callback(ticket_number,
+                                                 raise_errors=raise_errors)
+
+            if timeout is not None:
+                t0 = time.time()
+                td = t1 - t0
+                if td < 0:
+                    break
 
             r, w, e = select.select([self],
                                     [self] if self.needs_write() else [],
                                     [self],
-                                    timeout)
+                                    td)
             if r or e:
                 self.on_read()
             if w:
