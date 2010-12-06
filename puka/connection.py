@@ -12,7 +12,7 @@ from . import exceptions
 from . import machine
 from . import simplebuffer
 from . import spec
-from . import ticket as promise
+from . import promise
 
 log = logging.getLogger('puka')
 
