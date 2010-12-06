@@ -100,7 +100,7 @@ handling.
 
 
 Primise interface
-++++++++++++++++
++++++++++++++++++
 
 Functions below return a `primise`. It's a small number, that identifies
 an asynchronous request. You can wait for a `primise` to be done and
