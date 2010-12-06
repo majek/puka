@@ -22,7 +22,7 @@ BODY_SIZE=1
 PREFETCH_CNT=1
 
 
-PRIMISES = {}
+PROMISES = {}
 
 def blah(method):
     def wrapper(client, *args, **kwargs):
@@ -30,14 +30,14 @@ def blah(method):
         promise = gen.next()
         client.set_callback(promise, lambda t, result: \
                                 callback_wrapper(client, gen, t, result))
-        PRIMISES[gen] = promise
+        PROMISES[gen] = promise
     return wrapper
 
 def callback_wrapper(client, gen, t, result):
     promise = gen.send(result)
     client.set_callback(promise, lambda t, result: \
                             callback_wrapper(client, gen, t, result))
-    PRIMISES[gen] = promise
+    PROMISES[gen] = promise
 
 
 @blah
@@ -91,7 +91,7 @@ def main():
         while True:
             td = t1 - time.time()
             if td > 0:
-                client.wait(PRIMISES.values(), timeout=td)
+                client.wait(PROMISES.values(), timeout=td)
             else:
                 break
         global counter, average, average_count
