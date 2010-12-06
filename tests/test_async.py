@@ -34,52 +34,52 @@ class TestBasic(base.TestCase):
         client.connect(callback=on_connect)
         client.loop()
 
-        ticket = client.close()
-        client.wait(ticket)
+        primise = client.close()
+        client.wait(primise)
 
 
     def test_close(self):
-        def on_connection(ticket, result):
+        def on_connection(primise, result):
             client.queue_declare(queue=self.name, callback=on_queue_declare)
 
-        def on_queue_declare(ticket, result):
+        def on_queue_declare(primise, result):
             client.basic_publish(exchange='', routing_key=self.name,
                                  body="Hello world!",
                                  callback=on_basic_publish)
 
-        def on_basic_publish(ticket, result):
+        def on_basic_publish(primise, result):
             client.queue_delete(queue=self.name,
                                 callback=on_queue_delete)
 
-        def on_queue_delete(ticket, result):
+        def on_queue_delete(primise, result):
             client.loop_break()
 
         client = puka.Client(self.amqp_url)
         client.connect(callback=on_connection)
         client.loop()
 
-        ticket = client.close()
-        client.wait(ticket)
+        primise = client.close()
+        client.wait(primise)
 
 
     def test_consume_close(self):
-        def on_connection(ticket, result):
+        def on_connection(primise, result):
             client.queue_declare(queue=self.name, auto_delete=True,
                                  callback=on_queue_declare)
 
-        def on_queue_declare(ticket, result):
+        def on_queue_declare(primise, result):
             client.basic_consume(queue=self.name, callback=on_basic_consume)
             client.loop_break()
 
-        def on_basic_consume(ticket, result):
+        def on_basic_consume(primise, result):
             self.assertTrue(result.is_error)
 
         client = puka.Client(self.amqp_url)
         client.connect(callback=on_connection)
         client.loop()
 
-        ticket = client.close()
-        client.wait(ticket)
+        primise = client.close()
+        client.wait(primise)
 
         client.run_any_callbacks()
 

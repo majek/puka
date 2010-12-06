@@ -7,22 +7,22 @@ import puka
 
 
 client = puka.Client("amqp://localhost/")
-ticket = client.connect()
-client.wait(ticket)
+primise = client.connect()
+client.wait(primise)
 
-ticket = client.queue_declare(queue='test')
-client.wait(ticket)
+primise = client.queue_declare(queue='test')
+client.wait(primise)
 
 print "  [*] Waiting for a message. Press CTRL+C to quit."
 
-consume_ticket = client.basic_consume(queue='test')
-result = client.wait(consume_ticket)
+consume_primise = client.basic_consume(queue='test')
+result = client.wait(consume_primise)
 print " [x] Received message %r" % (result,)
 
 client.basic_ack(result)
 
-client.basic_cancel(consume_ticket)
-client.wait(consume_ticket)
+client.basic_cancel(consume_primise)
+client.wait(consume_primise)
 
-ticket = client.close()
-client.wait(ticket)
+primise = client.close()
+client.wait(primise)

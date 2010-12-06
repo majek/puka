@@ -13,8 +13,8 @@ def _nothing(t):
 def connection_handshake(conn):
     # Bypass conn._send, we want the socket to be writable first.
     conn.send_buf.write(spec.PREAMBLE)
-    t = conn.tickets.new(_connection_handshake, reentrant=True)
-    conn.x_connection_ticket = t
+    t = conn.promises.new(_connection_handshake, reentrant=True)
+    conn.x_connection_promise = t
     return t
 
 def _connection_handshake(t):
@@ -42,18 +42,18 @@ def _connection_tune(t, result):
 
 def _connection_open_ok(ct, result):
     ct.register(spec.METHOD_CONNECTION_CLOSE, _connection_close)
-    # Never free the ticket and channel.
+    # Never free the promise and channel.
     ct.ping(ct.x_cached_result)
-    ct.conn.x_connection_ticket = ct
-    publish_ticket(ct.conn)
+    ct.conn.x_connection_promise = ct
+    publish_promise(ct.conn)
 
-def publish_ticket(conn):
-    pt = conn.tickets.new(_pt_channel_open_ok)
+def publish_promise(conn):
+    pt = conn.promises.new(_pt_channel_open_ok)
     pt.x_async_enabled = False
     pt.x_async_id = 0
     pt.x_async_inflight = {}
     pt.x_async_next = []
-    conn.x_publish_ticket = pt
+    conn.x_publish_promise = pt
 
 def _pt_channel_open_ok(pt, _result=None):
     pt.x_async_enabled = True
@@ -73,7 +73,7 @@ def fix_basic_publish_headers(headers):
 
 def basic_publish(conn, exchange, routing_key, mandatory=False,
                         immediate=False, headers={}, body=''):
-    pt = conn.x_publish_ticket
+    pt = conn.x_publish_promise
     async_id = pt.x_async_id
     pt.x_async_id += 1
 
@@ -81,7 +81,7 @@ def basic_publish(conn, exchange, routing_key, mandatory=False,
     assert 'x-puka-async-id' not in nheaders
     nheaders['x-puka-async-id'] = async_id
 
-    t = conn.tickets.new(_nothing, no_channel=True)
+    t = conn.promises.new(_nothing, no_channel=True)
     frames = spec.encode_basic_publish(exchange, routing_key, mandatory,
                                        immediate, nheaders, body,
                                        conn.frame_max)
@@ -149,15 +149,15 @@ def _connection_close(t, result):
     t.conn._shutdown(result)
 
 def connection_close(conn):
-    t = conn.x_connection_ticket
+    t = conn.x_connection_promise
     t.register(spec.METHOD_CONNECTION_CLOSE_OK, _connection_close_ok)
     t.send_frames(spec.encode_connection_close(200, '', 0, 0))
     return t
 
 def _connection_close_ok(t, result):
-    # Ping this ticket with success.
+    # Ping this promise with success.
     t.ping(copy.copy(result))
-    # Cancel all our tickets with failure.
+    # Cancel all our promises with failure.
     exceptions.mark_frame(result)
     t.conn._shutdown(result)
 
@@ -175,7 +175,7 @@ def _channel_open_ok(t, result):
 ####
 def queue_declare(conn, queue='', durable=False, exclusive=False,
                   auto_delete=False, arguments={}):
-    t = conn.tickets.new(_queue_declare)
+    t = conn.promises.new(_queue_declare)
     t.x_frames = spec.encode_queue_declare(queue, False, durable, exclusive,
                                            auto_delete, arguments)
     return t
@@ -200,7 +200,7 @@ def basic_consume(conn, queue, prefetch_count=0, no_local=False, no_ack=False,
 
 ####
 def basic_consume_multi(conn, queues, prefetch_count=0, no_ack=False):
-    t = conn.tickets.new(_bcm_basic_qos, reentrant=True)
+    t = conn.promises.new(_bcm_basic_qos, reentrant=True)
     t.x_frames = spec.encode_basic_qos(0, prefetch_count, False)
     t.x_consumes = []
     for item in queues:
@@ -239,7 +239,7 @@ def _bcm_basic_consume_ok(t, consume_result):
 
 def _bcm_basic_deliver(t, msg_result):
     t.register(spec.METHOD_BASIC_DELIVER, _bcm_basic_deliver)
-    msg_result['ticket_number'] = t.number
+    msg_result['promise_number'] = t.number
     if t.x_no_ack is False:
         t.refcnt_inc()
     t.ping(msg_result)
@@ -247,7 +247,7 @@ def _bcm_basic_deliver(t, msg_result):
 
 ##
 def basic_ack(conn, msg_result):
-    t = conn.tickets.by_number(msg_result['ticket_number'])
+    t = conn.promises.by_number(msg_result['promise_number'])
     t.send_frames( spec.encode_basic_ack(msg_result['delivery_tag'], False) )
     assert t.x_no_ack is False
     t.refcnt_dec()
@@ -255,7 +255,7 @@ def basic_ack(conn, msg_result):
 
 ##
 def basic_reject(conn, msg_result):
-    t = conn.tickets.by_number(msg_result['ticket_number'])
+    t = conn.promises.by_number(msg_result['promise_number'])
     # For basic.reject requeue must be True.
     t.send_frames( spec.encode_basic_reject(msg_result['delivery_tag'], True) )
     assert t.x_no_ack is False
@@ -263,10 +263,10 @@ def basic_reject(conn, msg_result):
     return t
 
 ##
-def basic_qos(conn, consume_ticket, prefetch_count=0):
+def basic_qos(conn, consume_promise, prefetch_count=0):
     # TODO: race?
-    t = conn.tickets.new(_basic_qos, no_channel=True)
-    t.x_ct = conn.tickets.by_number(consume_ticket)
+    t = conn.promises.new(_basic_qos, no_channel=True)
+    t.x_ct = conn.promises.by_number(consume_promise)
     t.x_frames = spec.encode_basic_qos(0, prefetch_count, False)
     return t
 
@@ -274,17 +274,17 @@ def _basic_qos(t):
     ct = t.x_ct
     ct.register(spec.METHOD_BASIC_QOS_OK, _basic_qos_ok)
     ct.send_frames( t.x_frames )
-    ct.x_qos_ticket = t
+    ct.x_qos_promise = t
 
 def _basic_qos_ok(ct, result):
-    t = ct.x_qos_ticket
+    t = ct.x_qos_promise
     t.done(result)
 
 ##
-def basic_cancel(conn, consume_ticket):
+def basic_cancel(conn, consume_promise):
     # TODO: race?
-    t = conn.tickets.new(_basic_cancel, no_channel=True)
-    t.x_ct = conn.tickets.by_number(consume_ticket)
+    t = conn.promises.new(_basic_cancel, no_channel=True)
+    t.x_ct = conn.promises.by_number(consume_promise)
     return t
 
 def _basic_cancel(t):
@@ -307,7 +307,7 @@ def _basic_cancel_ok(ct, result):
 
 ####
 def basic_get(conn, queue, no_ack=False):
-    t = conn.tickets.new(_basic_get)
+    t = conn.promises.new(_basic_get)
     t.x_frames = spec.encode_basic_get(queue, no_ack)
     t.x_no_ack = no_ack
     return t
@@ -318,7 +318,7 @@ def _basic_get(t):
     t.send_frames(t.x_frames)
 
 def _basic_get_ok(t, msg_result):
-    msg_result['ticket_number'] = t.number
+    msg_result['promise_number'] = t.number
     if t.x_no_ack is False:
         t.refcnt_inc()
     t.done(msg_result)
@@ -333,7 +333,7 @@ def exchange_declare(conn, exchange, type='direct', durable=False,
                      auto_delete=False, arguments={}):
     # Exchanges don't support 'x-expires', so we support only durable exchanges.
     auto_delete = False
-    t = conn.tickets.new(_exchange_declare)
+    t = conn.promises.new(_exchange_declare)
 
     t.x_frames = spec.encode_exchange_declare(exchange, type, False, durable,
                                               auto_delete, False, arguments)
@@ -357,46 +357,46 @@ def _generic_callback_ok(t, result):
 
 ####
 def exchange_delete(conn, exchange, if_unused=False):
-    t = conn.tickets.new(_generic_callback)
+    t = conn.promises.new(_generic_callback)
     t.x_method = spec.METHOD_EXCHANGE_DELETE_OK
     t.x_frames = spec.encode_exchange_delete(exchange, if_unused)
     return t
 
 def exchange_bind(conn, destination, source, binding_key='', arguments={}):
-    t = conn.tickets.new(_generic_callback)
+    t = conn.promises.new(_generic_callback)
     t.x_method = spec.METHOD_EXCHANGE_BIND_OK
     t.x_frames = spec.encode_exchange_bind(destination, source, binding_key,
                                            arguments)
     return t
 
 def exchange_unbind(conn, destination, source, binding_key='', arguments={}):
-    t = conn.tickets.new(_generic_callback)
+    t = conn.promises.new(_generic_callback)
     t.x_method = spec.METHOD_EXCHANGE_UNBIND_OK
     t.x_frames = spec.encode_exchange_unbind(destination, source, binding_key,
                                              arguments)
     return t
 
 def queue_delete(conn, queue, if_unused=False, if_empty=False):
-    t = conn.tickets.new(_generic_callback)
+    t = conn.promises.new(_generic_callback)
     t.x_method = spec.METHOD_QUEUE_DELETE_OK
     t.x_frames = spec.encode_queue_delete(queue, if_unused, if_empty)
     return t
 
 def queue_purge(conn, queue):
-    t = conn.tickets.new(_generic_callback)
+    t = conn.promises.new(_generic_callback)
     t.x_method = spec.METHOD_QUEUE_PURGE_OK
     t.x_frames = spec.encode_queue_purge(queue)
     return t
 
 def queue_bind(conn, queue, exchange, binding_key='', arguments={}):
-    t = conn.tickets.new(_generic_callback)
+    t = conn.promises.new(_generic_callback)
     t.x_method = spec.METHOD_QUEUE_BIND_OK
     t.x_frames = spec.encode_queue_bind(queue, exchange, binding_key,
                                         arguments)
     return t
 
 def queue_unbind(conn, queue, exchange, binding_key='', arguments={}):
-    t = conn.tickets.new(_generic_callback)
+    t = conn.promises.new(_generic_callback)
     t.x_method = spec.METHOD_QUEUE_UNBIND_OK
     t.x_frames = spec.encode_queue_unbind(queue, exchange, binding_key,
                                           arguments)

@@ -8,40 +8,40 @@ log = logging.getLogger('puka')
 
 
 
-class TicketCollection(object):
+class PromiseCollection(object):
     def __init__(self, conn):
         self.conn = conn
-        self._tickets = {}
-        self.ticket_number = 1
+        self._promises = {}
+        self.promise_number = 1
         self.ready = set()
 
     def new(self, on_channel, **kwargs):
-        number = self.ticket_number
-        self.ticket_number += 1
-        ticket = Ticket(self.conn, number, on_channel, **kwargs)
-        self._tickets[number] = ticket
-        return ticket
+        number = self.promise_number
+        self.promise_number += 1
+        promise = Promise(self.conn, number, on_channel, **kwargs)
+        self._promises[number] = promise
+        return promise
 
-    def free(self, ticket):
-        del self._tickets[ticket.number]
+    def free(self, promise):
+        del self._promises[promise.number]
 
-    def mark_ready(self, ticket):
-        self.ready.add( ticket.number )
+    def mark_ready(self, promise):
+        self.ready.add( promise.number )
 
-    def unmark_ready(self, ticket):
-        self.ready.remove( ticket.number )
+    def unmark_ready(self, promise):
+        self.ready.remove( promise.number )
 
     def run_callback(self, number, **kwargs):
-        return self._tickets[number].run_callback(**kwargs)
+        return self._promises[number].run_callback(**kwargs)
 
     def by_number(self, number):
-        return self._tickets[number]
+        return self._promises[number]
 
     def all(self):
-        return self._tickets.values()
+        return self._promises.values()
 
 
-class Ticket(object):
+class Promise(object):
     to_be_released = False
     delay_release = None
     user_callback = None
@@ -108,7 +108,7 @@ class Ticket(object):
             self.callbacks.append( (self.user_callback, result) )
         else:
             self.callbacks.append( (None, result) )
-        self.conn.tickets.mark_ready(self)
+        self.conn.promises.mark_ready(self)
         self.to_be_released = True
         self.delay_release = delay_release
         self.methods.clear()
@@ -118,13 +118,13 @@ class Ticket(object):
         assert self.to_be_released == False
         assert self.reentrant
         self.callbacks.append( (self.user_callback, result) )
-        self.conn.tickets.mark_ready(self)
+        self.conn.promises.mark_ready(self)
 
 
     def run_callback(self, raise_errors=True):
         user_callback, result = self.callbacks.pop(0)
         if not self.callbacks:
-            self.conn.tickets.unmark_ready(self)
+            self.conn.promises.unmark_ready(self)
         if user_callback:
             user_callback(self.number, result)
             # We may be already freed now.
@@ -164,12 +164,12 @@ class Ticket(object):
         if self.delay_release is None:
             if self.channel:
                 self.conn.channels.deallocate(self.channel)
-            self.conn.tickets.free(self)
+            self.conn.promises.free(self)
         elif self.delay_release is Ellipsis:
             # Never free.
             pass
         else:
             # TODO:
-            print "Unable to free channel %i (ticket %i)" % \
+            print "Unable to free channel %i (promise %i)" % \
                 (self.channel.number, self.number)
         self.number = None

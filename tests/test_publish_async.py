@@ -13,122 +13,122 @@ AMQP_URL=os.getenv('AMQP_URL')
 class TestPublishAsync(base.TestCase):
     def test_simple_roundtrip(self):
         client = puka.Client(self.amqp_url)
-        ticket = client.connect()
-        client.wait(ticket)
+        promise = client.connect()
+        client.wait(promise)
 
-        ticket = client.queue_declare(queue=self.name)
-        client.wait(ticket)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
-        ticket = client.basic_publish(exchange='', routing_key=self.name,
+        promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body=self.msg)
-        client.wait(ticket)
+        client.wait(promise)
 
-        consume_ticket = client.basic_consume(queue=self.name, no_ack=True)
-        result = client.wait(consume_ticket)
+        consume_promise = client.basic_consume(queue=self.name, no_ack=True)
+        result = client.wait(consume_promise)
         self.assertEqual(result['body'], self.msg)
 
-        ticket = client.queue_delete(queue=self.name)
-        client.wait(ticket)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
     def test_big_failure(self):
         client = puka.Client(self.amqp_url)
-        ticket = client.connect()
-        client.wait(ticket)
+        promise = client.connect()
+        client.wait(promise)
 
         # synchronize publish channel - give time for chanel-open
-        ticket = client.queue_declare(queue=self.name)
-        client.wait(ticket)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
-        ticket1 = client.basic_publish(exchange='', routing_key='',
+        promise1 = client.basic_publish(exchange='', routing_key='',
                                        body=self.msg)
-        ticket2 = client.basic_publish(exchange='wrong_exchange',
+        promise2 = client.basic_publish(exchange='wrong_exchange',
                                        routing_key='',
                                        body=self.msg)
-        ticket3 = client.basic_publish(exchange='', routing_key='',
+        promise3 = client.basic_publish(exchange='', routing_key='',
                                        body=self.msg)
-        client.wait(ticket1)
+        client.wait(promise1)
         with self.assertRaises(puka.NotFound):
-            client.wait(ticket2)
+            client.wait(promise2)
         with self.assertRaises(puka.NotFound):
-            client.wait(ticket3)
+            client.wait(promise3)
 
-        ticket = client.basic_publish(exchange='', routing_key='',
+        promise = client.basic_publish(exchange='', routing_key='',
                                       body=self.msg)
-        client.wait(ticket)
+        client.wait(promise)
 
-        ticket = client.queue_delete(queue=self.name)
-        client.wait(ticket)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
     def test_return(self):
         client = puka.Client(self.amqp_url)
-        ticket = client.connect()
-        client.wait(ticket)
+        promise = client.connect()
+        client.wait(promise)
 
-        ticket = client.basic_publish(exchange='', routing_key='',
+        promise = client.basic_publish(exchange='', routing_key='',
                                       body=self.msg, immediate=True)
         with self.assertRaises(puka.NoConsumers):
-            client.wait(ticket)
+            client.wait(promise)
 
     def test_batched_acks(self):
         client = puka.Client(self.amqp_url)
-        ticket = client.connect()
-        client.wait(ticket)
+        promise = client.connect()
+        client.wait(promise)
 
-        ticket = client.queue_declare(queue=self.name)
-        client.wait(ticket)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
-        tickets = [client.basic_publish(exchange='', routing_key=self.name,
+        promises = [client.basic_publish(exchange='', routing_key=self.name,
                                         body=self.msg)
                    for i in range(10)]
-        responses = [client.wait(ticket) for ticket in tickets]
-        # Some of the responses are identical for few tickets.
+        responses = [client.wait(promise) for promise in promises]
+        # Some of the responses are identical for few promises.
         self.assertTrue(len(set([id(r) for r in responses])) < 10)
 
-        ticket = client.queue_delete(queue=self.name)
-        client.wait(ticket)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
     def test_batched_return(self):
         client = puka.Client(self.amqp_url)
-        ticket = client.connect()
-        client.wait(ticket)
+        promise = client.connect()
+        client.wait(promise)
 
-        ticket = client.queue_declare(queue=self.name)
-        client.wait(ticket)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
-        tickets = [client.basic_publish(exchange='',
+        promises = [client.basic_publish(exchange='',
                                         routing_key=(self.name if i != 6 \
                                                          else 'badname'),
                                         mandatory=True, body=self.msg)
                    for i in range(10)]
-        responses = [client.wait(ticket, raise_errors=False) \
-                         for ticket in tickets]
-        # Some of the responses are identical for few tickets.
+        responses = [client.wait(promise, raise_errors=False) \
+                         for promise in promises]
+        # Some of the responses are identical for few promises.
         self.assertTrue(len(set([id(r) for r in responses])) < 10)
         self.assertTrue(responses[5] is responses[7])
         self.assertEqual(responses[6]['reply_code'], 312)
 
-        ticket = client.queue_delete(queue=self.name)
-        client.wait(ticket)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
     def test_return(self):
         client = puka.Client(self.amqp_url)
-        ticket = client.connect()
-        client.wait(ticket)
+        promise = client.connect()
+        client.wait(promise)
 
-        ticket = client.queue_declare(queue=self.name)
-        client.wait(ticket)
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
 
-        ticket = client.basic_publish(exchange='', routing_key='badname',
+        promise = client.basic_publish(exchange='', routing_key='badname',
                                       immediate=True, body=self.msg)
         try:
-            client.wait(ticket)
+            client.wait(promise)
         except puka.NoConsumers, (response,):
             pass
 
         self.assertEqual(response['reply_code'], 313)
 
-        ticket = client.queue_delete(queue=self.name)
-        client.wait(ticket)
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
 
 if __name__ == '__main__':

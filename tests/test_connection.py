@@ -11,27 +11,27 @@ class TestConnection(base.TestCase):
     def test_broken_url(self):
         client = puka.Client('amqp://does.not.resolve/')
         with self.assertRaises(socket.gaierror):
-            ticket = client.connect()
+            primise = client.connect()
 
     def test_connection_refused(self):
         client = puka.Client('amqp://127.0.0.1:9999/')
         with self.assertRaises(socket.error):
             # Can raise in connect or on wait
-            ticket = client.connect()
-            client.wait(ticket)
+            primise = client.connect()
+            client.wait(primise)
 
     # The following tests take 3 seconds each, due to Rabbit.
     def test_wrong_user(self):
         client = puka.Client('amqp://xxx:bbb@127.0.0.1/')
-        ticket = client.connect()
+        primise = client.connect()
         with self.assertRaises(puka.ConnectionBroken):
-            client.wait(ticket)
+            client.wait(primise)
 
     # def test_wrong_vhost(self):
     #     client = puka.Client('amqp:///xxxx')
-    #     ticket = client.connect()
+    #     primise = client.connect()
     #     with self.assertRaises(puka.ConnectionBroken):
-    #         client.wait(ticket)
+    #         client.wait(primise)
 
 
 if __name__ == '__main__':

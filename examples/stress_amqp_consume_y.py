@@ -13,65 +13,75 @@ counter_t0 = time.time()
 headers={'persistent': False}
 
 
+#AMQP_URL="amqp://a:a@localhost/a"
 AMQP_URL="amqp://localhost/"
-QUEUE_CNT=2
-BURST_SIZE=12
-QUEUE_SIZE=1000
+QUEUE_CNT=20
+BURST_SIZE=120
+QUEUE_SIZE=17000
 BODY_SIZE=1
 PREFETCH_CNT=1
 
 
-TICKETS = {}
+PRIMISES = {}
 
 def blah(method):
     def wrapper(client, *args, **kwargs):
         gen = method(client, *args, **kwargs)
-        ticket = gen.next()
-        client.set_callback(ticket, lambda t, result: \
+        primise = gen.next()
+        client.set_callback(primise, lambda t, result: \
                                 callback_wrapper(client, gen, t, result))
-        TICKETS[gen] = ticket
+        PRIMISES[gen] = primise
     return wrapper
 
 def callback_wrapper(client, gen, t, result):
-    ticket = gen.send(result)
-    client.set_callback(ticket, lambda t, result: \
+    primise = gen.send(result)
+    client.set_callback(primise, lambda t, result: \
                             callback_wrapper(client, gen, t, result))
-    TICKETS[gen] = ticket
+    PRIMISES[gen] = primise
 
 
 @blah
-def worker(client, q, msg_cnt, body, prefetch_cnt, inc):
+def worker(client, q, msg_cnt, body, prefetch_cnt, inc, avg):
     result = (yield client.queue_declare(queue=q))
     fill = max(msg_cnt - result['message_count'], 0)
 
     while fill > 0:
         fill -= BURST_SIZE
         for i in xrange(BURST_SIZE):
-            ticket = client.basic_publish(exchange='', routing_key=q,
+            primise = client.basic_publish(exchange='', routing_key=q,
                                           body=body, headers=headers)
-        yield ticket # Wait only for one in burst (the last one).
+        yield primise # Wait only for one in burst (the last one).
         inc(BURST_SIZE)
 
-    consume_ticket = client.basic_consume(queue=q, prefetch_count=prefetch_cnt)
+    consume_primise = client.basic_consume(queue=q, prefetch_count=prefetch_cnt)
     while True:
-        msg = (yield consume_ticket)
-        client.basic_publish(exchange='', routing_key=q,
-                             body=body, headers=headers)
+        msg = (yield consume_primise)
+        t0 = time.time()
+        yield client.basic_publish(exchange='', routing_key=q,
+                                   body=body, headers=headers)
+        td = time.time() - t0
+        avg(td)
         client.basic_ack(msg)
         inc()
 
+average = average_count = 0.0
 
 def main():
     client = puka.Client(AMQP_URL)
-    ticket = client.connect()
-    client.wait(ticket)
+    primise = client.connect()
+    client.wait(primise)
 
     def inc(value=1):
         global counter
         counter += value
 
+    def avg(td):
+        global average, average_count
+        average += td
+        average_count += 1
+
     for q in ['q%04i' % i for i in range(QUEUE_CNT)]:
-        worker(client, q, QUEUE_SIZE, 'a' * BODY_SIZE, PREFETCH_CNT, inc)
+        worker(client, q, QUEUE_SIZE, 'a' * BODY_SIZE, PREFETCH_CNT, inc, avg)
 
 
     print ' [*] loop'
@@ -81,13 +91,14 @@ def main():
         while True:
             td = t1 - time.time()
             if td > 0:
-                client.wait(TICKETS.values(), timeout=td)
+                client.wait(PRIMISES.values(), timeout=td)
             else:
                 break
-        global counter
+        global counter, average, average_count
         td = time.time() - t0
-        print "send: %i " % (counter/td,)
-        counter = 0
+        average_count = max(average_count, 1.0)
+        print "send: %i  avg: %.3fms " % (counter/td, (average/average_count)*1000.0)
+        counter = average = average_count = 0
 
 
 

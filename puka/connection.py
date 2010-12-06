@@ -12,7 +12,7 @@ from . import exceptions
 from . import machine
 from . import simplebuffer
 from . import spec
-from . import ticket
+from . import ticket as promise
 
 log = logging.getLogger('puka')
 
@@ -23,7 +23,7 @@ class Connection(object):
 
     def __init__(self, amqp_url='amqp:///'):
         self.channels = channel.ChannelCollection()
-        self.tickets = ticket.TicketCollection(self)
+        self.promises = promise.PromiseCollection(self)
 
         self.sd = socket.socket()
         self.sd.setblocking(False)
@@ -145,25 +145,25 @@ class Connection(object):
         return self.frame_max
 
 
-    def wait(self, ticket_numbers, timeout=None, raise_errors=True):
+    def wait(self, promise_numbers, timeout=None, raise_errors=True):
         '''
-        Wait for selected tickets. Exit after ticket runs a callback.
+        Wait for selected promises. Exit after promise runs a callback.
         '''
         if timeout is not None:
             t1 = time.time() + timeout
         else:
             td = None
 
-        if isinstance(ticket_numbers, int):
-            ticket_numbers = [ticket_numbers]
-        ticket_numbers = set(ticket_numbers)
+        if isinstance(promise_numbers, int):
+            promise_numbers = [promise_numbers]
+        promise_numbers = set(promise_numbers)
         while True:
             while True:
-                ready = ticket_numbers & self.tickets.ready
+                ready = promise_numbers & self.promises.ready
                 if not ready:
                     break
-                ticket_number = ready.pop()
-                return self.tickets.run_callback(ticket_number,
+                promise_number = ready.pop()
+                return self.promises.run_callback(promise_number,
                                                  raise_errors=raise_errors)
 
             if timeout is not None:
@@ -189,7 +189,7 @@ class Connection(object):
 
     def loop(self, timeout=None):
         '''
-        Wait for any ticket. Block forever.
+        Wait for any promise. Block forever.
         '''
         if timeout is not None:
             t1 = time.time() + timeout
@@ -218,21 +218,21 @@ class Connection(object):
 
     def run_any_callbacks(self):
         '''
-        Run any callbacks, any tickets, but do not block.
+        Run any callbacks, any promises, but do not block.
         '''
-        while self.tickets.ready:
-            [self.tickets.run_callback(ticket, raise_errors=False) \
-                 for ticket in list(self.tickets.ready)]
+        while self.promises.ready:
+            [self.promises.run_callback(promise, raise_errors=False) \
+                 for promise in list(self.promises.ready)]
 
 
     def _shutdown(self, result):
         # Cancel all events.
-        for ticket in self.tickets.all():
-            # It's possible that a ticket may be already `done` but still not
+        for promise in self.promises.all():
+            # It's possible that a promise may be already `done` but still not
             # removed. For example due to `refcnt`. In that case don't run
             # callbacks.
-            if ticket.to_be_released is False:
-                ticket.done(result)
+            if promise.to_be_released is False:
+                promise.done(result)
 
         # And kill the socket
         self.sd.shutdown(socket.SHUT_RDWR)
@@ -244,9 +244,9 @@ class Connection(object):
     def _close(self):
         return machine.connection_close(self)
 
-    def set_callback(self, ticket_number, callback):
-        ticket = self.tickets.by_number(ticket_number)
-        ticket.user_callback = callback
+    def set_callback(self, promise_number, callback):
+        promise = self.promises.by_number(promise_number)
+        promise.user_callback = callback
 
 
 def parse_amqp_url(amqp_url):

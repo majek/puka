@@ -12,16 +12,16 @@ class TestLimits(unittest.TestCase):
         msg = '%s' % (random.random(),)
 
         client = puka.Client(AMQP_URL)
-        ticket = client.connect()
-        client.wait(ticket)
+        primise = client.connect()
+        client.wait(primise)
 
         queues = [qname+'.%s' % (i,) for i in xrange(100)]
-        tickets = [client.queue_declare(queue=q) for q in queues]
+        promises = [client.queue_declare(queue=q) for q in queues]
 
-        for ticket in tickets:
-            client.wait(ticket)
+        for primise in promises:
+            client.wait(primise)
 
-        tickets = [client.queue_delete(queue=q) for q in queues]
-        for ticket in tickets:
-            client.wait(ticket)
+        promises = [client.queue_delete(queue=q) for q in queues]
+        for primise in promises:
+            client.wait(primise)
 

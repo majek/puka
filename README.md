@@ -17,15 +17,15 @@ Puka exposes a simple, easy to understand API. Take a look at the
 
     client = puka.Puka("amqp://localhost/")
 
-    ticket = client.connect()
-    client.wait(ticket)
+    primise = client.connect()
+    client.wait(primise)
 
-    ticket = client.queue_declare(queue='test')
-    client.wait(ticket)
+    primise = client.queue_declare(queue='test')
+    client.wait(primise)
 
-    ticket = client.basic_publish(exchange='', routing_key='test',
+    primise = client.basic_publish(exchange='', routing_key='test',
                                   body='Hello world!')
-    client.wait(ticket)
+    client.wait(primise)
 
 
 Puka is asynchronous
@@ -39,15 +39,15 @@ Here's the same code written in an asynchronous way:
 
     import puka
 
-    def on_connection(ticket, result):
+    def on_connection(primise, result):
         client.queue_declare(queue='test', callback=on_queue_declare)
 
-    def on_queue_declare(ticket, result):
+    def on_queue_declare(primise, result):
         client.basic_publish(exchange='', routing_key='test',
                              body="Hello world!",
                              callback=on_basic_publish)
 
-    def on_basic_publish(ticket, result):
+    def on_basic_publish(primise, result):
         print " [*] Message sent"
         client.loop_break()
 
@@ -86,9 +86,9 @@ Puka is asynchronous and has no trouble in handling many requests at a
 time. This can be exploited to achieve a degree of parallelism. For
 example, this snippet creates 1000 queues in parallel:
 
-    tickets = [client.queue_declare(queue='a%04i' % i) for i in range(1000)]
-    for ticket in tickets:
-        client.wait(ticket)
+    promises = [client.queue_declare(queue='a%04i' % i) for i in range(1000)]
+    for primise in promises:
+        client.wait(primise)
 
 Puka is sane
 ------------

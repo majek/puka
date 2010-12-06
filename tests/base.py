@@ -21,10 +21,10 @@ def connect(method):
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
         client = puka.Client(self.amqp_url)
-        ticket = client.connect()
-        client.wait(ticket)
+        primise = client.connect()
+        client.wait(primise)
         r = method(self, client, *args, **kwargs)
-        ticket = client.close()
-        client.wait(ticket)
+        primise = client.close()
+        client.wait(primise)
         return r
     return wrapper

@@ -10,82 +10,82 @@ import base
 class TestExchange(base.TestCase):
     def test_exchange_redeclare(self):
         client = puka.Client(self.amqp_url)
-        ticket = client.connect()
-        client.wait(ticket)
+        primise = client.connect()
+        client.wait(primise)
 
-        ticket = client.exchange_declare(exchange=self.name)
-        r = client.wait(ticket)
+        primise = client.exchange_declare(exchange=self.name)
+        r = client.wait(primise)
 
-        ticket = client.exchange_declare(exchange=self.name, type='fanout')
+        primise = client.exchange_declare(exchange=self.name, type='fanout')
         with self.assertRaises(puka.PreconditionFailed):
-            client.wait(ticket)
+            client.wait(primise)
 
-        ticket = client.exchange_delete(exchange=self.name)
-        client.wait(ticket)
+        primise = client.exchange_delete(exchange=self.name)
+        client.wait(primise)
 
     def test_exchange_delete_not_found(self):
         client = puka.Client(self.amqp_url)
-        ticket = client.connect()
-        client.wait(ticket)
+        primise = client.connect()
+        client.wait(primise)
 
-        ticket = client.exchange_delete(exchange='not_existing_exchange')
+        primise = client.exchange_delete(exchange='not_existing_exchange')
 
         with self.assertRaises(puka.NotFound):
-            client.wait(ticket)
+            client.wait(primise)
 
     def test_bind(self):
         client = puka.Client(self.amqp_url)
-        ticket = client.connect()
-        client.wait(ticket)
+        primise = client.connect()
+        client.wait(primise)
 
-        ticket = client.exchange_declare(exchange=self.name1, type='fanout')
-        client.wait(ticket)
+        primise = client.exchange_declare(exchange=self.name1, type='fanout')
+        client.wait(primise)
 
-        ticket = client.exchange_declare(exchange=self.name2, type='fanout')
-        client.wait(ticket)
+        primise = client.exchange_declare(exchange=self.name2, type='fanout')
+        client.wait(primise)
 
-        ticket = client.queue_declare()
-        qname = client.wait(ticket)['queue']
+        primise = client.queue_declare()
+        qname = client.wait(primise)['queue']
 
-        ticket = client.queue_bind(queue=qname, exchange=self.name2)
-        client.wait(ticket)
+        primise = client.queue_bind(queue=qname, exchange=self.name2)
+        client.wait(primise)
 
-        ticket = client.basic_publish(exchange=self.name1, routing_key='',
+        primise = client.basic_publish(exchange=self.name1, routing_key='',
                                       body='a')
-        client.wait(ticket)
+        client.wait(primise)
 
-        ticket = client.exchange_bind(source=self.name1, destination=self.name2)
-        client.wait(ticket)
+        primise = client.exchange_bind(source=self.name1, destination=self.name2)
+        client.wait(primise)
 
-        ticket = client.basic_publish(exchange=self.name1, routing_key='',
+        primise = client.basic_publish(exchange=self.name1, routing_key='',
                                       body='b')
-        client.wait(ticket)
+        client.wait(primise)
 
-        ticket = client.exchange_unbind(source=self.name1,
+        primise = client.exchange_unbind(source=self.name1,
                                         destination=self.name2)
-        client.wait(ticket)
+        client.wait(primise)
 
-        ticket = client.basic_publish(exchange=self.name1, routing_key='',
+        primise = client.basic_publish(exchange=self.name1, routing_key='',
                                       body='c')
-        client.wait(ticket)
+        client.wait(primise)
 
-        ticket = client.basic_get(queue=qname, no_ack=True)
-        r = client.wait(ticket)
+        primise = client.basic_get(queue=qname, no_ack=True)
+        r = client.wait(primise)
         self.assertEquals(r['body'], 'b')
 
-        ticket = client.basic_get(queue=qname)
-        r = client.wait(ticket)
+        primise = client.basic_get(queue=qname)
+        r = client.wait(primise)
         self.assertTrue('empty' in r)
 
-        ticket = client.exchange_delete(exchange=self.name1)
-        client.wait(ticket)
-        ticket = client.exchange_delete(exchange=self.name2)
-        client.wait(ticket)
-        ticket = client.queue_delete(queue=qname)
-        client.wait(ticket)
+        primise = client.exchange_delete(exchange=self.name1)
+        client.wait(primise)
+        primise = client.exchange_delete(exchange=self.name2)
+        client.wait(primise)
+        primise = client.queue_delete(queue=qname)
+        client.wait(primise)
 
-        ticket = client.close()
-        client.wait(ticket)
+        primise = client.close()
+        client.wait(primise)
 
 
 if __name__ == '__main__':
