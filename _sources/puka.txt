@@ -99,7 +99,7 @@ handling.
    Cause the event loop to break on next iteration.
 
 
-Primise interface
+Promise interface
 +++++++++++++++++
 
 Functions below return a `promise`. It's a small number, that identifies
