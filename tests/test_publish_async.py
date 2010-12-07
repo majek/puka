@@ -59,6 +59,28 @@ class TestPublishAsync(base.TestCase):
         promise = client.queue_delete(queue=self.name)
         client.wait(promise)
 
+    def test_big_failure_not_synced(self):
+        client = puka.Client(self.amqp_url)
+        promise = client.connect()
+        client.wait(promise)
+
+        promise1 = client.basic_publish(exchange='', routing_key='',
+                                       body=self.msg)
+        promise2 = client.basic_publish(exchange='wrong_exchange',
+                                       routing_key='',
+                                       body=self.msg)
+        promise3 = client.basic_publish(exchange='', routing_key='',
+                                       body=self.msg)
+        client.wait(promise1)
+        with self.assertRaises(puka.NotFound):
+            client.wait(promise2)
+        with self.assertRaises(puka.NotFound):
+            client.wait(promise3)
+
+        promise = client.basic_publish(exchange='', routing_key='',
+                                      body=self.msg)
+        client.wait(promise)
+
     def test_return(self):
         client = puka.Client(self.amqp_url)
         promise = client.connect()
@@ -69,46 +91,6 @@ class TestPublishAsync(base.TestCase):
         with self.assertRaises(puka.NoConsumers):
             client.wait(promise)
 
-    def test_batched_acks(self):
-        client = puka.Client(self.amqp_url)
-        promise = client.connect()
-        client.wait(promise)
-
-        promise = client.queue_declare(queue=self.name)
-        client.wait(promise)
-
-        promises = [client.basic_publish(exchange='', routing_key=self.name,
-                                        body=self.msg)
-                   for i in range(10)]
-        responses = [client.wait(promise) for promise in promises]
-        # Some of the responses are identical for few promises.
-        self.assertTrue(len(set([id(r) for r in responses])) < 10)
-
-        promise = client.queue_delete(queue=self.name)
-        client.wait(promise)
-
-    def test_batched_return(self):
-        client = puka.Client(self.amqp_url)
-        promise = client.connect()
-        client.wait(promise)
-
-        promise = client.queue_declare(queue=self.name)
-        client.wait(promise)
-
-        promises = [client.basic_publish(exchange='',
-                                        routing_key=(self.name if i != 6 \
-                                                         else 'badname'),
-                                        mandatory=True, body=self.msg)
-                   for i in range(10)]
-        responses = [client.wait(promise, raise_errors=False) \
-                         for promise in promises]
-        # Some of the responses are identical for few promises.
-        self.assertTrue(len(set([id(r) for r in responses])) < 10)
-        self.assertTrue(responses[5] is responses[7])
-        self.assertEqual(responses[6]['reply_code'], 312)
-
-        promise = client.queue_delete(queue=self.name)
-        client.wait(promise)
 
     def test_return(self):
         client = puka.Client(self.amqp_url)

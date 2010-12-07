@@ -29,7 +29,10 @@ def _connection_start(t, result):
                                              response, 'en_US')
     t.register(spec.METHOD_CONNECTION_TUNE, _connection_tune)
     t.send_frames(frames)
-    t.conn.x_server_version = result
+    t.x_cached_result = result
+    t.conn.x_server_props = result['server_properties']
+    t.conn.x_server_version = map(int,
+                                  t.conn.x_server_props['version'].split('.'))
 
 def _connection_tune(t, result):
     frame_max = t.conn._tune_frame_max(result['frame_max'])
@@ -43,7 +46,7 @@ def _connection_tune(t, result):
 def _connection_open_ok(ct, result):
     ct.register(spec.METHOD_CONNECTION_CLOSE, _connection_close)
     # Never free the promise and channel.
-    ct.ping(ct.conn.x_server_version)
+    ct.ping(ct.x_cached_result)
     ct.conn.x_connection_promise = ct
     publish_promise(ct.conn)
 
@@ -71,8 +74,12 @@ def fix_basic_publish_headers(headers):
     assert 'headers' not in headers
     return nheaders
 
-def basic_publish(conn, exchange, routing_key, mandatory=False,
-                        immediate=False, headers={}, body=''):
+def basic_publish(conn, *args, **kwargs):
+    #if conn.x_server_version > (2,3,0):
+    return basic_publish_standard(conn, *args, **kwargs)
+
+def basic_publish_standard(conn, exchange, routing_key, mandatory=False,
+                           immediate=False, headers={}, body=''):
     pt = conn.x_publish_promise
     async_id = pt.x_async_id
     pt.x_async_id += 1
@@ -80,53 +87,41 @@ def basic_publish(conn, exchange, routing_key, mandatory=False,
     nheaders = fix_basic_publish_headers(headers)
     assert 'x-puka-async-id' not in nheaders
     nheaders['x-puka-async-id'] = async_id
+    eheaders = {'x-puka-async-id': async_id, 'x-puka-footer': True}
 
     t = conn.promises.new(_nothing, no_channel=True)
-    frames = spec.encode_basic_publish(exchange, routing_key, mandatory,
-                                       immediate, nheaders, body,
-                                       conn.frame_max)
-    pt.x_async_next.append( (async_id, (_pt_basic_return_user, t), frames) )
+
+    frames = list(spec.encode_basic_publish(exchange, routing_key, mandatory,
+                                            immediate, nheaders, body,
+                                            conn.frame_max)) + \
+             list(spec.encode_basic_publish('', '', False, True, eheaders, '',
+                                            conn.frame_max))
+    pt.x_async_next.append( (async_id, t, frames) )
     _pt_async_flush(pt)
     return t
 
 def _pt_async_flush(pt):
-    if not pt.x_async_inflight and pt.x_async_next and pt.x_async_enabled:
+    if pt.x_async_enabled:
         frames_acc = []
-        for async_id, cb_t, frames in pt.x_async_next:
-            pt.x_async_inflight[async_id] = cb_t
+        for async_id, t, frames in pt.x_async_next:
+            pt.x_async_inflight[async_id] = t
             frames_acc.extend( frames )
         pt.x_async_next = []
-
-        async_id = pt.x_async_id
-        pt.x_async_id += 1
-        pt.x_async_inflight[async_id] = (_pt_basic_return_footer, None)
-        eheaders = {'x-puka-async-id': async_id, 'x-puka-footer': True}
-        frames = spec.encode_basic_publish('', '', False, True, eheaders, '',
-                                           pt.conn.frame_max)
-        frames_acc.extend( frames )
         pt.send_frames(frames_acc)
 
 def _pt_basic_return(pt, result):
     pt.register(spec.METHOD_BASIC_RETURN, _pt_basic_return)
     async_id = result['headers']['x-puka-async-id']
-    cb, t = pt.x_async_inflight[async_id]
-    del pt.x_async_inflight[async_id]
-    cb(pt, t, result)
-
-def _pt_basic_return_footer(pt, _t, result):
-    # Ack all other messages.
-    ack = spec.Frame()
-    for cb, t in pt.x_async_inflight.itervalues():
-        cb(pt, t, ack)
-    pt.x_async_inflight.clear()
-    # Send remaining messages.
-    _pt_async_flush(pt)
-
-def _pt_basic_return_user(pt, t, result):
-    # Handle the direct case - when we just received a 'immediate' return.
-    if not result.is_error and 'reply_code' in result:
-        exceptions.mark_frame(result)
-    t.done(result)
+    if async_id in pt.x_async_inflight:
+        t = pt.x_async_inflight[async_id]
+        del pt.x_async_inflight[async_id]
+        if 'x-puka-footer' in result['headers']:
+            # ok
+            t.done(spec.Frame())
+        else:
+            # return
+            exceptions.mark_frame(result)
+            t.done(result)
 
 def _pt_channel_close(pt, result):
     pt.x_async_enabled = False
@@ -136,9 +131,8 @@ def _pt_channel_close(pt, result):
                     list(spec.encode_channel_open('')))
     # All the publishes are marked as failed.
     exceptions.mark_frame(result)
-    for cb, t in pt.x_async_inflight.itervalues():
-        if t: # Not footer handler
-            cb(pt, t, result)
+    for t in pt.x_async_inflight.itervalues():
+        t.done(result)
     pt.x_async_inflight.clear()
 
 def _connection_close(t, result):
