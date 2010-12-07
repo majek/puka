@@ -29,7 +29,7 @@ def _connection_start(t, result):
                                              response, 'en_US')
     t.register(spec.METHOD_CONNECTION_TUNE, _connection_tune)
     t.send_frames(frames)
-    t.x_cached_result = result
+    t.conn.x_server_version = result
 
 def _connection_tune(t, result):
     frame_max = t.conn._tune_frame_max(result['frame_max'])
@@ -43,7 +43,7 @@ def _connection_tune(t, result):
 def _connection_open_ok(ct, result):
     ct.register(spec.METHOD_CONNECTION_CLOSE, _connection_close)
     # Never free the promise and channel.
-    ct.ping(ct.x_cached_result)
+    ct.ping(ct.conn.x_server_version)
     ct.conn.x_connection_promise = ct
     publish_promise(ct.conn)
 
