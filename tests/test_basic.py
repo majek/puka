@@ -130,7 +130,8 @@ class TestBasic(base.TestCase):
         promise = client.basic_publish(exchange='', routing_key=self.name,
                                       immediate=True, body='')
         with self.assertRaises(puka.NoConsumers):
-            client.wait(promise)
+            r = client.wait(promise)
+            print r
 
         promise = client.queue_delete(queue=self.name)
         client.wait(promise)
@@ -240,7 +241,7 @@ class TestBasic(base.TestCase):
         recv_headers = r['headers']
         del recv_headers['delivery_mode']
         del recv_headers['persistent']
-        del recv_headers['x-puka-async-id']
+        del recv_headers['x-puka-delivery-tag']
 
         self.assertEqual(headers, recv_headers)
 
