@@ -59,28 +59,6 @@ class TestPublishAsync(base.TestCase):
         promise = client.queue_delete(queue=self.name)
         client.wait(promise)
 
-    def test_big_failure_not_synced(self):
-        client = puka.Client(self.amqp_url)
-        promise = client.connect()
-        client.wait(promise)
-
-        promise1 = client.basic_publish(exchange='', routing_key='',
-                                       body=self.msg)
-        promise2 = client.basic_publish(exchange='wrong_exchange',
-                                       routing_key='',
-                                       body=self.msg)
-        promise3 = client.basic_publish(exchange='', routing_key='',
-                                       body=self.msg)
-        client.wait(promise1)
-        with self.assertRaises(puka.NotFound):
-            client.wait(promise2)
-        with self.assertRaises(puka.NotFound):
-            client.wait(promise3)
-
-        promise = client.basic_publish(exchange='', routing_key='',
-                                      body=self.msg)
-        client.wait(promise)
-
     def test_return(self):
         client = puka.Client(self.amqp_url)
         promise = client.connect()
@@ -92,7 +70,7 @@ class TestPublishAsync(base.TestCase):
             client.wait(promise)
 
 
-    def test_return(self):
+    def test_return_2(self):
         client = puka.Client(self.amqp_url)
         promise = client.connect()
         client.wait(promise)

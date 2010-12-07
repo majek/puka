@@ -36,6 +36,11 @@ def _connection_start(t, result):
             map(int, t.conn.x_server_props['version'].split('.'))
     except ValueError:
         t.conn.x_server_version = (Ellipsis,)
+    if t.conn.pubacks is None:
+        t.conn.x_pubacks = t.conn.x_server_version > (2,2,0)
+    else:
+        t.conn.x_pubacks = t.conn.pubacks
+
 
 def _connection_tune(t, result):
     frame_max = t.conn._tune_frame_max(result['frame_max'])
@@ -44,7 +49,7 @@ def _connection_tune(t, result):
     t.register(spec.METHOD_CONNECTION_OPEN_OK, _connection_open_ok)
     f1 = spec.encode_connection_tune_ok(channel_max, frame_max, 0)
     f2 = spec.encode_connection_open(t.conn.vhost)
-    t.send_frames(list(f1) + list(f2))
+    t.send_frames(f1 + f2)
 
 def _connection_open_ok(ct, result):
     ct.register(spec.METHOD_CONNECTION_CLOSE, _connection_close)
@@ -54,17 +59,10 @@ def _connection_open_ok(ct, result):
     publish_promise(ct.conn)
 
 
-_basic_publish_fun = None
-def basic_publish(*args, **kwargs):
-    return _basic_publish_fun(*args, **kwargs)
-
 def publish_promise(conn):
-    global _basic_publish_fun
-    if conn.x_server_version > (2,2,0):
-        _basic_publish_fun = basic_publish_puback
+    if conn.x_pubacks:
         pt = conn.promises.new(_pt_channel_open_ok_puback)
     else:
-        _basic_publish_fun = basic_publish_standard
         pt = conn.promises.new(_pt_channel_open_ok)
     pt.x_async_enabled = False
     pt.x_delivery_tag = 0
@@ -94,8 +92,8 @@ def fix_basic_publish_headers(headers):
     assert 'headers' not in headers
     return nheaders
 
-def basic_publish_puback(conn, exchange, routing_key, mandatory=False,
-                         immediate=False, headers={}, body=''):
+def basic_publish(conn, exchange, routing_key, mandatory=False,
+                  immediate=False, headers={}, body=''):
     pt = conn.x_publish_promise
     delivery_tag = pt.x_delivery_tag
     pt.x_delivery_tag += 1
@@ -104,32 +102,16 @@ def basic_publish_puback(conn, exchange, routing_key, mandatory=False,
     assert 'x-puka-delivery-tag' not in nheaders
     nheaders['x-puka-delivery-tag'] = delivery_tag
 
-    t = conn.promises.new(_nothing, no_channel=True)
     frames = spec.encode_basic_publish(exchange, routing_key, mandatory,
                                        immediate, nheaders, body,
                                        conn.frame_max)
-    pt.x_async_next.append( (delivery_tag, t, frames) )
-    _pt_async_flush(pt)
-    return t
-
-def basic_publish_standard(conn, exchange, routing_key, mandatory=False,
-                           immediate=False, headers={}, body=''):
-    pt = conn.x_publish_promise
-    delivery_tag = pt.x_delivery_tag
-    pt.x_delivery_tag += 1
-
-    nheaders = fix_basic_publish_headers(headers)
-    assert 'x-puka-delivery-tag' not in nheaders
-    nheaders['x-puka-delivery-tag'] = delivery_tag
-    eheaders = {'x-puka-delivery-tag': delivery_tag, 'x-puka-footer': True}
-
+    if not conn.x_pubacks:
+        # Construct ack packet.
+        eheaders = {'x-puka-delivery-tag': delivery_tag, 'x-puka-footer': True}
+        frames = frames + \
+                 spec.encode_basic_publish('', '', False, True, eheaders,
+                                                '', conn.frame_max)
     t = conn.promises.new(_nothing, no_channel=True)
-
-    frames = list(spec.encode_basic_publish(exchange, routing_key, mandatory,
-                                            immediate, nheaders, body,
-                                            conn.frame_max)) + \
-             list(spec.encode_basic_publish('', '', False, True, eheaders, '',
-                                            conn.frame_max))
     pt.x_async_next.append( (delivery_tag, t, frames) )
     _pt_async_flush(pt)
     return t
@@ -149,11 +131,9 @@ def _pt_basic_return(pt, result):
     if delivery_tag in pt.x_async_inflight:
         t = pt.x_async_inflight[delivery_tag]
         del pt.x_async_inflight[delivery_tag]
-        if 'x-puka-footer' in result['headers']:
-            # ok
+        if 'x-puka-footer' in result['headers']: # ok
             t.done(spec.Frame())
-        else:
-            # return
+        else: # return
             exceptions.mark_frame(result)
             t.done(result)
 
@@ -169,12 +149,12 @@ def _pt_channel_close(pt, result):
     pt.x_async_enabled = False
     pt.x_delivery_tag_shift = pt.x_delivery_tag
     # Start off with reestablishing the channel
-    if pt.conn.x_server_version > (2,2,0):
+    if pt.conn.x_pubacks:
         pt.register(spec.METHOD_CHANNEL_OPEN_OK, _pt_channel_open_ok_puback)
     else:
         pt.register(spec.METHOD_CHANNEL_OPEN_OK, _pt_channel_open_ok)
-    pt.send_frames( list(spec.encode_channel_close_ok()) +
-                    list(spec.encode_channel_open('')))
+    pt.send_frames( spec.encode_channel_close_ok() +
+                    spec.encode_channel_open(''))
     # All the publishes are marked as failed.
     exceptions.mark_frame(result)
     for t in pt.x_async_inflight.itervalues():
