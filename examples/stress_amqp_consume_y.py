@@ -15,34 +15,37 @@ headers={'persistent': False}
 
 #AMQP_URL="amqp://a:a@localhost/a"
 AMQP_URL="amqp://localhost/"
-QUEUE_CNT=1
+QUEUE_CNT=30
 BURST_SIZE=120
-QUEUE_SIZE=17000
-BODY_SIZE=1
-PREFETCH_CNT=1
+QUEUE_SIZE=1000
+BODY_SIZE=0
+PREFETCH_CNT=2
+
+
+class Blah(object):
+    def __init__(self, client, gen):
+        self.gen = gen
+        self.client = client
+        self.promises = collections.defaultdict(list)
+
+        self.waiting_for = self.gen.next()
+        self.client.set_callback(self.waiting_for, self.callback_wrapper)
+
+    def callback_wrapper(self, t, result):
+        self.promises[t].append(result)
+        while self.waiting_for in self.promises:
+            result = self.promises[self.waiting_for].pop(0)
+            if not self.promises[self.waiting_for]:
+                del self.promises[self.waiting_for]
+            self.waiting_for = self.gen.send(result)
+        self.client.set_callback(self.waiting_for, self.callback_wrapper)
 
 
 def blah(method):
-    waiting_for = [None]
-    promises = collections.defaultdict(list)
-    def callback_wrapper(client, gen, t, result):
-        promises[t].append(result)
-        while waiting_for[0] in promises:
-            result = promises[waiting_for[0]].pop(0)
-            if not promises[waiting_for[0]]:
-                del promises[waiting_for[0]]
-            waiting_for[0] = gen.send(result)
-        client.set_callback(waiting_for[0], lambda t, result: \
-                            callback_wrapper(client, gen, t, result))
-
     def wrapper(client, *args, **kwargs):
-        gen = method(client, *args, **kwargs)
-        waiting_for[0] = gen.next()
-        client.set_callback(waiting_for[0], lambda t, result: \
-                                callback_wrapper(client, gen, t, result))
+        Blah(client, method(client, *args, **kwargs))
+        return None
     return wrapper
-
-
 
 @blah
 def worker(client, q, msg_cnt, body, prefetch_cnt, inc, avg):
@@ -61,7 +64,7 @@ def worker(client, q, msg_cnt, body, prefetch_cnt, inc, avg):
     while True:
         msg = (yield consume_promise)
         t0 = time.time()
-        client.basic_publish(exchange='', routing_key=q,
+        yield client.basic_publish(exchange='', routing_key=q,
                                    body=body, headers=headers)
         td = time.time() - t0
         avg(td)
@@ -71,7 +74,7 @@ def worker(client, q, msg_cnt, body, prefetch_cnt, inc, avg):
 average = average_count = 0.0
 
 def main():
-    client = puka.Client(AMQP_URL)
+    client = puka.Client(AMQP_URL, pubacks=False)
     promise = client.connect()
     client.wait(promise)
 
