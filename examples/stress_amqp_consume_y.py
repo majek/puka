@@ -10,16 +10,17 @@ import collections
 counter = 0
 counter_t0 = time.time()
 
-headers={'persistent': False}
+headers={'persistent': True}
 
 
 #AMQP_URL="amqp://a:a@localhost/a"
 AMQP_URL="amqp://localhost/"
-QUEUE_CNT=30
+QUEUE_CNT=1
 BURST_SIZE=120
 QUEUE_SIZE=1000
-BODY_SIZE=0
-PREFETCH_CNT=2
+BODY_SIZE=32*1024*1024
+PREFETCH_CNT=1
+PUBACKS=None
 
 
 class Blah(object):
@@ -49,7 +50,7 @@ def blah(method):
 
 @blah
 def worker(client, q, msg_cnt, body, prefetch_cnt, inc, avg):
-    result = (yield client.queue_declare(queue=q))
+    result = (yield client.queue_declare(queue=q, durable=True))
     fill = max(msg_cnt - result['message_count'], 0)
 
     while fill > 0:
@@ -64,8 +65,10 @@ def worker(client, q, msg_cnt, body, prefetch_cnt, inc, avg):
     while True:
         msg = (yield consume_promise)
         t0 = time.time()
+        client.basic_publish(exchange='', routing_key=q,
+                             body=body, headers=headers)
         yield client.basic_publish(exchange='', routing_key=q,
-                                   body=body, headers=headers)
+                             body=body, headers=headers)
         td = time.time() - t0
         avg(td)
         client.basic_ack(msg)
@@ -74,7 +77,7 @@ def worker(client, q, msg_cnt, body, prefetch_cnt, inc, avg):
 average = average_count = 0.0
 
 def main():
-    client = puka.Client(AMQP_URL, pubacks=False)
+    client = puka.Client(AMQP_URL, pubacks=PUBACKS)
     promise = client.connect()
     client.wait(promise)
 
