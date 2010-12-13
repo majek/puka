@@ -61,9 +61,12 @@ fine with other message brokers that support this protocol.</p>
 <p>The <a class="reference internal" href="#module-puka" title="puka: An opinionated RabbitMQ client."><tt class="xref py py-mod docutils literal"><span class="pre">puka</span></tt></a> module defines a single class:</p>
 <dl class="class">
 <dt id="puka.Client">
-<em class="property">class </em><tt class="descclassname">puka.</tt><tt class="descname">Client</tt><big>(</big><em>amqp_url='amqp:///'</em><big>)</big><a class="headerlink" href="#puka.Client" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">puka.</tt><tt class="descname">Client</tt><big>(</big><em>amqp_url='amqp:///'</em>, <em>pubacks=None</em><big>)</big><a class="headerlink" href="#puka.Client" title="Permalink to this definition">¶</a></dt>
 <dd><p>Consturctor for <a class="reference internal" href="#puka.Client" title="puka.Client"><tt class="xref py py-class docutils literal"><span class="pre">Client</span></tt></a> class. <cite>amqp_url</cite> is an url-like
-address of the RabbitMQ server. Default points to <cite>amqp://guest:guest&#64;localhost:5672/</cite>.</p>
+address of the RabbitMQ server. Default points to
+<cite>amqp://guest:guest&#64;localhost:5672/</cite>. <cite>pubacks</cite> tells if the client
+should take advantage of the publiser-acks feature on the server -
+autodetect by default.</p>
 </dd></dl>
 
 <div class="section" id="exceptions">
@@ -155,7 +158,7 @@ the socket.</p>
 
 <dl class="method">
 <dt id="puka.Client.wait">
-<tt class="descclassname">Client.</tt><tt class="descname">wait</tt><big>(</big><em>promise</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#puka.Client.wait" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">Client.</tt><tt class="descname">wait</tt><big>(</big><em>promise</em>, <em>timeout=None</em>, <em>raise_errors=True</em><big>)</big><a class="headerlink" href="#puka.Client.wait" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wait up to <cite>timeout</cite> seconds for an event on given <cite>promise</cite>. If the event
 was received before <cite>timeout</cite>, run the callback for the <cite>promise</cite> and
 return AMQP <cite>response</cite>.</p>
