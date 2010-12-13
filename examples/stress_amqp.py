@@ -8,7 +8,7 @@ import time
 import collections
 
 AMQP_URL = "amqp://localhost/"
-QUEUE_CNT = 1
+QUEUE_CNT = 32
 BURST_SIZE = 120
 QUEUE_SIZE = 1000
 BODY_SIZE = 1
