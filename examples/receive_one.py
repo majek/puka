@@ -21,8 +21,8 @@ print " [x] Received message %r" % (result,)
 
 client.basic_ack(result)
 
-client.basic_cancel(consume_promise)
-client.wait(consume_promise)
+promise = client.basic_cancel(consume_promise)
+client.wait(promise)
 
 promise = client.close()
 client.wait(promise)

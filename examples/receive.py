@@ -15,11 +15,10 @@ client.wait(promise)
 
 print "  [*] Waiting for messages. Press CTRL+C to quit."
 
-consume_promise = client.basic_consume(queue='test')
+consume_promise = client.basic_consume(queue='test', prefetch_count=1)
 while True:
     result = client.wait(consume_promise)
     print " [x] Received message %r" % (result,)
-
     client.basic_ack(result)
 
 promise = client.close()

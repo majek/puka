@@ -7,23 +7,19 @@ import puka
 import time
 import collections
 
+AMQP_URL = "amqp://localhost/"
+QUEUE_CNT = 1
+BURST_SIZE = 120
+QUEUE_SIZE = 1000
+BODY_SIZE = 1
+PREFETCH_CNT = 1
+MSG_HEADERS = {'persistent': False}
+PUBACKS = False
+
 counter = 0
 counter_t0 = time.time()
 
-headers={'persistent': True}
-
-
-#AMQP_URL="amqp://a:a@localhost/a"
-AMQP_URL="amqp://localhost/"
-QUEUE_CNT=1
-BURST_SIZE=120
-QUEUE_SIZE=1000
-BODY_SIZE=32*1024*1024
-PREFETCH_CNT=1
-PUBACKS=None
-
-
-class Blah(object):
+class AsyncGeneratorState(object):
     def __init__(self, client, gen):
         self.gen = gen
         self.client = client
@@ -41,14 +37,14 @@ class Blah(object):
             self.waiting_for = self.gen.send(result)
         self.client.set_callback(self.waiting_for, self.callback_wrapper)
 
-
-def blah(method):
+def puka_async_generator(method):
     def wrapper(client, *args, **kwargs):
-        Blah(client, method(client, *args, **kwargs))
+        AsyncGeneratorState(client, method(client, *args, **kwargs))
         return None
     return wrapper
 
-@blah
+
+@puka_async_generator
 def worker(client, q, msg_cnt, body, prefetch_cnt, inc, avg):
     result = (yield client.queue_declare(queue=q, durable=True))
     fill = max(msg_cnt - result['message_count'], 0)
@@ -57,7 +53,7 @@ def worker(client, q, msg_cnt, body, prefetch_cnt, inc, avg):
         fill -= BURST_SIZE
         for i in xrange(BURST_SIZE):
             promise = client.basic_publish(exchange='', routing_key=q,
-                                          body=body, headers=headers)
+                                          body=body, headers=MSG_HEADERS)
         yield promise # Wait only for one in burst (the last one).
         inc(BURST_SIZE)
 
@@ -65,17 +61,15 @@ def worker(client, q, msg_cnt, body, prefetch_cnt, inc, avg):
     while True:
         msg = (yield consume_promise)
         t0 = time.time()
-        client.basic_publish(exchange='', routing_key=q,
-                             body=body, headers=headers)
         yield client.basic_publish(exchange='', routing_key=q,
-                             body=body, headers=headers)
+                             body=body, headers=MSG_HEADERS)
         td = time.time() - t0
         avg(td)
         client.basic_ack(msg)
         inc()
 
-average = average_count = 0.0
 
+average = average_count = 0.0
 def main():
     client = puka.Client(AMQP_URL, pubacks=PUBACKS)
     promise = client.connect()
@@ -102,10 +96,9 @@ def main():
         client.loop(timeout=1.0)
         td = time.time() - t0
         average_count = max(average_count, 1.0)
-        print "send: %i  avg: %.3fms " % (counter/td, (average/average_count)*1000.0)
+        print "send: %i  avg: %.3fms " % (counter/td,
+                                          (average/average_count)*1000.0)
         counter = average = average_count = 0
-
-
 
 if __name__ == '__main__':
     main()
