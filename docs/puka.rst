@@ -22,10 +22,13 @@ For more information see:
 
 The :mod:`puka` module defines a single class:
 
-.. class:: Client(amqp_url='amqp:///')
+.. class:: Client(amqp_url='amqp:///', pubacks=None)
 
    Consturctor for :class:`Client` class. `amqp_url` is an url-like
-   address of the RabbitMQ server. Default points to `amqp://guest:guest@localhost:5672/`.
+   address of the RabbitMQ server. Default points to
+   `amqp://guest:guest@localhost:5672/`. `pubacks` tells if the client
+   should take advantage of the publiser-acks feature on the server -
+   autodetect by default.
 
 Exceptions
 ----------
@@ -83,7 +86,7 @@ handling.
 
    Run any outstanding user callbacks for any of the `promises`.
 
-.. method:: Client.wait(promise, timeout=None)
+.. method:: Client.wait(promise, timeout=None, raise_errors=True)
 
    Wait up to `timeout` seconds for an event on given `promise`. If the event
    was received before `timeout`, run the callback for the `promise` and
