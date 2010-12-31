@@ -352,8 +352,6 @@ def _basic_get_empty(t, result):
 ####
 def exchange_declare(conn, exchange, type='direct', durable=False,
                      auto_delete=False, arguments={}):
-    # Exchanges don't support 'x-expires', so we support only durable exchanges.
-    auto_delete = False
     t = conn.promises.new(_exchange_declare)
 
     t.x_frames = spec.encode_exchange_declare(exchange, type, False, durable,
