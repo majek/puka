@@ -21,7 +21,7 @@ log = logging.getLogger('puka')
 class Connection(object):
     frame_max = 131072
 
-    def __init__(self, amqp_url='amqp:///', pubacks=None):
+    def __init__(self, amqp_url='amqp:///', pubacks=False):
         self.pubacks = pubacks
 
         self.channels = channel.ChannelCollection()
