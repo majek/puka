@@ -92,7 +92,7 @@ def fix_basic_publish_headers(headers):
     assert 'headers' not in headers
     return nheaders
 
-def basic_publish(conn, exchange, routing_key, mandatory=False,
+def basic_publish(conn, exchange, routing_key='', mandatory=False,
                   immediate=False, headers={}, body=''):
     pt = conn.x_publish_promise
     delivery_tag = pt.x_delivery_tag
