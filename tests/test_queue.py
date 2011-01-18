@@ -87,13 +87,13 @@ class TestQueue(unittest.TestCase):
         t = client.basic_publish(exchange=qname, routing_key=qname, body='a')
         client.wait(t)
 
-        t = client.queue_bind(exchange=qname, queue=qname, binding_key=qname)
+        t = client.queue_bind(exchange=qname, queue=qname, routing_key=qname)
         client.wait(t)
 
         t = client.basic_publish(exchange=qname, routing_key=qname, body='b')
         client.wait(t)
 
-        t = client.queue_unbind(exchange=qname, queue=qname, binding_key=qname)
+        t = client.queue_unbind(exchange=qname, queue=qname, routing_key=qname)
         client.wait(t)
 
         t = client.basic_publish(exchange=qname, routing_key=qname, body='c')

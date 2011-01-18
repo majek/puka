@@ -381,17 +381,17 @@ def exchange_delete(conn, exchange, if_unused=False):
     t.x_frames = spec.encode_exchange_delete(exchange, if_unused)
     return t
 
-def exchange_bind(conn, destination, source, binding_key='', arguments={}):
+def exchange_bind(conn, destination, source, routing_key='', arguments={}):
     t = conn.promises.new(_generic_callback)
     t.x_method = spec.METHOD_EXCHANGE_BIND_OK
-    t.x_frames = spec.encode_exchange_bind(destination, source, binding_key,
+    t.x_frames = spec.encode_exchange_bind(destination, source, routing_key,
                                            arguments)
     return t
 
-def exchange_unbind(conn, destination, source, binding_key='', arguments={}):
+def exchange_unbind(conn, destination, source, routing_key='', arguments={}):
     t = conn.promises.new(_generic_callback)
     t.x_method = spec.METHOD_EXCHANGE_UNBIND_OK
-    t.x_frames = spec.encode_exchange_unbind(destination, source, binding_key,
+    t.x_frames = spec.encode_exchange_unbind(destination, source, routing_key,
                                              arguments)
     return t
 
@@ -407,17 +407,17 @@ def queue_purge(conn, queue):
     t.x_frames = spec.encode_queue_purge(queue)
     return t
 
-def queue_bind(conn, queue, exchange, binding_key='', arguments={}):
+def queue_bind(conn, queue, exchange, routing_key='', arguments={}):
     t = conn.promises.new(_generic_callback)
     t.x_method = spec.METHOD_QUEUE_BIND_OK
-    t.x_frames = spec.encode_queue_bind(queue, exchange, binding_key,
+    t.x_frames = spec.encode_queue_bind(queue, exchange, routing_key,
                                         arguments)
     return t
 
-def queue_unbind(conn, queue, exchange, binding_key='', arguments={}):
+def queue_unbind(conn, queue, exchange, routing_key='', arguments={}):
     t = conn.promises.new(_generic_callback)
     t.x_method = spec.METHOD_QUEUE_UNBIND_OK
-    t.x_frames = spec.encode_queue_unbind(queue, exchange, binding_key,
+    t.x_frames = spec.encode_queue_unbind(queue, exchange, routing_key,
                                           arguments)
     return t
 
