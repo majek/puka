@@ -42,8 +42,9 @@ class FieldTable(Field):
 def xdecode_bits(wrapper, name):
     wrapper.bits.append( name )
     if len(wrapper.bits) == 1:
-        x = [Field('B', 1, 'bits', False)]
-    return x
+        return [Field('B', 1, 'bits', False)]
+    else:
+        return []
 
 unpack_fixed_types = {
     'octet':     lambda w, n:[Field('B', 1, n)],

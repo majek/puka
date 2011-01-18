@@ -59,6 +59,7 @@ METHOD_BASIC_REJECT             = 0x003C005A 	# 60,90 3932250
 METHOD_BASIC_RECOVER_ASYNC      = 0x003C0064 	# 60,100 3932260
 METHOD_BASIC_RECOVER            = 0x003C006E 	# 60,110 3932270
 METHOD_BASIC_RECOVER_OK         = 0x003C006F 	# 60,111 3932271
+METHOD_BASIC_NACK               = 0x003C0078 	# 60,120 3932280
 METHOD_CONFIRM_SELECT           = 0x0055000A 	# 85,10 5570570
 METHOD_CONFIRM_SELECT_OK        = 0x0055000B 	# 85,11 5570571
 
@@ -734,7 +735,7 @@ def encode_queue_declare(queue, passive, durable, exclusive, auto_delete, argume
               ))
            ), )
 
-# ticket=0 queue=None exchange=None routing_key='' nowait=False arguments={}
+# ticket=0 queue='' exchange=None routing_key='' nowait=False arguments={}
 def encode_queue_bind(queue, exchange, routing_key, arguments):
     arguments_raw = table.encode(arguments)
     return ( (0x01,
@@ -750,7 +751,7 @@ def encode_queue_bind(queue, exchange, routing_key, arguments):
               ))
            ), )
 
-# ticket=0 queue=None nowait=False
+# ticket=0 queue='' nowait=False
 def encode_queue_purge(queue):
     return ( (0x01,
               ''.join((
@@ -760,7 +761,7 @@ def encode_queue_purge(queue):
               ))
            ), )
 
-# ticket=0 queue=None if_unused=False if_empty=False nowait=False
+# ticket=0 queue='' if_unused=False if_empty=False nowait=False
 def encode_queue_delete(queue, if_unused, if_empty):
     return ( (0x01,
               ''.join((
@@ -770,7 +771,7 @@ def encode_queue_delete(queue, if_unused, if_empty):
               ))
            ), )
 
-# ticket=0 queue=None exchange=None routing_key='' arguments={}
+# ticket=0 queue='' exchange=None routing_key='' arguments={}
 def encode_queue_unbind(queue, exchange, routing_key, arguments):
     arguments_raw = table.encode(arguments)
     return ( (0x01,
@@ -791,7 +792,7 @@ def encode_basic_qos(prefetch_size, prefetch_count, global_):
                 struct.pack('!IIHB', METHOD_BASIC_QOS, prefetch_size, prefetch_count, (global_ and 0x1 or 0)),
            ), )
 
-# ticket=0 queue=None consumer_tag='' no_local=False no_ack=False exclusive=False nowait=False arguments={}
+# ticket=0 queue='' consumer_tag='' no_local=False no_ack=False exclusive=False nowait=False arguments={}
 def encode_basic_consume(queue, consumer_tag, no_local, no_ack, exclusive, arguments):
     arguments_raw = table.encode(arguments)
     return ( (0x01,
@@ -832,7 +833,7 @@ def encode_basic_publish(exchange, routing_key, mandatory, immediate, user_heade
            encode_basic_properties(len(body), props),
         ] + encode_body(body, frame_size)
 
-# ticket=0 queue=None no_ack=False
+# ticket=0 queue='' no_ack=False
 def encode_basic_get(queue, no_ack):
     return ( (0x01,
               ''.join((
@@ -866,10 +867,16 @@ def encode_basic_recover(requeue):
                 struct.pack('!IB', METHOD_BASIC_RECOVER, (requeue and 0x1 or 0)),
            ), )
 
-# multiple=False nowait=False
-def encode_confirm_select(multiple):
+# delivery_tag=0 multiple=False requeue=True
+def encode_basic_nack(delivery_tag, multiple, requeue):
     return ( (0x01,
-                struct.pack('!IB', METHOD_CONFIRM_SELECT, (multiple and 0x1 or 0)),
+                struct.pack('!IQB', METHOD_BASIC_NACK, delivery_tag, (multiple and 0x1 or 0) | (requeue and 0x2 or 0)),
+           ), )
+
+# nowait=False
+def encode_confirm_select():
+    return ( (0x01,
+                struct.pack('!IB', METHOD_CONFIRM_SELECT, 0),
            ), )
 
 BASIC_PROPS_SET = set((

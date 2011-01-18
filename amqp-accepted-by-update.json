@@ -163,6 +163,9 @@
         ],
         "cancel-ok": [
             "client"
+        ],
+        "nack": [
+            "server"
         ]
     },
     "channel": {
