@@ -68,6 +68,8 @@ def encode(table):
     '\\x00\\x00\\x00\\x07\\x01aD\\x03\\x00\\x00\\x00\\x05'
     >>> encode({'a':datetime.datetime(2010,12,31,23,58,59)})
     '\\x00\\x00\\x00\\x0b\\x01aT\\x00\\x00\\x00\\x00M\\x1enC'
+    >>> encode({'test':decimal.Decimal('-0.01')})
+    '\\x00\\x00\\x00\\n\\x04testD\\x02\\xff\\xff\\xff\\xff'
     '''
     pieces = []
     if table is None:
@@ -91,10 +93,10 @@ def encode(table):
             if value._exp < 0:
                 decimals = -value._exp
                 raw = int(value * (decimal.Decimal(10) ** decimals))
-                pieces.append(struct.pack('>cBI', 'D', decimals, raw))
+                pieces.append(struct.pack('>cBi', 'D', decimals, raw))
             else:
                 # per spec, the "decimals" octet is unsigned (!)
-                pieces.append(struct.pack('>cBI', 'D', 0, int(value)))
+                pieces.append(struct.pack('>cBi', 'D', 0, int(value)))
             tablesize = tablesize + 5
         elif isinstance(value, datetime.datetime):
             pieces.append(struct.pack('>cQ', 'T', calendar.timegm(value.utctimetuple())))
@@ -125,6 +127,12 @@ def decode(encoded, offset):
     {'a': Decimal(...5E-30...)}
     >>> decode(encode({'a':datetime.datetime(2010,12,31,23,58,59)}), 0)[0]
     {'a': datetime.datetime(2010, 12, 31, 23, 58, 59)}
+    >>> decode(encode({'test':decimal.Decimal('-1.234')}), 0)[0]
+    {'test': Decimal('-1.234')}
+    >>> decode(encode({'test':decimal.Decimal('1.234')}), 0)[0]
+    {'test': Decimal('1.234')}
+    >>> decode(encode({'test':decimal.Decimal('1000000')}), 0)[0]
+    {'test': Decimal('1000000')}
     '''
     result = {}
     tablesize = struct.unpack_from('>I', encoded, offset)[0]
@@ -148,7 +156,7 @@ def decode(encoded, offset):
         elif kind == 'D':
             decimals = struct.unpack_from('B', encoded, offset)[0]
             offset = offset + 1
-            raw = struct.unpack_from('>I', encoded, offset)[0]
+            raw = struct.unpack_from('>i', encoded, offset)[0]
             offset = offset + 4
             value = decimal.Decimal(raw) * (decimal.Decimal(10) ** -decimals)
         elif kind == 'T':
