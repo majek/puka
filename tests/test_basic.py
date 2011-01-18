@@ -225,7 +225,7 @@ class TestBasic(base.TestCase):
             "message_id": 'g',
             "timestamp": 1,
             "type_": 'h',
-            "user_id": 'i',
+            "user_id": 'guest',  # that one needs to match real user
             "app_id": 'j',
             "cluster_id": 'k',
             "custom": 'l',
