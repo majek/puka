@@ -46,7 +46,8 @@
 #
 # ***** END LICENSE BLOCK *****
 #
-# Code adapted to Puka.
+# Code originally from Pika, adapted to Puka.
+#
 
 import struct
 import decimal
@@ -81,35 +82,47 @@ def encode(table):
         pieces.append(struct.pack('B', len(key)))
         pieces.append(key)
         tablesize = tablesize + 1 + len(key)
-        if isinstance(value, str):
-            pieces.append(struct.pack('>cI', 'S', len(value)))
-            pieces.append(value)
-            tablesize = tablesize + 5 + len(value)
-        elif isinstance(value, int):
-            pieces.append(struct.pack('>cI', 'I', value))
-            tablesize = tablesize + 5
-        elif isinstance(value, decimal.Decimal):
-            value = value.normalize()
-            if value._exp < 0:
-                decimals = -value._exp
-                raw = int(value * (decimal.Decimal(10) ** decimals))
-                pieces.append(struct.pack('>cBi', 'D', decimals, raw))
-            else:
-                # per spec, the "decimals" octet is unsigned (!)
-                pieces.append(struct.pack('>cBi', 'D', 0, int(value)))
-            tablesize = tablesize + 5
-        elif isinstance(value, datetime.datetime):
-            pieces.append(struct.pack('>cQ', 'T', calendar.timegm(value.utctimetuple())))
-            tablesize = tablesize + 9
-        elif isinstance(value, dict):
-            pieces.append(struct.pack('>c', 'F'))
-            piece = encode(value)
-            pieces.append(piece)
-            tablesize = tablesize + 1 + len(piece)
-        else:
-            assert False, "Unsupported field kind during encoding %r/%r" % (key, value)
+        tablesize += encode_value(pieces, value)
     pieces[length_index] = struct.pack('>I', tablesize)
     return ''.join(pieces)
+
+def encode_value(pieces, value):
+    if isinstance(value, str):
+        pieces.append(struct.pack('>cI', 'S', len(value)))
+        pieces.append(value)
+        return 5 + len(value)
+    elif isinstance(value, int):
+        pieces.append(struct.pack('>cI', 'I', value))
+        return 5
+    elif isinstance(value, decimal.Decimal):
+        value = value.normalize()
+        if value._exp < 0:
+            decimals = -value._exp
+            raw = int(value * (decimal.Decimal(10) ** decimals))
+            pieces.append(struct.pack('>cBi', 'D', decimals, raw))
+        else:
+            # per spec, the "decimals" octet is unsigned (!)
+            pieces.append(struct.pack('>cBi', 'D', 0, int(value)))
+        return 5
+    elif isinstance(value, datetime.datetime):
+        pieces.append(struct.pack('>cQ', 'T', calendar.timegm(
+                    value.utctimetuple())))
+        return 9
+    elif isinstance(value, dict):
+        pieces.append(struct.pack('>c', 'F'))
+        piece = encode(value)
+        pieces.append(piece)
+        return 1 + len(piece)
+    elif isinstance(value, list):
+        p = []
+        [encode_value(p, v) for v in value]
+        piece = ''.join(p)
+        pieces.append(struct.pack('>cI', 'A', len(piece)))
+        pieces.append(piece)
+        return 5 + len(piece)
+    else:
+        assert False, "Unsupported field kind during encoding %r/%r" % (
+            key, value)
 
 def decode(encoded, offset):
     '''
@@ -133,6 +146,8 @@ def decode(encoded, offset):
     {'test': Decimal('1.234')}
     >>> decode(encode({'test':decimal.Decimal('1000000')}), 0)[0]
     {'test': Decimal('1000000')}
+    >>> decode(encode({'a':[1,2,3,'a',decimal.Decimal('-0.01')]}), 0)[0]
+    {'a': [1, 2, 3, 'a', Decimal('-0.01')]}
     '''
     result = {}
     tablesize = struct.unpack_from('>I', encoded, offset)[0]
@@ -143,28 +158,41 @@ def decode(encoded, offset):
         offset = offset + 1
         key = encoded[offset : offset + keylen]
         offset = offset + keylen
-        kind = encoded[offset]
-        offset = offset + 1
-        if kind == 'S':
-            length = struct.unpack_from('>I', encoded, offset)[0]
-            offset = offset + 4
-            value = encoded[offset : offset + length]
-            offset = offset + length
-        elif kind == 'I':
-            value = struct.unpack_from('>I', encoded, offset)[0]
-            offset = offset + 4
-        elif kind == 'D':
-            decimals = struct.unpack_from('B', encoded, offset)[0]
-            offset = offset + 1
-            raw = struct.unpack_from('>i', encoded, offset)[0]
-            offset = offset + 4
-            value = decimal.Decimal(raw) * (decimal.Decimal(10) ** -decimals)
-        elif kind == 'T':
-            value = datetime.datetime.utcfromtimestamp(struct.unpack_from('>Q', encoded, offset)[0])
-            offset = offset + 8
-        elif kind == 'F':
-            (value, offset) = decode(encoded, offset)
-        else:
-            assert False, "Unsupported field kind %s during decoding" % (kind,)
-        result[key] = value
+        result[key], offset = decode_value(encoded, offset)
     return (result, offset)
+
+def decode_value(encoded, offset):
+    kind = encoded[offset]
+    offset = offset + 1
+    if kind == 'S':
+        length = struct.unpack_from('>I', encoded, offset)[0]
+        offset = offset + 4
+        value = encoded[offset : offset + length]
+        offset = offset + length
+    elif kind == 'I':
+        value = struct.unpack_from('>I', encoded, offset)[0]
+        offset = offset + 4
+    elif kind == 'D':
+        decimals = struct.unpack_from('B', encoded, offset)[0]
+        offset = offset + 1
+        raw = struct.unpack_from('>i', encoded, offset)[0]
+        offset = offset + 4
+        value = decimal.Decimal(raw) * (decimal.Decimal(10) ** -decimals)
+    elif kind == 'T':
+        value = datetime.datetime.utcfromtimestamp(
+            struct.unpack_from('>Q', encoded, offset)[0])
+        offset = offset + 8
+    elif kind == 'F':
+        (value, offset) = decode(encoded, offset)
+    elif kind == 'A':
+        length, = struct.unpack_from('>I', encoded, offset)
+        offset = offset + 4
+        offset_end = offset + length
+        value = []
+        while offset < offset_end:
+            v, offset = decode_value(encoded, offset)
+            value.append(v)
+        assert offset == offset_end
+    else:
+        assert False, "Unsupported field kind %s during decoding" % (kind,)
+    return value, offset
