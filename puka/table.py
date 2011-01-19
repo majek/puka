@@ -94,6 +94,9 @@ def encode_value(pieces, value):
     elif isinstance(value, int):
         pieces.append(struct.pack('>cI', 'I', value))
         return 5
+    elif isinstance(value, long):
+        pieces.append(struct.pack('>cq', 'l', value))
+        return 9
     elif isinstance(value, decimal.Decimal):
         value = value.normalize()
         if value._exp < 0:
@@ -148,6 +151,8 @@ def decode(encoded, offset):
     {'test': Decimal('1000000')}
     >>> decode(encode({'a':[1,2,3,'a',decimal.Decimal('-0.01')]}), 0)[0]
     {'a': [1, 2, 3, 'a', Decimal('-0.01')]}
+    >>> decode(encode({'a': 0x7EADBEEFDEADBEEFL}), 0)[0]
+    {'a': 9128161957192253167}
     '''
     result = {}
     tablesize = struct.unpack_from('>I', encoded, offset)[0]
@@ -172,6 +177,9 @@ def decode_value(encoded, offset):
     elif kind == 'I':
         value = struct.unpack_from('>I', encoded, offset)[0]
         offset = offset + 4
+    elif kind == 'l':
+        value = struct.unpack_from('>q', encoded, offset)[0]
+        offset = offset + 8
     elif kind == 'D':
         decimals = struct.unpack_from('B', encoded, offset)[0]
         offset = offset + 1
