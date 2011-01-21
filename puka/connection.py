@@ -5,7 +5,7 @@ import socket
 import struct
 import time
 import urllib
-import urlparse
+from . import urlparse
 
 from . import channel
 from . import exceptions
@@ -27,10 +27,6 @@ class Connection(object):
         self.channels = channel.ChannelCollection()
         self.promises = promise.PromiseCollection(self)
 
-        self.sd = socket.socket()
-        self.sd.setblocking(False)
-        set_ridiculously_high_buffers(self.sd)
-
         (self.username, self.password, self.vhost, self.host, self.port) = \
             parse_amqp_url(amqp_url)
 
@@ -48,8 +44,18 @@ class Connection(object):
 
     def _connect(self):
         self._init_buffers()
+
         try:
-            self.sd.connect((self.host, self.port))
+            addrinfo = socket.getaddrinfo(self.host, self.port, socket.AF_INET6, socket.SOCK_STREAM)
+        except socket.gaierror:
+            addrinfo = socket.getaddrinfo(self.host, self.port, socket.AF_INET, socket.SOCK_STREAM)
+
+        (family, socktype, proto, canonname, sockaddr) = addrinfo[0]
+        self.sd = socket.socket(family, socktype, proto)
+        self.sd.setblocking(False)
+        set_ridiculously_high_buffers(self.sd)
+        try:
+            self.sd.connect(sockaddr)
         except socket.error, e:
             if e.errno not in (errno.EINPROGRESS, errno.EWOULDBLOCK):
                 raise
