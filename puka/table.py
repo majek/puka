@@ -56,21 +56,23 @@ import calendar
 
 
 def encode(table):
-    '''
+    r'''
     >>> encode(None)
-    '\\x00\\x00\\x00\\x00'
+    '\x00\x00\x00\x00'
     >>> encode({})
-    '\\x00\\x00\\x00\\x00'
+    '\x00\x00\x00\x00'
     >>> encode({'a':1, 'c':True, 'd':'x', 'e':{}})
-    '\\x00\\x00\\x00\\x1d\\x01aI\\x00\\x00\\x00\\x01\\x01cI\\x00\\x00\\x00\\x01\\x01eF\\x00\\x00\\x00\\x00\\x01dS\\x00\\x00\\x00\\x01x'
+    '\x00\x00\x00\x1d\x01aI\x00\x00\x00\x01\x01cI\x00\x00\x00\x01\x01eF\x00\x00\x00\x00\x01dS\x00\x00\x00\x01x'
     >>> encode({'a':decimal.Decimal('1.0')})
-    '\\x00\\x00\\x00\\x07\\x01aD\\x00\\x00\\x00\\x00\\x01'
+    '\x00\x00\x00\x08\x01aD\x00\x00\x00\x00\x01'
     >>> encode({'a':decimal.Decimal('5E-3')})
-    '\\x00\\x00\\x00\\x07\\x01aD\\x03\\x00\\x00\\x00\\x05'
+    '\x00\x00\x00\x08\x01aD\x03\x00\x00\x00\x05'
     >>> encode({'a':datetime.datetime(2010,12,31,23,58,59)})
-    '\\x00\\x00\\x00\\x0b\\x01aT\\x00\\x00\\x00\\x00M\\x1enC'
+    '\x00\x00\x00\x0b\x01aT\x00\x00\x00\x00M\x1enC'
     >>> encode({'test':decimal.Decimal('-0.01')})
-    '\\x00\\x00\\x00\\n\\x04testD\\x02\\xff\\xff\\xff\\xff'
+    '\x00\x00\x00\x0b\x04testD\x02\xff\xff\xff\xff'
+    >>> encode({'a':-1, 'b':[1,2,3,4,-1],'g':-1})
+    '\x00\x00\x00.\x01aI\xff\xff\xff\xff\x01bA\x00\x00\x00\x19I\x00\x00\x00\x01I\x00\x00\x00\x02I\x00\x00\x00\x03I\x00\x00\x00\x04I\xff\xff\xff\xff\x01gI\xff\xff\xff\xff'
     '''
     pieces = []
     if table is None:
@@ -92,7 +94,7 @@ def encode_value(pieces, value):
         pieces.append(value)
         return 5 + len(value)
     elif isinstance(value, int):
-        pieces.append(struct.pack('>cI', 'I', value))
+        pieces.append(struct.pack('>ci', 'I', value))
         return 5
     elif isinstance(value, long):
         pieces.append(struct.pack('>cq', 'l', value))
@@ -106,7 +108,7 @@ def encode_value(pieces, value):
         else:
             # per spec, the "decimals" octet is unsigned (!)
             pieces.append(struct.pack('>cBi', 'D', 0, int(value)))
-        return 5
+        return 6
     elif isinstance(value, datetime.datetime):
         pieces.append(struct.pack('>cQ', 'T', calendar.timegm(
                     value.utctimetuple())))
@@ -133,8 +135,8 @@ def decode(encoded, offset):
     ({}, 4)
     >>> decode(encode({}), 0)[0]
     {}
-    >>> decode(encode({'a':1, 'c':True, 'd':'x', 'e':{}}), 0)[0]
-    {'a': 1, 'c': 1, 'e': {}, 'd': 'x'}
+    >>> decode(encode({'a':1, 'c':True, 'd':'x', 'e':{}, 'f':-1}), 0)[0]
+    {'a': 1, 'c': 1, 'e': {}, 'd': 'x', 'f': -1}
 
     # python 2.5 reports Decimal("1.01"), python 2.6 Decimal('1.01')
     >>> decode(encode({'a':decimal.Decimal('1.01')}), 0)[0] # doctest: +ELLIPSIS
@@ -175,7 +177,7 @@ def decode_value(encoded, offset):
         value = encoded[offset : offset + length]
         offset = offset + length
     elif kind == 'I':
-        value = struct.unpack_from('>I', encoded, offset)[0]
+        value = struct.unpack_from('>i', encoded, offset)[0]
         offset = offset + 4
     elif kind == 'l':
         value = struct.unpack_from('>q', encoded, offset)[0]
