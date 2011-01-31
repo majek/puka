@@ -150,9 +150,6 @@ def _pt_basic_ack(pt, result):
             t = pt.x_async_inflight[delivery_tag]
             del pt.x_async_inflight[delivery_tag]
             t.done(spec.Frame())
-    else:
-        raise Exception("Something went wrong with pubacks %r not in %r" % (
-                result, pt.x_async_inflight.keys()))
 
 def _pt_channel_close(pt, result):
     pt.x_async_enabled = False
