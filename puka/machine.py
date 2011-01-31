@@ -65,14 +65,14 @@ def publish_promise(conn):
     else:
         pt = conn.promises.new(_pt_channel_open_ok)
     pt.x_async_enabled = False
-    pt.x_delivery_tag = 0
+    pt.x_delivery_tag = 1
     pt.x_delivery_tag_shift = 0
     pt.x_async_inflight = {}
     pt.x_async_next = []
     conn.x_publish_promise = pt
 
 def _pt_channel_open_ok_puback(pt, _result=None):
-    pt.send_frames( spec.encode_confirm_select(False) )
+    pt.send_frames( spec.encode_confirm_select() )
     pt.register(spec.METHOD_CONFIRM_SELECT_OK, _pt_channel_open_ok)
     pt.register(spec.METHOD_BASIC_ACK, _pt_basic_ack)
 
@@ -141,9 +141,18 @@ def _pt_basic_ack(pt, result):
     pt.register(spec.METHOD_BASIC_ACK, _pt_basic_ack)
     delivery_tag = result['delivery_tag'] + pt.x_delivery_tag_shift
     if delivery_tag in pt.x_async_inflight:
-        t = pt.x_async_inflight[delivery_tag]
-        del pt.x_async_inflight[delivery_tag]
-        t.done(spec.Frame())
+        if result['multiple'] == True:
+            delivery_tags = filter(lambda dt: dt <= delivery_tag,
+                                   pt.x_async_inflight.iterkeys())
+        else:
+            delivery_tags = (delivery_tag,)
+        for delivery_tag in delivery_tags:
+            t = pt.x_async_inflight[delivery_tag]
+            del pt.x_async_inflight[delivery_tag]
+            t.done(spec.Frame())
+    else:
+        raise Exception("Something went wrong with pubacks %r not in %r" % (
+                result, pt.x_async_inflight.keys()))
 
 def _pt_channel_close(pt, result):
     pt.x_async_enabled = False
