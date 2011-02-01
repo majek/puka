@@ -216,7 +216,7 @@ class TestBasic(base.TestCase):
         headers = {
             "content_type": 'a',
             "content_encoding": 'b',
-            #"headers": ,
+            #"headers":
             #"delivery_mode": ,
             "priority": 1,
             "correlation_id": 'd',
@@ -229,6 +229,8 @@ class TestBasic(base.TestCase):
             "app_id": 'j',
             "cluster_id": 'k',
             "custom": 'l',
+            "blah2": [True, 1, -1, 4611686018427387904L,
+                      -4611686018427387904L, [1,2,3,4, {"a":"b", "c":[]}]],
             }
 
         t = client.basic_publish(exchange='', routing_key=self.name,
@@ -243,7 +245,7 @@ class TestBasic(base.TestCase):
         del recv_headers['persistent']
         del recv_headers['x-puka-delivery-tag']
 
-        self.assertEqual(headers, recv_headers)
+        self.assertEqual(repr(headers), repr(recv_headers))
 
         promise = client.queue_delete(queue=self.name)
         client.wait(promise)

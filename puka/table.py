@@ -61,7 +61,7 @@ def encode(table):
     '\x00\x00\x00\x00'
     >>> encode({})
     '\x00\x00\x00\x00'
-    >>> encode({'a':1, 'c':True, 'd':'x', 'e':{}})
+    >>> encode({'a':1, 'c':1, 'd':'x', 'e':{}})
     '\x00\x00\x00\x1d\x01aI\x00\x00\x00\x01\x01cI\x00\x00\x00\x01\x01eF\x00\x00\x00\x00\x01dS\x00\x00\x00\x01x'
     >>> encode({'a':decimal.Decimal('1.0')})
     '\x00\x00\x00\x08\x01aD\x00\x00\x00\x00\x01'
@@ -73,6 +73,10 @@ def encode(table):
     '\x00\x00\x00\x0b\x04testD\x02\xff\xff\xff\xff'
     >>> encode({'a':-1, 'b':[1,2,3,4,-1],'g':-1})
     '\x00\x00\x00.\x01aI\xff\xff\xff\xff\x01bA\x00\x00\x00\x19I\x00\x00\x00\x01I\x00\x00\x00\x02I\x00\x00\x00\x03I\x00\x00\x00\x04I\xff\xff\xff\xff\x01gI\xff\xff\xff\xff'
+    >>> encode({'a': True})
+    '\x00\x00\x00\x04\x01at\x01'
+    >>> encode({'a': False})
+    '\x00\x00\x00\x04\x01at\x00'
     '''
     pieces = []
     if table is None:
@@ -93,6 +97,9 @@ def encode_value(pieces, value):
         pieces.append(struct.pack('>cI', 'S', len(value)))
         pieces.append(value)
         return 5 + len(value)
+    elif isinstance(value, bool):
+        pieces.append(struct.pack('>cB', 't', int(value)))
+        return 2
     elif isinstance(value, int):
         pieces.append(struct.pack('>ci', 'I', value))
         return 5
@@ -135,7 +142,7 @@ def decode(encoded, offset):
     ({}, 4)
     >>> decode(encode({}), 0)[0]
     {}
-    >>> decode(encode({'a':1, 'c':True, 'd':'x', 'e':{}, 'f':-1}), 0)[0]
+    >>> decode(encode({'a':1, 'c':1, 'd':'x', 'e':{}, 'f':-1}), 0)[0]
     {'a': 1, 'c': 1, 'e': {}, 'd': 'x', 'f': -1}
 
     # python 2.5 reports Decimal("1.01"), python 2.6 Decimal('1.01')
@@ -154,7 +161,9 @@ def decode(encoded, offset):
     >>> decode(encode({'a':[1,2,3,'a',decimal.Decimal('-0.01')]}), 0)[0]
     {'a': [1, 2, 3, 'a', Decimal('-0.01')]}
     >>> decode(encode({'a': 0x7EADBEEFDEADBEEFL}), 0)[0]
-    {'a': 9128161957192253167}
+    {'a': 9128161957192253167L}
+    >>> decode(encode({'a': True, 'b': False}), 0)[0]
+    {'a': True, 'b': False}
     '''
     result = {}
     tablesize = struct.unpack_from('>I', encoded, offset)[0]
@@ -176,11 +185,16 @@ def decode_value(encoded, offset):
         offset = offset + 4
         value = encoded[offset : offset + length]
         offset = offset + length
+    elif kind == 't':
+        value = struct.unpack_from('>B', encoded, offset)[0]
+        value = bool(value)
+        offset = offset + 1
     elif kind == 'I':
         value = struct.unpack_from('>i', encoded, offset)[0]
         offset = offset + 4
     elif kind == 'l':
         value = struct.unpack_from('>q', encoded, offset)[0]
+        value = long(value)
         offset = offset + 8
     elif kind == 'D':
         decimals = struct.unpack_from('B', encoded, offset)[0]
