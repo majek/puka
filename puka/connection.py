@@ -121,8 +121,7 @@ class Connection(object):
     def _send(self, data):
         p = bool(self.send_buf)
         self.send_buf.write(data)
-        if not p: # buffer wasn't full before, try to write straightaway.
-            self.on_write()
+        # Do not try to write straightaway, better wait for more data.
 
     def _send_frames(self, channel_number, frames):
         self._send( ''.join([''.join((struct.pack('!BHI',
