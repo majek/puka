@@ -132,6 +132,8 @@ class Connection(object):
                                  for frame_type, payload in frames]) )
 
     def needs_write(self):
+        # Try to flush before answering.
+        self.on_write()
         return bool(self.send_buf)
 
     def on_write(self):
