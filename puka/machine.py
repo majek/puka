@@ -86,7 +86,11 @@ def _pt_channel_open_ok(pt, _result=None):
 def fix_basic_publish_headers(headers):
     nheaders = {}
     nheaders.update(headers) # copy
-    if nheaders.get('persistent', True):
+    if 'persistent' in nheaders:
+        if nheaders['persistent']:
+            nheaders['delivery_mode'] = 2
+        del nheaders['persistent']
+    else:
         nheaders['delivery_mode'] = 2
     # That's not a good idea.
     assert 'headers' not in headers
