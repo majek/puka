@@ -60,8 +60,13 @@ class TestBasicConsumeMulti(base.TestCase):
         with self.assertRaises(puka.ResourceLocked):
             client.wait(promise)
 
+        # Testing exclusive basic_consume.
         promise = client.basic_consume(queue=self.name, exclusive=True)
-        client.wait(promise, timeout=0.01)
+        client.wait(promise, timeout=0.001)
+
+        # Do something syncrhonus.
+        promise = client.queue_declare(exclusive=True)
+        client.wait(promise)
 
         promise = client.basic_consume(queue=self.name)
         with self.assertRaises(puka.AccessRefused):
@@ -70,4 +75,8 @@ class TestBasicConsumeMulti(base.TestCase):
         promise = client.queue_delete(queue=self.name)
         client.wait(promise)
 
+
+if __name__ == '__main__':
+    import tests
+    tests.run_unittests(globals())
 
