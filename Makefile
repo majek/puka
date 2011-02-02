@@ -6,8 +6,7 @@ PYTHON=python
 all: vendor/rabbitmq-codegen/amqp_codegen.py puka/spec.py puka/spec_exceptions.py tests
 
 vendor/rabbitmq-codegen/amqp_codegen.py:
-	git submodule init
-	git submodule update
+	git submodule update --init
 
 $(AMQP_JSON_SPEC):
 	@echo "You need '$(CODEGEN_DIR)' package."
