@@ -37,7 +37,7 @@ def _connection_start(t, result):
     except ValueError:
         t.conn.x_server_version = (Ellipsis,)
     if t.conn.pubacks is None:
-        t.conn.x_pubacks = t.conn.x_server_version > (2,2,0)
+        t.conn.x_pubacks = t.conn.x_server_version > (2,3,0)
     else:
         t.conn.x_pubacks = t.conn.pubacks
 
@@ -160,6 +160,7 @@ def _pt_channel_close(pt, result):
     pt.x_delivery_tag_shift = pt.x_delivery_tag
     # Start off with reestablishing the channel
     if pt.conn.x_pubacks:
+        pt.x_delivery_tag_shift -= 1 # starting from 1.
         pt.register(spec.METHOD_CHANNEL_OPEN_OK, _pt_channel_open_ok_puback)
     else:
         pt.register(spec.METHOD_CHANNEL_OPEN_OK, _pt_channel_open_ok)

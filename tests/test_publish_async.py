@@ -52,6 +52,19 @@ class TestPublishAsync(base.TestCase):
         with self.assertRaises(puka.NotFound):
             client.wait(promise3)
 
+        # validate if it still works
+        promise = client.basic_publish(exchange='', routing_key='',
+                                      body=self.msg)
+        client.wait(promise)
+
+        # and fail again.
+        promise = client.basic_publish(exchange='wrong_exchange',
+                                       routing_key='',
+                                       body=self.msg)
+        with self.assertRaises(puka.NotFound):
+            client.wait(promise)
+
+        # and validate again
         promise = client.basic_publish(exchange='', routing_key='',
                                       body=self.msg)
         client.wait(promise)
