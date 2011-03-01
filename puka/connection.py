@@ -196,6 +196,10 @@ class Connection(object):
     def wait_for_any(self):
         return self.loop()
 
+    def wait_for_all(self, promise_list, raise_errors=True):
+        for promise in promise_list:
+            self.wait(promise, raise_errors=raise_errors)
+
     def loop(self, timeout=None):
         '''
         Wait for any promise. Block forever.
