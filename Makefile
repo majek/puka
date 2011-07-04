@@ -36,7 +36,7 @@ distclean: clean
 
 test: tests
 tests: puka/spec.py
-	cd tests && AMQP_URL=amqp://127.0.0.1/ PYTHONPATH=.. $(PYTHON) tests.py ../puka puka
+	cd tests && AMQP_URL=amqp://127.0.0.1/ PYTHONPATH=.. $(PYTHON) tests.py ../puka puka puka.urlparse
 
 
 venv:

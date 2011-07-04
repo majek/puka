@@ -34,7 +34,7 @@ def main_coverage(TESTS):
 
     pwd=os.getcwd()
     os.chdir(sys.argv[1])
-    BAD_MODULES=[]
+    BAD_MODULES=(sys.argv[3] if len(sys.argv) >= 4 else '').split(',')
     MODULE_NAMES=[sys.argv[2] + '.' +f[0:-3] for f in glob.glob("*.py") if f not in BAD_MODULES]
     MODULE_NAMES.sort()
     os.chdir(pwd)
