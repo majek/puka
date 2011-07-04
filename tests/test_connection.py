@@ -2,10 +2,12 @@ from __future__ import with_statement
 
 import os
 import puka
+import puka.connection
 import socket
 
 import base
 
+AMQP_URL=os.getenv('AMQP_URL')
 
 class TestConnection(base.TestCase):
     def test_broken_url(self):
@@ -22,7 +24,11 @@ class TestConnection(base.TestCase):
 
     # The following tests take 3 seconds each, due to Rabbit.
     def test_wrong_user(self):
-        client = puka.Client('amqp://xxx:bbb@127.0.0.1/')
+        (username, password, vhost, host, port) = \
+            puka.connection.parse_amqp_url(AMQP_URL)
+
+        client = puka.Client('amqp://%s:%s@%s:%s%s' % \
+                                 (username, 'wrongpass', host, port, vhost))
         promise = client.connect()
         with self.assertRaises(puka.ConnectionBroken):
             client.wait(promise)
