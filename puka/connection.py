@@ -43,6 +43,7 @@ class Connection(object):
         return self.sd
 
     def _connect(self):
+        self._handle_read = self._handle_conn_read
         self._init_buffers()
 
         try:
@@ -85,7 +86,18 @@ class Connection(object):
                     self._handle_read(data, offset)
             self.recv_buf.consume(offset)
 
-    def _handle_read(self, data, start_offset):
+    def _handle_conn_read(self, data, offset):
+        self._handle_read = self._handle_frame_read
+        if data[offset:].startswith('AMQP'):
+            a,b,c,d = struct.unpack('!BBBB', data[offset+4:offset+4+4])
+            self._shutdown(exceptions.mark_frame(
+                    spec.Frame(),
+                    exceptions.UnsupportedProtocol("%s.%s.%s.%s" % (a,b,c,d))))
+            return 0,0
+        else:
+            return self._handle_frame_read(data, offset)
+
+    def _handle_frame_read(self, data, start_offset):
         offset = start_offset
         if len(data)-start_offset < 8:
             return start_offset, 8

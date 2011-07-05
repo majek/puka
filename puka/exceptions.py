@@ -2,6 +2,7 @@ import socket
 from . import spec_exceptions
 
 class ConnectionBroken(socket.error): pass
+class UnsupportedProtocol(socket.error): pass
 
 
 def exception_from_frame(result):
