@@ -2,18 +2,25 @@ import os
 import sys
 import setuptools
 
+# Some filesystems don't support hard links. Use the power of
+# monkeypatching to overcome the problem.
+import os, shutil
+os.link = shutil.copy
+
+
 if not os.path.exists("puka/spec.py"):
     print >> sys.stderr, "Run 'make' first."
     sys.exit(1)
 
 
 setuptools.setup(name='puka',
-      version='0.0.1',
+      version=file('VERSION').read().strip(),
       description='Puka - the opinionated RabbitMQ client',
       author='Marek Majkowski',
       author_email='marek@rabbitmq.com',
       url='http://github.com/majek/puka#readme',
       packages=['puka'],
+      platforms=['any'],
       license='MIT',
       classifiers=[
         'Development Status :: 3 - Alpha',
@@ -22,4 +29,5 @@ setuptools.setup(name='puka',
         'Operating System :: OS Independent',
         'Topic :: Software Development :: Libraries :: Python Modules',
         ],
+      zip_safe = True,
       )

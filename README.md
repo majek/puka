@@ -127,14 +127,18 @@ interesting bits:
 I want to install Puka
 ----------------------
 
-To install Puka system-wide type:
+You can install Puka system-wide using pip:
 
-    sudo pip install -e git+http://github.com/majek/puka.git#egg=puka
+    sudo pip install puka
 
-Even better is to use `virtualenv` local environment:
+Alternatively to install it in the `virtualenv` local environment:
 
      virtualenv my_venv
-     pip -E my_venv install -e git+http://github.com/majek/puka.git#egg=puka
+     pip -E my_venv install puka
+
+Or if you need the code from trunk:
+
+    sudo pip install -e git+http://github.com/majek/puka.git#egg=puka
 
 
 I want to run the examples
