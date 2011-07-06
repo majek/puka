@@ -15,7 +15,7 @@ Puka exposes a simple, easy to understand API. Take a look at the
 
     import puka
 
-    client = puka.Puka("amqp://localhost/")
+    client = puka.Client("amqp://localhost/")
 
     promise = client.connect()
     client.wait(promise)
@@ -31,7 +31,7 @@ Puka exposes a simple, easy to understand API. Take a look at the
 Puka is asynchronous
 --------------------
 
-Puka by is fully asynchronous. Although, as you can see in example
+Puka is fully asynchronous. Although, as you can see in example
 above, it can behave synchronously. That's especially useful for
 simple tasks when you don't want to introduce callbacks.
 
@@ -54,6 +54,9 @@ Here's the same code written in an asynchronous way:
     client = puka.Client("amqp://localhost/")
     client.connect(callback=on_connection)
     client.loop()
+
+You can mix synchronous and asychronous programming styles if you want
+to.
 
 
 Puka never blocks
@@ -90,6 +93,9 @@ example, this snippet creates 1000 queues in parallel:
     for promise in promises:
         client.wait(promise)
 
+Puka also has a nicely optimized AMQP codec, but don't expect miracles
+- it can't go faster than Python.
+
 Puka is sane
 ------------
 
@@ -98,10 +104,12 @@ Puka does expose only a sane subset of AMQP, as judged by the author.
 The major differences between Puka and normal AMQP libraries include:
 
   - Puka doesn't expose AMQP channels to the users.
-  - Puka treats `basic_publish` as a synchronous method (you can wait
-    on it and make sure that your data is delivered).
+  - Puka treats `basic_publish` as a synchronous method. You can wait
+    on it and make sure that your data is delivered. Alternatively,
+    you may ignore the promise and treat it as an asynchronous command.
   - Puka tries to cope with the AMQP exceptions and expose them
-    to the user in a predictable way.
+    to the user in a predictable way. Unlike other libraries it's
+    possible (and recommended!) to recover from AMQP errors.
 
 
 Puka is experimental
@@ -115,7 +123,10 @@ and may be abandoned at any time.
 I like it! Show me more!
 ------------------------
 
-You can find more code in the `./examples` directory. Some
+The best examples to start with are in the
+[rabbitmq-tutorials repo](https://github.com/rabbitmq/rabbitmq-tutorials/tree/master/python-puka).
+
+More code can be found in the `./examples` directory. Some
 interesting bits:
 
   - `./examples/send.py`: sends one message
@@ -161,10 +172,10 @@ I want to see the API documentation
 -----------------------------------
 
 The easiest way to get started is to take a look at the examples and
-tweak them to your needs. You can't see more detailed documentation,
-as it doesn't exist right now. If it existed it would live here:
+tweak them to your needs.  Detailed documentation doesn't exist
+now. If it existed it would live here:
 
 [http://majek.github.com/puka/](http://majek.github.com/puka/)
 
 There is also a bunch of fairly complicated examples hidden in the
-tests.
+tests (see the `./tests` directory).
