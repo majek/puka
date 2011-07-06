@@ -151,28 +151,27 @@ class TestBasic(base.TestCase):
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body=self.msg,
-                                      headers={'persistent':True})
+                                      headers={'delivery_mode':2})
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
                                       body=self.msg,
-                                      headers={'persistent':False})
+                                      headers={'delivery_mode':1})
         client.wait(promise)
 
         promise = client.basic_get(queue=self.name, no_ack=True)
         result = client.wait(promise)
-        self.assertTrue(result['headers']['persistent'])
-        self.assertEquals(result['headers']['delivery_mode'], 2)
-
-        promise = client.basic_get(queue=self.name, no_ack=True)
-        result = client.wait(promise)
-        self.assertTrue(result['headers']['persistent'])
-        self.assertEquals(result['headers']['delivery_mode'], 2)
-
-        promise = client.basic_get(queue=self.name, no_ack=True)
-        result = client.wait(promise)
-        self.assertTrue(not result['headers']['persistent'])
         self.assertTrue('delivery_mode' not in result['headers'])
+
+        promise = client.basic_get(queue=self.name, no_ack=True)
+        result = client.wait(promise)
+        self.assertTrue('delivery_mode' in result['headers'])
+        self.assertEquals(result['headers']['delivery_mode'], 2)
+
+        promise = client.basic_get(queue=self.name, no_ack=True)
+        result = client.wait(promise)
+        self.assertTrue('delivery_mode' in result['headers'])
+        self.assertEquals(result['headers']['delivery_mode'], 1)
 
         promise = client.queue_delete(queue=self.name)
         client.wait(promise)
@@ -217,7 +216,7 @@ class TestBasic(base.TestCase):
             "content_type": 'a',
             "content_encoding": 'b',
             #"headers":
-            #"delivery_mode": ,
+            "delivery_mode": 2,
             "priority": 1,
             "correlation_id": 'd',
             "reply_to": 'e',
@@ -241,8 +240,6 @@ class TestBasic(base.TestCase):
         r = client.wait(t)
         self.assertEqual(r['body'], 'a')
         recv_headers = r['headers']
-        del recv_headers['delivery_mode']
-        del recv_headers['persistent']
         del recv_headers['x-puka-delivery-tag']
 
         self.assertEqual(repr(headers), repr(recv_headers))

@@ -84,16 +84,9 @@ def _pt_channel_open_ok(pt, _result=None):
     _pt_async_flush(pt)
 
 def fix_basic_publish_headers(headers):
+    assert 'headers' not in headers # That's not a good idea.
     nheaders = {}
-    nheaders.update(headers) # copy
-    if 'persistent' in nheaders:
-        if nheaders['persistent']:
-            nheaders['delivery_mode'] = 2
-        del nheaders['persistent']
-    else:
-        nheaders['delivery_mode'] = 2
-    # That's not a good idea.
-    assert 'headers' not in headers
+    nheaders.update(headers)
     return nheaders
 
 def basic_publish(conn, exchange, routing_key='', mandatory=False,

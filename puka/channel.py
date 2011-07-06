@@ -94,9 +94,6 @@ class Channel(object):
             if 'headers' in props:
                 del props['headers']
             result['headers'].update( props )
-            # Fix delivery_mode.
-            result['headers']['persistent'] = \
-                result['headers'].get('delivery_mode', 1) == 2
 
             self._clear_inbound_state()
             return self._handle_inbound(result)
