@@ -279,13 +279,21 @@ def parse_amqp_url(amqp_url):
     >>> parse_amqp_url('amqp:///')
     ('guest', 'guest', '/', 'localhost', 5672)
     >>> parse_amqp_url('amqp://a:b@c:1/d')
-    ('a', 'b', '/d', 'c', 1)
+    ('a', 'b', 'd', 'c', 1)
     >>> parse_amqp_url('amqp://g%20uest:g%20uest@host/vho%20st')
-    ('g uest', 'g uest', '/vho st', 'host', 5672)
+    ('g uest', 'g uest', 'vho st', 'host', 5672)
     >>> parse_amqp_url('http://asd')
     Traceback (most recent call last):
       ...
     AssertionError: Only amqp:// protocol supported.
+    >>> parse_amqp_url('amqp://host/%2f')
+    ('guest', 'guest', '/', 'host', 5672)
+    >>> parse_amqp_url('amqp://host/%2fabc')
+    ('guest', 'guest', '/abc', 'host', 5672)
+    >>> parse_amqp_url('amqp://host/')
+    ('guest', 'guest', '/', 'host', 5672)
+    >>> parse_amqp_url('amqp://host')
+    ('guest', 'guest', '/', 'host', 5672)
     '''
     assert amqp_url.startswith('amqp://'), "Only amqp:// protocol supported."
     # urlsplit doesn't know how to parse query when scheme is amqp,
@@ -294,7 +302,8 @@ def parse_amqp_url(amqp_url):
     username = urllib.unquote(o.username) if o.username else 'guest'
     password = urllib.unquote(o.password) if o.password else 'guest'
 
-    vhost = urllib.unquote(o.path) if o.path else '/'
+    path = o.path[1:] if o.path.startswith('/') else o.path
+    vhost = urllib.unquote(path) if path else '/'
     host = o.hostname or 'localhost'
     port = o.port if o.port else 5672
     return (username, password, vhost, host, port)
