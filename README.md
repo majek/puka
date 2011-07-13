@@ -55,7 +55,7 @@ Here's the same code written in an asynchronous way:
     client.connect(callback=on_connection)
     client.loop()
 
-You can mix synchronous and asychronous programming styles if you want
+You can mix synchronous and asynchronous programming styles if you want
 to.
 
 
@@ -116,7 +116,7 @@ Puka is experimental
 --------------------
 
 Puka is a side project, written mostly to prove if it is possible to
-create a reasonable API on top of the AMQP protocol. It is not finshed
+create a reasonable API on top of the AMQP protocol. It is not finished
 and may be abandoned at any time.
 
 
