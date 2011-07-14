@@ -116,8 +116,7 @@ Puka is experimental
 --------------------
 
 Puka is a side project, written mostly to prove if it is possible to
-create a reasonable API on top of the AMQP protocol. It is not finished
-and may be abandoned at any time.
+create a reasonable API on top of the AMQP protocol.
 
 
 I like it! Show me more!
