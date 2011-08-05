@@ -131,9 +131,8 @@ class Connection(object):
 
 
     def _send(self, data):
-        p = bool(self.send_buf)
-        self.send_buf.write(data)
         # Do not try to write straightaway, better wait for more data.
+        self.send_buf.write(data)
 
     def _send_frames(self, channel_number, frames):
         self._send( ''.join([''.join((struct.pack('!BHI',
@@ -178,6 +177,13 @@ class Connection(object):
         if isinstance(promise_numbers, int):
             promise_numbers = [promise_numbers]
         promise_numbers = set(promise_numbers)
+
+        # Try flushing the write buffer before entering the loop, we
+        # may as well return soon, and the user has no way to figure
+        # out if the write buffer was flushed or not - (ie: did the
+        # wait run select() or not)
+        self.on_write()
+
         while True:
             while True:
                 ready = promise_numbers & self.promises.ready
@@ -185,7 +191,7 @@ class Connection(object):
                     break
                 promise_number = ready.pop()
                 return self.promises.run_callback(promise_number,
-                                                 raise_errors=raise_errors)
+                                                  raise_errors=raise_errors)
 
             if timeout is not None:
                 t0 = time.time()
@@ -221,8 +227,13 @@ class Connection(object):
         else:
             td = None
         self._loop_break = False
-        self.run_any_callbacks()
-        while not self._loop_break:
+
+        while True:
+            self.run_any_callbacks()
+
+            if self._loop_break:
+                break
+
             if timeout is not None:
                 t0 = time.time()
                 td = t1 - t0
@@ -236,7 +247,12 @@ class Connection(object):
                 self.on_read()
             if w:
                 self.on_write()
-            self.run_any_callbacks()
+
+        # Try flushing the write buffer just after the loop. The user
+        # has no way to figure out if the buffer was flushed or
+        # not. (ie: if the loop() require waiting on for data or not).
+        self.on_write()
+
 
     def loop_break(self):
         self._loop_break = True
