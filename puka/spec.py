@@ -336,6 +336,22 @@ def decode_basic_consume_ok(data, offset):
     return frame, offset
 
 
+class FrameBasicCancel(Frame):
+    name = 'basic.cancel'
+    method_id = METHOD_BASIC_CANCEL
+
+def decode_basic_cancel(data, offset):
+    frame = FrameBasicCancel()
+    (str_len,) = struct.unpack_from('!B', data, offset)
+    offset += 1
+    frame['consumer_tag'] = data[offset : offset+str_len]
+    offset += str_len
+    (bits,) = struct.unpack_from('!B', data, offset)
+    frame['nowait'] = bool(bits & 0x1)
+    offset += 1
+    return frame, offset
+
+
 class FrameBasicCancelOk(Frame):
     name = 'basic.cancel_ok'
     method_id = METHOD_BASIC_CANCEL_OK
@@ -491,6 +507,7 @@ METHODS = {
     METHOD_QUEUE_UNBIND_OK:         decode_queue_unbind_ok,
     METHOD_BASIC_QOS_OK:            decode_basic_qos_ok,
     METHOD_BASIC_CONSUME_OK:        decode_basic_consume_ok,
+    METHOD_BASIC_CANCEL:            decode_basic_cancel,
     METHOD_BASIC_CANCEL_OK:         decode_basic_cancel_ok,
     METHOD_BASIC_RETURN:            decode_basic_return,
     METHOD_BASIC_DELIVER:           decode_basic_deliver,
