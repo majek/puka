@@ -11,8 +11,9 @@ import base
 AMQP_URL=os.getenv('AMQP_URL')
 
 class TestPublishAsync(base.TestCase):
+    pubacks = None
     def test_simple_roundtrip(self):
-        client = puka.Client(self.amqp_url)
+        client = puka.Client(self.amqp_url, pubacks=self.pubacks)
         promise = client.connect()
         client.wait(promise)
 
@@ -31,7 +32,7 @@ class TestPublishAsync(base.TestCase):
         client.wait(promise)
 
     def test_big_failure(self):
-        client = puka.Client(self.amqp_url)
+        client = puka.Client(self.amqp_url, pubacks=self.pubacks)
         promise = client.connect()
         client.wait(promise)
 
@@ -73,7 +74,7 @@ class TestPublishAsync(base.TestCase):
         client.wait(promise)
 
     def test_return(self):
-        client = puka.Client(self.amqp_url)
+        client = puka.Client(self.amqp_url, pubacks=self.pubacks)
         promise = client.connect()
         client.wait(promise)
 
@@ -84,7 +85,7 @@ class TestPublishAsync(base.TestCase):
 
 
     def test_return_2(self):
-        client = puka.Client(self.amqp_url)
+        client = puka.Client(self.amqp_url, pubacks=self.pubacks)
         promise = client.connect()
         client.wait(promise)
 
@@ -102,6 +103,24 @@ class TestPublishAsync(base.TestCase):
 
         promise = client.queue_delete(queue=self.name)
         client.wait(promise)
+
+
+class TestPublishAsyncPubacksTrue(TestPublishAsync):
+    pubacks = True
+
+class TestPublishAsyncPubacksFalse(TestPublishAsync):
+    pubacks = False
+
+class TestPublishAckDetection(base.TestCase):
+    # Assuming reasonably recent RabbitMQ server (which does pubacks).
+    def test_pubacks(self):
+        client = puka.Client(self.amqp_url)
+        promise = client.connect()
+        r = client.wait(promise)
+        self.assertEqual(client.pubacks, None)
+        self.assertTrue(r['server_properties']['capabilities']\
+                            ['publisher_confirms'])
+        self.assertTrue(client.x_pubacks)
 
 
 if __name__ == '__main__':
