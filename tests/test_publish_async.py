@@ -41,12 +41,12 @@ class TestPublishAsync(base.TestCase):
         client.wait(promise)
 
         promise1 = client.basic_publish(exchange='', routing_key='',
-                                       body=self.msg)
+                                        body=self.msg)
         promise2 = client.basic_publish(exchange='wrong_exchange',
-                                       routing_key='',
-                                       body=self.msg)
+                                        routing_key='',
+                                        body=self.msg)
         promise3 = client.basic_publish(exchange='', routing_key='',
-                                       body=self.msg)
+                                        body=self.msg)
         client.wait(promise1)
         with self.assertRaises(puka.NotFound):
             client.wait(promise2)
@@ -55,7 +55,7 @@ class TestPublishAsync(base.TestCase):
 
         # validate if it still works
         promise = client.basic_publish(exchange='', routing_key='',
-                                      body=self.msg)
+                                       body=self.msg)
         client.wait(promise)
 
         # and fail again.
@@ -67,7 +67,7 @@ class TestPublishAsync(base.TestCase):
 
         # and validate again
         promise = client.basic_publish(exchange='', routing_key='',
-                                      body=self.msg)
+                                       body=self.msg)
         client.wait(promise)
 
         promise = client.queue_delete(queue=self.name)
