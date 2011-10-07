@@ -25,8 +25,13 @@ def _connection_start(t, result):
     # log.info("Connected to %r", result['server_properties'])
     assert 'PLAIN' in result['mechanisms'].split(), "Only PLAIN auth supported."
     response = '\0%s\0%s' % (t.conn.username, t.conn.password)
-    frames = spec.encode_connection_start_ok({'product': 'Puka'}, 'PLAIN',
-                                             response, 'en_US')
+    scapa = result['server_properties'].get('capabilities', {})
+    ccapa = {}
+    if scapa.get('consumer_cancel_notify'):
+        ccapa['consumer_cancel_notify'] = False
+    frames = spec.encode_connection_start_ok({'product': 'Puka',
+                                              'capabilities': ccapa},
+                                             'PLAIN', response, 'en_US')
     t.register(spec.METHOD_CONNECTION_TUNE, _connection_tune)
     t.send_frames(frames)
     t.x_cached_result = result
@@ -37,7 +42,7 @@ def _connection_start(t, result):
     except ValueError:
         t.conn.x_server_version = (Ellipsis,)
     if t.conn.pubacks is None:
-        t.conn.x_pubacks = t.conn.x_server_version > (2,3,0)
+        t.conn.x_pubacks = scapa.get('publisher_confirms', False)
     else:
         t.conn.x_pubacks = t.conn.pubacks
 
