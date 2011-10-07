@@ -144,7 +144,8 @@
             "server"
         ],
         "cancel": [
-            "server"
+            "server",
+            "client"
         ],
         "recover-async": [
             "server"

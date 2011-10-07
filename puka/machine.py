@@ -28,7 +28,7 @@ def _connection_start(t, result):
     scapa = result['server_properties'].get('capabilities', {})
     ccapa = {}
     if scapa.get('consumer_cancel_notify'):
-        ccapa['consumer_cancel_notify'] = False
+        ccapa['consumer_cancel_notify'] = True
     frames = spec.encode_connection_start_ok({'product': 'Puka',
                                               'capabilities': ccapa},
                                              'PLAIN', response, 'en_US')
@@ -248,6 +248,7 @@ def basic_consume_multi(conn, queues, prefetch_count=0, no_ack=False):
     t.x_no_ack = no_ack
     t.x_consumer_tag = {}
     t.register(spec.METHOD_BASIC_DELIVER, _bcm_basic_deliver)
+    t.register(spec.METHOD_BASIC_CANCEL, _bcm_basic_cancel)
     return t
 
 def _bcm_basic_qos(t):
@@ -274,6 +275,10 @@ def _bcm_basic_deliver(t, msg_result):
         t.refcnt_inc()
     t.ping(msg_result)
 
+def _bcm_basic_cancel(ct, result):
+    ct.register(spec.METHOD_BASIC_CANCEL, _generic_callback_nop)
+    ct.x_ct = ct
+    _basic_cancel(ct)
 
 ##
 def basic_ack(conn, msg_result):
@@ -331,8 +336,9 @@ def _basic_cancel_ok(ct, result):
         _basic_cancel_one(ct)
     else:
         ct.x_mt.done(result)
+        if ct != ct.x_mt:
+            ct.done(None, no_callback=True)
         ct.x_mt = None
-        ct.done(None, no_callback=True)
         ct.refcnt_clear()
 
 ####
@@ -382,6 +388,9 @@ def _generic_callback(t):
 
 def _generic_callback_ok(t, result):
     t.done(result)
+
+def _generic_callback_nop(t, result):
+    pass
 
 ####
 def exchange_delete(conn, exchange, if_unused=False):
