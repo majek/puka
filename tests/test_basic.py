@@ -16,7 +16,7 @@ class TestBasic(base.TestCase):
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      body=self.msg)
+                                       body=self.msg)
         client.wait(promise)
 
         consume_promise = client.basic_consume(queue=self.name, no_ack=True)
@@ -36,7 +36,7 @@ class TestBasic(base.TestCase):
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      body=self.msg)
+                                       body=self.msg)
         client.wait(promise)
 
         promise = client.queue_purge(queue=self.name)
@@ -61,7 +61,7 @@ class TestBasic(base.TestCase):
 
         for i in range(4):
             promise = client.basic_publish(exchange='', routing_key=self.name,
-                                          body=self.msg+str(i))
+                                           body=self.msg+str(i))
             client.wait(promise)
 
         msgs = []
@@ -94,7 +94,7 @@ class TestBasic(base.TestCase):
 
         for i in range(2):
             promise = client.basic_publish(exchange='invalid_exchange',
-                                          routing_key='xxx', body='')
+                                           routing_key='xxx', body='')
 
             self.assertEqual(len(client.channels.free_channels), 0)
             self.assertEqual(client.channels.free_channel_numbers[-1], 2)
@@ -116,7 +116,7 @@ class TestBasic(base.TestCase):
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      mandatory=True, body='')
+                                       mandatory=True, body='')
         with self.assertRaises(puka.NoRoute):
             client.wait(promise)
 
@@ -124,11 +124,11 @@ class TestBasic(base.TestCase):
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      mandatory=True, body='')
+                                       mandatory=True, body='')
         client.wait(promise) # no error
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      immediate=True, body='')
+                                       immediate=True, body='')
         with self.assertRaises(puka.NoConsumers):
             r = client.wait(promise)
             print r
@@ -146,17 +146,17 @@ class TestBasic(base.TestCase):
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      body=self.msg) # persistence=default
+                                       body=self.msg) # persistence=default
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      body=self.msg,
-                                      headers={'delivery_mode':2})
+                                       body=self.msg,
+                                       headers={'delivery_mode':2})
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      body=self.msg,
-                                      headers={'delivery_mode':1})
+                                       body=self.msg,
+                                       headers={'delivery_mode':1})
         client.wait(promise)
 
         promise = client.basic_get(queue=self.name, no_ack=True)
@@ -186,7 +186,7 @@ class TestBasic(base.TestCase):
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      body='a')
+                                       body='a')
         client.wait(promise)
 
         t = client.basic_get(queue=self.name)
@@ -257,7 +257,7 @@ class TestBasic(base.TestCase):
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      body='a')
+                                       body='a')
         client.wait(promise)
 
         promise = client.basic_consume(queue=self.name)
@@ -290,7 +290,7 @@ class TestBasic(base.TestCase):
 
         for i in range(2):
             promise = client.basic_publish(exchange='', routing_key=self.name,
-                                          body='a')
+                                           body='a')
             client.wait(promise)
 
         consume_promise = client.basic_consume(queue=self.name)
@@ -303,7 +303,7 @@ class TestBasic(base.TestCase):
         self.assertTrue('consumer_tag' in result)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      body='b')
+                                       body='b')
         client.wait(promise)
 
         promise = client.queue_delete(queue=self.name)
@@ -319,7 +319,7 @@ class TestBasic(base.TestCase):
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      body=self.msg)
+                                       body=self.msg)
         client.wait(promise)
 
         consume_promise = client.basic_consume(queue=self.name)
@@ -371,13 +371,13 @@ class TestBasic(base.TestCase):
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      body='a')
+                                       body='a')
         client.wait(promise)
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      body='b')
+                                       body='b')
         client.wait(promise)
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      body='c')
+                                       body='c')
         client.wait(promise)
 
         consume_promise = client.basic_consume(queue=self.name, prefetch_count=1)

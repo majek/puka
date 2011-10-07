@@ -21,7 +21,7 @@ class TestPublishAsync(base.TestCase):
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
-                                      body=self.msg)
+                                       body=self.msg)
         client.wait(promise)
 
         consume_promise = client.basic_consume(queue=self.name, no_ack=True)
@@ -79,7 +79,7 @@ class TestPublishAsync(base.TestCase):
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key='',
-                                      body=self.msg, immediate=True)
+                                       body=self.msg, immediate=True)
         with self.assertRaises(puka.NoConsumers):
             client.wait(promise)
 
@@ -93,7 +93,7 @@ class TestPublishAsync(base.TestCase):
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key='badname',
-                                      immediate=True, body=self.msg)
+                                       immediate=True, body=self.msg)
         try:
             client.wait(promise)
         except puka.NoConsumers, (response,):
