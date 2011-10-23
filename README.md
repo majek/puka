@@ -134,6 +134,10 @@ interesting bits:
     benchmark the throughput of the server
 
 
+There is also a bunch of fairly complicated examples hidden in the
+tests (see the `./tests` directory).
+
+
 I want to install Puka
 ----------------------
 
@@ -175,6 +179,3 @@ tweak them to your needs.  Detailed documentation doesn't exist
 now. If it existed it would live here:
 
 [http://majek.github.com/puka/](http://majek.github.com/puka/)
-
-There is also a bunch of fairly complicated examples hidden in the
-tests (see the `./tests` directory).
