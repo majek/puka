@@ -276,7 +276,10 @@ class Connection(object):
                 promise.done(result)
 
         # And kill the socket
-        self.sd.shutdown(socket.SHUT_RDWR)
+        try:
+            self.sd.shutdown(socket.SHUT_RDWR)
+        except socket.error, e:
+            if e.errno is not errno.ENOTCONN: raise
         self.sd.close()
         self.sd = None
         # Sending is illegal
