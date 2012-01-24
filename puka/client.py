@@ -16,10 +16,10 @@ def machine_decorator(method):
         callback = kwargs.get('callback')
         if callback is not None:
             del kwargs['callback']
-        t = method(*args, **kwargs)
-        t.user_callback = callback
-        t.after_machine()
-        return t.number
+        p = method(*args, **kwargs)
+        p.user_callback = callback
+        p.after_machine()
+        return p.number
     return wrapper
 
 
