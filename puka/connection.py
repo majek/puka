@@ -28,7 +28,7 @@ class Connection(object):
         self.promises = promise.PromiseCollection(self)
 
         (self.username, self.password, self.vhost, self.host, self.port) = \
-            parse_amqp_url(amqp_url)
+            parse_amqp_url(str(amqp_url))
 
     def _init_buffers(self):
         self.recv_buf = simplebuffer.SimpleBuffer()
