@@ -1,2 +1,5 @@
 *.pyc
 tests/.coverage
+build/
+dist/
+puka.egg-info/
