@@ -46,21 +46,28 @@ class Connection(object):
         self._handle_read = self._handle_conn_read
         self._init_buffers()
 
-        try:
-            addrinfo = socket.getaddrinfo(self.host, self.port, socket.AF_INET6, socket.SOCK_STREAM)
-        except socket.gaierror:
-            addrinfo = socket.getaddrinfo(self.host, self.port, socket.AF_INET, socket.SOCK_STREAM)
 
-        (family, socktype, proto, canonname, sockaddr) = addrinfo[0]
-        self.sd = socket.socket(family, socktype, proto)
-        self.sd.setblocking(False)
-        set_ridiculously_high_buffers(self.sd)
-        try:
-            self.sd.connect(sockaddr)
-        except socket.error, e:
-            if e.errno not in (errno.EINPROGRESS, errno.EWOULDBLOCK):
-                raise
-        return machine.connection_handshake(self)
+        endpoints = socket.getaddrinfo(self.host, self.port, socket.AF_UNSPEC,
+                socket.SOCK_STREAM)
+        errors = []
+
+        for family, socktype, proto, canonname, sockaddr in endpoints:
+            sd = socket.socket(family, socktype, proto)
+            sd.setblocking(False)
+            set_ridiculously_high_buffers(sd)
+            try:
+                sd.connect(sockaddr)
+            except socket.error, e:
+                if e.errno not in (errno.EINPROGRESS, errno.EWOULDBLOCK):
+                    errors.append('[{0}]:{1}: {2}'.format(sockaddr[0],
+                        sockaddr[1], e))
+                    continue
+
+            self.sd = sd
+            return machine.connection_handshake(self)
+
+        # we tried every endpoints without any success
+        raise exceptions.ConnectionError(errors)
 
     def on_read(self):
         try:
