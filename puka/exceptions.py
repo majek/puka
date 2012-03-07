@@ -3,7 +3,7 @@ from . import spec_exceptions
 
 class ConnectionBroken(socket.error): pass
 class UnsupportedProtocol(socket.error): pass
-
+class ConnectionError(socket.error): pass
 
 def exception_from_frame(result):
     reply_code = result.get('reply_code', 0)
