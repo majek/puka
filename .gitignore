@@ -3,3 +3,5 @@ tests/.coverage
 build/
 dist/
 puka.egg-info/
+venv/
+distribute-*.tar.gz

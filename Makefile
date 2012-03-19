@@ -26,11 +26,12 @@ puka/spec_exceptions.py: codegen.py codegen_helpers.py \
 
 clean:
 	find . -name \*pyc|xargs --no-run-if-empty rm
-	rm -f tests/.coverage
+	rm -f tests/.coverage distribute-0.6.10.tar.gz
 	rm -rf venv
 
 distclean: clean
 	rm -f puka/spec.py puka/spec_exceptions.py
+	rm -rf build dist puka.egg-info
 
 .PHONY: tests prerequisites
 
