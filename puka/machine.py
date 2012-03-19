@@ -132,8 +132,7 @@ def _pt_basic_return(pt, result):
     pt.register(spec.METHOD_BASIC_RETURN, _pt_basic_return)
     delivery_tag = result['headers']['x-puka-delivery-tag']
     if delivery_tag in pt.x_async_inflight:
-        t = pt.x_async_inflight[delivery_tag]
-        del pt.x_async_inflight[delivery_tag]
+        t = pt.x_async_inflight.pop(delivery_tag)
         if 'x-puka-footer' in result['headers']: # ok
             t.done(spec.Frame())
         else: # return
@@ -146,8 +145,7 @@ def _pt_basic_ack(pt, result):
     if delivery_tag in pt.x_async_inflight:
         if result['multiple'] == True:
             delivery_tags = []
-            keys = pt.x_async_inflight.iterkeys()
-            for key in keys:
+            for key in pt.x_async_inflight.iterkeys():
                 if key <= delivery_tag:
                     delivery_tags.append(key)
                 else:
