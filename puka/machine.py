@@ -3,6 +3,7 @@ import logging
 
 from . import exceptions
 from . import spec
+from . import ordereddict
 
 log = logging.getLogger('puka')
 
@@ -72,7 +73,7 @@ def publish_promise(conn):
     pt.x_async_enabled = False
     pt.x_delivery_tag = 1
     pt.x_delivery_tag_shift = 0
-    pt.x_async_inflight = {}
+    pt.x_async_inflight = ordereddict.OrderedDict()
     pt.x_async_next = []
     conn.x_publish_promise = pt
 
@@ -144,14 +145,19 @@ def _pt_basic_ack(pt, result):
     delivery_tag = result['delivery_tag'] + pt.x_delivery_tag_shift
     if delivery_tag in pt.x_async_inflight:
         if result['multiple'] == True:
-            delivery_tags = filter(lambda dt: dt <= delivery_tag,
-                                   pt.x_async_inflight.iterkeys())
+            delivery_tags = []
+            keys = pt.x_async_inflight.iterkeys()
+            for key in keys:
+                if key <= delivery_tag:
+                    delivery_tags.append(key)
+                else:
+                    break
         else:
-            delivery_tags = (delivery_tag,)
+            delivery_tags = [delivery_tag]
         for delivery_tag in delivery_tags:
-            t = pt.x_async_inflight[delivery_tag]
-            del pt.x_async_inflight[delivery_tag]
+            t = pt.x_async_inflight.pop(delivery_tag)
             t.done(spec.Frame())
+
 
 def _pt_channel_close(pt, result):
     pt.x_async_enabled = False
