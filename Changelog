@@ -1,3 +1,14 @@
+0.0.4
+=====
+
+ * Updated URL scheme parsing.
+ * Better tests for pubacks.
+ * Proper support for capabilities.
+ * Support for canceling consumes (basic.cancel).
+ * Fixed performance problem when there was a large number
+   of published messages unacked with pubacks enabled.
+ * Many minor fixes.
+
 
 0.0.3
 =====
