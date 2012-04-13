@@ -204,6 +204,81 @@ class TestBasic(base.TestCase):
         client.wait(promise)
 
 
+    def test_basic_reject_no_requeue(self):
+        client = puka.Client(self.amqp_url)
+        promise = client.connect()
+        client.wait(promise)
+
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
+
+        promise = client.basic_publish(exchange='', routing_key=self.name,
+                                       body='a')
+        client.wait(promise)
+
+        t = client.basic_get(queue=self.name)
+        r = client.wait(t)
+        self.assertEqual(r['body'], 'a')
+        self.assertTrue(not r['redelivered'])
+        client.basic_reject(r, requeue=False)
+
+        t = client.basic_get(queue=self.name)
+        r = client.wait(t)
+        self.assertTrue(r['empty'])
+        self.assertFalse('redelivered' in r)
+        self.assertFalse('body' in r)
+
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
+
+
+    def test_basic_reject_dead_letter_exchange(self):
+        client = puka.Client(self.amqp_url)
+        promise = client.connect()
+        client.wait(promise)
+
+        promise = client.exchange_declare(exchange=self.name1, type='fanout')
+        client.wait(promise)
+
+        promise = client.queue_declare(
+            queue=self.name, arguments={'x-dead-letter-exchange': self.name1})
+        client.wait(promise)
+
+        promise = client.queue_declare(exclusive=True)
+        dlxqname = client.wait(promise)['queue']
+
+        promise = client.queue_bind(queue=dlxqname, exchange=self.name1)
+        client.wait(promise)
+
+        promise = client.basic_publish(exchange='', routing_key=self.name,
+                                       body='a')
+        client.wait(promise)
+
+        t = client.basic_get(queue=self.name)
+        r = client.wait(t)
+        self.assertEqual(r['body'], 'a')
+        self.assertTrue(not r['redelivered'])
+        client.basic_reject(r, requeue=False)
+
+        t = client.basic_get(queue=self.name)
+        r = client.wait(t)
+        self.assertTrue(r['empty'])
+        self.assertFalse('redelivered' in r)
+        self.assertFalse('body' in r)
+
+        t = client.basic_get(queue=dlxqname)
+        r = client.wait(t)
+        self.assertEqual(r['body'], 'a')
+        self.assertEqual(r['headers']['x-death'][0]['reason'], 'rejected')
+        self.assertTrue(not r['redelivered'])
+
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
+
+        promise = client.exchange_delete(exchange=self.name1)
+        client.wait(promise)
+
+
     def test_properties(self):
         client = puka.Client(self.amqp_url)
         promise = client.connect()

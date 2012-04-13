@@ -293,10 +293,9 @@ def basic_ack(conn, msg_result):
     return t
 
 ##
-def basic_reject(conn, msg_result):
+def basic_reject(conn, msg_result, requeue=True):
     t = conn.promises.by_number(msg_result['promise_number'])
-    # For basic.reject requeue must be True.
-    t.send_frames( spec.encode_basic_reject(msg_result['delivery_tag'], True) )
+    t.send_frames(spec.encode_basic_reject(msg_result['delivery_tag'], requeue))
     assert t.x_no_ack is False
     t.refcnt_dec()
     return t
