@@ -180,7 +180,18 @@ class Connection(object):
         # may as well return soon, and the user has no way to figure
         # out if the write buffer was flushed or not - (ie: did the
         # wait run select() or not)
-        self.on_write()
+        #
+        # This is problem is especially painful with regard to
+        # async messages, like basic_ack. See #3.
+        #
+        # Additionally, during the first round trip on windows - when
+        # the connection is being established, the socket may not yet
+        # be in the connected state - swallow an error in that case.
+        try:
+            self.on_write()
+        except socket.error, e:
+            if e.errno != 10057:
+                raise
 
         while True:
             while True:
