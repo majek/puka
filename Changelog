@@ -1,3 +1,10 @@
+0.0.5
+=====
+
+ * #15 - On windows, on slow network, client.wait may
+   have failed with error 10057.
+
+
 0.0.4
 =====
 
