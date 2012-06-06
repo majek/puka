@@ -85,11 +85,11 @@ def decode_connection_start(data, offset):
     frame['server_properties'], offset = table.decode(data, offset)
     (str_len,) = struct.unpack_from('!I', data, offset)
     offset += 4
-    frame['mechanisms'] = data[offset : offset+str_len]
+    frame['mechanisms'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     (str_len,) = struct.unpack_from('!I', data, offset)
     offset += 4
-    frame['locales'] = data[offset : offset+str_len]
+    frame['locales'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     return frame, offset
 
@@ -102,7 +102,7 @@ def decode_connection_secure(data, offset):
     frame = FrameConnectionSecure()
     (str_len,) = struct.unpack_from('!I', data, offset)
     offset += 4
-    frame['challenge'] = data[offset : offset+str_len]
+    frame['challenge'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     return frame, offset
 
@@ -128,7 +128,7 @@ def decode_connection_open_ok(data, offset):
     frame = FrameConnectionOpenOk()
     (str_len,) = struct.unpack_from('!B', data, offset)
     offset += 1
-    frame['known_hosts'] = data[offset : offset+str_len]
+    frame['known_hosts'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     return frame, offset
 
@@ -142,7 +142,7 @@ def decode_connection_close(data, offset):
     (frame['reply_code'],
      str_len) = struct.unpack_from('!HB', data, offset)
     offset += 2+1
-    frame['reply_text'] = data[offset : offset+str_len]
+    frame['reply_text'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     (frame['class_id'],
      frame['method_id']) = struct.unpack_from('!HH', data, offset)
@@ -167,7 +167,7 @@ def decode_channel_open_ok(data, offset):
     frame = FrameChannelOpenOk()
     (str_len,) = struct.unpack_from('!I', data, offset)
     offset += 4
-    frame['channel_id'] = data[offset : offset+str_len]
+    frame['channel_id'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     return frame, offset
 
@@ -205,7 +205,7 @@ def decode_channel_close(data, offset):
     (frame['reply_code'],
      str_len) = struct.unpack_from('!HB', data, offset)
     offset += 2+1
-    frame['reply_text'] = data[offset : offset+str_len]
+    frame['reply_text'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     (frame['class_id'],
      frame['method_id']) = struct.unpack_from('!HH', data, offset)
@@ -266,7 +266,7 @@ def decode_queue_declare_ok(data, offset):
     frame = FrameQueueDeclareOk()
     (str_len,) = struct.unpack_from('!B', data, offset)
     offset += 1
-    frame['queue'] = data[offset : offset+str_len]
+    frame['queue'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     (frame['message_count'],
      frame['consumer_count']) = struct.unpack_from('!II', data, offset)
@@ -331,7 +331,7 @@ def decode_basic_consume_ok(data, offset):
     frame = FrameBasicConsumeOk()
     (str_len,) = struct.unpack_from('!B', data, offset)
     offset += 1
-    frame['consumer_tag'] = data[offset : offset+str_len]
+    frame['consumer_tag'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     return frame, offset
 
@@ -344,7 +344,7 @@ def decode_basic_cancel(data, offset):
     frame = FrameBasicCancel()
     (str_len,) = struct.unpack_from('!B', data, offset)
     offset += 1
-    frame['consumer_tag'] = data[offset : offset+str_len]
+    frame['consumer_tag'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     (bits,) = struct.unpack_from('!B', data, offset)
     frame['nowait'] = bool(bits & 0x1)
@@ -360,7 +360,7 @@ def decode_basic_cancel_ok(data, offset):
     frame = FrameBasicCancelOk()
     (str_len,) = struct.unpack_from('!B', data, offset)
     offset += 1
-    frame['consumer_tag'] = data[offset : offset+str_len]
+    frame['consumer_tag'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     return frame, offset
 
@@ -376,15 +376,15 @@ def decode_basic_return(data, offset):
     (frame['reply_code'],
      str_len) = struct.unpack_from('!HB', data, offset)
     offset += 2+1
-    frame['reply_text'] = data[offset : offset+str_len]
+    frame['reply_text'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     (str_len,) = struct.unpack_from('!B', data, offset)
     offset += 1
-    frame['exchange'] = data[offset : offset+str_len]
+    frame['exchange'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     (str_len,) = struct.unpack_from('!B', data, offset)
     offset += 1
-    frame['routing_key'] = data[offset : offset+str_len]
+    frame['routing_key'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     return frame, offset
 
@@ -399,18 +399,18 @@ def decode_basic_deliver(data, offset):
     frame = FrameBasicDeliver()
     (str_len,) = struct.unpack_from('!B', data, offset)
     offset += 1
-    frame['consumer_tag'] = data[offset : offset+str_len]
+    frame['consumer_tag'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     (frame['delivery_tag'],
      bits,
      str_len) = struct.unpack_from('!QBB', data, offset)
     frame['redelivered'] = bool(bits & 0x1)
     offset += 8+1+1
-    frame['exchange'] = data[offset : offset+str_len]
+    frame['exchange'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     (str_len,) = struct.unpack_from('!B', data, offset)
     offset += 1
-    frame['routing_key'] = data[offset : offset+str_len]
+    frame['routing_key'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     return frame, offset
 
@@ -428,11 +428,11 @@ def decode_basic_get_ok(data, offset):
      str_len) = struct.unpack_from('!QBB', data, offset)
     frame['redelivered'] = bool(bits & 0x1)
     offset += 8+1+1
-    frame['exchange'] = data[offset : offset+str_len]
+    frame['exchange'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     (str_len,) = struct.unpack_from('!B', data, offset)
     offset += 1
-    frame['routing_key'] = data[offset : offset+str_len]
+    frame['routing_key'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     (frame['message_count'],) = struct.unpack_from('!I', data, offset)
     offset += 4
@@ -447,7 +447,7 @@ def decode_basic_get_empty(data, offset):
     frame = FrameBasicGetEmpty()
     (str_len,) = struct.unpack_from('!B', data, offset)
     offset += 1
-    frame['cluster_id'] = data[offset : offset+str_len]
+    frame['cluster_id'] = data[offset : offset+str_len].decode('utf-8')
     offset += str_len
     return frame, offset
 
@@ -527,12 +527,12 @@ def decode_basic_properties(data, offset):
     if (flags & 0x8000): # 1 << 15
         (str_len,) = struct.unpack_from('!B', data, offset)
         offset += 1
-        props['content_type'] = data[offset : offset+str_len]
+        props['content_type'] = data[offset : offset+str_len].decode('utf-8')
         offset += str_len
     if (flags & 0x4000): # 1 << 14
         (str_len,) = struct.unpack_from('!B', data, offset)
         offset += 1
-        props['content_encoding'] = data[offset : offset+str_len]
+        props['content_encoding'] = data[offset : offset+str_len].decode('utf-8')
         offset += str_len
     if (flags & 0x2000): # 1 << 13
         props['headers'], offset = table.decode(data, offset)
@@ -545,22 +545,22 @@ def decode_basic_properties(data, offset):
     if (flags & 0x0400): # 1 << 10
         (str_len,) = struct.unpack_from('!B', data, offset)
         offset += 1
-        props['correlation_id'] = data[offset : offset+str_len]
+        props['correlation_id'] = data[offset : offset+str_len].decode('utf-8')
         offset += str_len
     if (flags & 0x0200): # 1 << 9
         (str_len,) = struct.unpack_from('!B', data, offset)
         offset += 1
-        props['reply_to'] = data[offset : offset+str_len]
+        props['reply_to'] = data[offset : offset+str_len].decode('utf-8')
         offset += str_len
     if (flags & 0x0100): # 1 << 8
         (str_len,) = struct.unpack_from('!B', data, offset)
         offset += 1
-        props['expiration'] = data[offset : offset+str_len]
+        props['expiration'] = data[offset : offset+str_len].decode('utf-8')
         offset += str_len
     if (flags & 0x0080): # 1 << 7
         (str_len,) = struct.unpack_from('!B', data, offset)
         offset += 1
-        props['message_id'] = data[offset : offset+str_len]
+        props['message_id'] = data[offset : offset+str_len].decode('utf-8')
         offset += str_len
     if (flags & 0x0040): # 1 << 6
         (props['timestamp'],) = struct.unpack_from('!Q', data, offset)
@@ -568,22 +568,22 @@ def decode_basic_properties(data, offset):
     if (flags & 0x0020): # 1 << 5
         (str_len,) = struct.unpack_from('!B', data, offset)
         offset += 1
-        props['type_'] = data[offset : offset+str_len]
+        props['type_'] = data[offset : offset+str_len].decode('utf-8')
         offset += str_len
     if (flags & 0x0010): # 1 << 4
         (str_len,) = struct.unpack_from('!B', data, offset)
         offset += 1
-        props['user_id'] = data[offset : offset+str_len]
+        props['user_id'] = data[offset : offset+str_len].decode('utf-8')
         offset += str_len
     if (flags & 0x0008): # 1 << 3
         (str_len,) = struct.unpack_from('!B', data, offset)
         offset += 1
-        props['app_id'] = data[offset : offset+str_len]
+        props['app_id'] = data[offset : offset+str_len].decode('utf-8')
         offset += str_len
     if (flags & 0x0004): # 1 << 2
         (str_len,) = struct.unpack_from('!B', data, offset)
         offset += 1
-        props['cluster_id'] = data[offset : offset+str_len]
+        props['cluster_id'] = data[offset : offset+str_len].decode('utf-8')
         offset += str_len
     return props, offset
 
@@ -596,6 +596,8 @@ PROPS = {
 # client_properties=None mechanism='PLAIN' response=None locale='en_US'
 def encode_connection_start_ok(client_properties, mechanism, response, locale):
     client_properties_raw = table.encode(client_properties)
+    mechanism = mechanism.encode('utf-8')
+    locale = locale.encode('utf-8')
     return ( (0x01,
               ''.join((
                 struct.pack('!I', METHOD_CONNECTION_START_OK),
@@ -626,6 +628,7 @@ def encode_connection_tune_ok(channel_max, frame_max, heartbeat):
 
 # virtual_host='/' capabilities='' insist=False
 def encode_connection_open(virtual_host):
+    virtual_host = virtual_host.encode('utf-8')
     return ( (0x01,
               ''.join((
                 struct.pack('!IB', METHOD_CONNECTION_OPEN, len(virtual_host)),
@@ -636,6 +639,7 @@ def encode_connection_open(virtual_host):
 
 # reply_code=None reply_text='' class_id=None method_id=None
 def encode_connection_close(reply_code, reply_text, class_id, method_id):
+    reply_text = reply_text.encode('utf-8')
     return ( (0x01,
               ''.join((
                 struct.pack('!IHB', METHOD_CONNECTION_CLOSE, reply_code, len(reply_text)),
@@ -652,6 +656,7 @@ def encode_connection_close_ok():
 
 # out_of_band=''
 def encode_channel_open(out_of_band):
+    out_of_band = out_of_band.encode('utf-8')
     return ( (0x01,
                 struct.pack('!IB', METHOD_CHANNEL_OPEN, 0),
            ), )
@@ -670,6 +675,7 @@ def encode_channel_flow_ok(active):
 
 # reply_code=None reply_text='' class_id=None method_id=None
 def encode_channel_close(reply_code, reply_text, class_id, method_id):
+    reply_text = reply_text.encode('utf-8')
     return ( (0x01,
               ''.join((
                 struct.pack('!IHB', METHOD_CHANNEL_CLOSE, reply_code, len(reply_text)),
@@ -686,6 +692,8 @@ def encode_channel_close_ok():
 
 # ticket=0 exchange=None type_='direct' passive=False durable=False auto_delete=False internal=False nowait=False arguments={}
 def encode_exchange_declare(exchange, type_, passive, durable, auto_delete, internal, arguments):
+    exchange = exchange.encode('utf-8')
+    type_ = type_.encode('utf-8')
     arguments_raw = table.encode(arguments)
     return ( (0x01,
               ''.join((
@@ -700,6 +708,7 @@ def encode_exchange_declare(exchange, type_, passive, durable, auto_delete, inte
 
 # ticket=0 exchange=None if_unused=False nowait=False
 def encode_exchange_delete(exchange, if_unused):
+    exchange = exchange.encode('utf-8')
     return ( (0x01,
               ''.join((
                 struct.pack('!IHB', METHOD_EXCHANGE_DELETE, 0, len(exchange)),
@@ -710,6 +719,9 @@ def encode_exchange_delete(exchange, if_unused):
 
 # ticket=0 destination=None source=None routing_key='' nowait=False arguments={}
 def encode_exchange_bind(destination, source, routing_key, arguments):
+    destination = destination.encode('utf-8')
+    source = source.encode('utf-8')
+    routing_key = routing_key.encode('utf-8')
     arguments_raw = table.encode(arguments)
     return ( (0x01,
               ''.join((
@@ -726,6 +738,9 @@ def encode_exchange_bind(destination, source, routing_key, arguments):
 
 # ticket=0 destination=None source=None routing_key='' nowait=False arguments={}
 def encode_exchange_unbind(destination, source, routing_key, arguments):
+    destination = destination.encode('utf-8')
+    source = source.encode('utf-8')
+    routing_key = routing_key.encode('utf-8')
     arguments_raw = table.encode(arguments)
     return ( (0x01,
               ''.join((
@@ -742,6 +757,7 @@ def encode_exchange_unbind(destination, source, routing_key, arguments):
 
 # ticket=0 queue='' passive=False durable=False exclusive=False auto_delete=False nowait=False arguments={}
 def encode_queue_declare(queue, passive, durable, exclusive, auto_delete, arguments):
+    queue = queue.encode('utf-8')
     arguments_raw = table.encode(arguments)
     return ( (0x01,
               ''.join((
@@ -754,6 +770,9 @@ def encode_queue_declare(queue, passive, durable, exclusive, auto_delete, argume
 
 # ticket=0 queue='' exchange=None routing_key='' nowait=False arguments={}
 def encode_queue_bind(queue, exchange, routing_key, arguments):
+    queue = queue.encode('utf-8')
+    exchange = exchange.encode('utf-8')
+    routing_key = routing_key.encode('utf-8')
     arguments_raw = table.encode(arguments)
     return ( (0x01,
               ''.join((
@@ -770,6 +789,7 @@ def encode_queue_bind(queue, exchange, routing_key, arguments):
 
 # ticket=0 queue='' nowait=False
 def encode_queue_purge(queue):
+    queue = queue.encode('utf-8')
     return ( (0x01,
               ''.join((
                 struct.pack('!IHB', METHOD_QUEUE_PURGE, 0, len(queue)),
@@ -780,6 +800,7 @@ def encode_queue_purge(queue):
 
 # ticket=0 queue='' if_unused=False if_empty=False nowait=False
 def encode_queue_delete(queue, if_unused, if_empty):
+    queue = queue.encode('utf-8')
     return ( (0x01,
               ''.join((
                 struct.pack('!IHB', METHOD_QUEUE_DELETE, 0, len(queue)),
@@ -790,6 +811,9 @@ def encode_queue_delete(queue, if_unused, if_empty):
 
 # ticket=0 queue='' exchange=None routing_key='' arguments={}
 def encode_queue_unbind(queue, exchange, routing_key, arguments):
+    queue = queue.encode('utf-8')
+    exchange = exchange.encode('utf-8')
+    routing_key = routing_key.encode('utf-8')
     arguments_raw = table.encode(arguments)
     return ( (0x01,
               ''.join((
@@ -811,6 +835,8 @@ def encode_basic_qos(prefetch_size, prefetch_count, global_):
 
 # ticket=0 queue='' consumer_tag='' no_local=False no_ack=False exclusive=False nowait=False arguments={}
 def encode_basic_consume(queue, consumer_tag, no_local, no_ack, exclusive, arguments):
+    queue = queue.encode('utf-8')
+    consumer_tag = consumer_tag.encode('utf-8')
     arguments_raw = table.encode(arguments)
     return ( (0x01,
               ''.join((
@@ -825,6 +851,7 @@ def encode_basic_consume(queue, consumer_tag, no_local, no_ack, exclusive, argum
 
 # consumer_tag=None nowait=False
 def encode_basic_cancel(consumer_tag):
+    consumer_tag = consumer_tag.encode('utf-8')
     return ( (0x01,
               ''.join((
                 struct.pack('!IB', METHOD_BASIC_CANCEL, len(consumer_tag)),
@@ -835,6 +862,8 @@ def encode_basic_cancel(consumer_tag):
 
 # ticket=0 exchange='' routing_key='' mandatory=False immediate=False user_headers={} payload='' frame_size=None
 def encode_basic_publish(exchange, routing_key, mandatory, immediate, user_headers, body, frame_size):
+    exchange = exchange.encode('utf-8')
+    routing_key = routing_key.encode('utf-8')
     props, headers = split_headers(user_headers, BASIC_PROPS_SET)
     if headers:
         props['headers'] = headers
@@ -852,6 +881,7 @@ def encode_basic_publish(exchange, routing_key, mandatory, immediate, user_heade
 
 # ticket=0 queue='' no_ack=False
 def encode_basic_get(queue, no_ack):
+    queue = queue.encode('utf-8')
     return ( (0x01,
               ''.join((
                 struct.pack('!IHB', METHOD_BASIC_GET, 0, len(queue)),
