@@ -136,8 +136,11 @@ def _method_params_list(m):
 def print_encode_method(m):
     print "# %s" % (' '.join(_default_params(m)),)
     print "def %s(%s):" % (m.encode, ', '.join(_method_params_list(m)),)
-    for f in [f for f in m.arguments if not f.banned and f.t in ['table']]:
-        print "    %s_raw = table.encode(%s)" % (f.n, f.n)
+    for f in [f for f in m.arguments if not f.banned]:
+        if f.t == 'table':
+            print "    %s_raw = table.encode(%s)" % (f.n, f.n)
+        elif f.t == 'shortstr':
+            print "    %s = %s.encode('utf-8')" % (f.n, f.n)
 
     if m.hasContent:
         print "    props, headers = split_headers(user_headers, %s_PROPS_SET)" % (

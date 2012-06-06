@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import with_statement
 
 import os
@@ -317,7 +318,7 @@ class TestBasic(base.TestCase):
         recv_headers = r['headers']
         del recv_headers['x-puka-delivery-tag']
 
-        self.assertEqual(repr(headers), repr(recv_headers))
+        self.assertEqual(headers, recv_headers)
 
         promise = client.queue_delete(queue=self.name)
         client.wait(promise)
@@ -474,6 +475,16 @@ class TestBasic(base.TestCase):
         promise = client.queue_delete(queue=self.name)
         client.wait(promise)
 
+
+    @base.connect
+    def test_unicode(self, client):
+        self.name += u'ęśćł'
+        promise = client.queue_declare(queue=self.name)
+        result = client.wait(promise)
+        self.assertEqual(result['queue'], self.name)
+
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
 
 
 if __name__ == '__main__':

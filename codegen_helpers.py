@@ -32,7 +32,7 @@ class Field(object):
 
 class FieldStr(Field):
     def _do_print(self, prefix, dname):
-        print prefix+"%s = data[offset : offset+str_len]" % dname
+        print prefix+"%s = data[offset : offset+str_len].decode('utf-8')" % dname
         print prefix+"offset += str_len"
 
 class FieldTable(Field):
