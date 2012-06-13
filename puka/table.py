@@ -50,6 +50,7 @@
 #
 
 import struct
+import xdrlib
 import decimal
 import datetime
 import calendar
@@ -91,7 +92,10 @@ def encode(table):
     return ''.join(pieces)
 
 def encode_value(pieces, value):
-    if isinstance(value, str):
+    if value is None:
+        pieces.append(struct.pack('>c', 'V'))
+        return 1
+    elif isinstance(value, str):
         pieces.append(struct.pack('>cI', 'S', len(value)))
         pieces.append(value)
         return 5 + len(value)
@@ -117,6 +121,12 @@ def encode_value(pieces, value):
     elif isinstance(value, datetime.datetime):
         pieces.append(struct.pack('>cQ', 'T', calendar.timegm(
                     value.utctimetuple())))
+        return 9
+    elif isinstance(value, float):
+        pieces.append(struct.pack('>c', 'd'))
+        p = xdrlib.Packer()
+        p.pack_double(value)
+        pieces.append(p.get_buffer())
         return 9
     elif isinstance(value, dict):
         pieces.append(struct.pack('>c', 'F'))
@@ -183,16 +193,49 @@ def decode_value(encoded, offset):
         offset = offset + 4
         value = encoded[offset : offset + length]
         offset = offset + length
+    elif kind == 's':
+        length = struct.unpack_from('>B', encoded, offset)[0]
+        offset = offset + 1
+        value = encoded[offset : offset + length]
+        offset = offset + length
     elif kind == 't':
         value = struct.unpack_from('>B', encoded, offset)[0]
         value = bool(value)
         offset = offset + 1
+    elif kind == 'b':
+        value = struct.unpack_from('>b', encoded, offset)[0]
+        offset = offset + 1
+    elif kind == 'B':
+        value = struct.unpack_from('>B', encoded, offset)[0]
+        offset = offset + 1
+    elif kind == 'U':
+        value = struct.unpack_from('>h', encoded, offset)[0]
+        offset = offset + 2
+    elif kind == 'u':
+        value = struct.unpack_from('>H', encoded, offset)[0]
+        offset = offset + 2
     elif kind == 'I':
         value = struct.unpack_from('>i', encoded, offset)[0]
         offset = offset + 4
+    elif kind == 'i':
+        value = struct.unpack_from('>I', encoded, offset)[0]
+        offset = offset + 4
+    elif kind == 'L':
+        value = struct.unpack_from('>Q', encoded, offset)[0]
+        value = long(value)
+        offset = offset + 8
     elif kind == 'l':
         value = struct.unpack_from('>q', encoded, offset)[0]
         value = long(value)
+        offset = offset + 8
+    elif kind == 'f':
+        # IEEE 754
+        value = struct.unpack_from('>f', encoded, offset)[0]
+        offset = offset + 4
+    elif kind == 'd':
+        # RFC 1832 XDR (struct module only does IEE 754 doubles, not the same)
+        p = xdrlib.Unpacker(encoded[offset : offset + 8 ])
+        value = p.unpack_double()
         offset = offset + 8
     elif kind == 'D':
         decimals = struct.unpack_from('B', encoded, offset)[0]
@@ -215,6 +258,8 @@ def decode_value(encoded, offset):
             v, offset = decode_value(encoded, offset)
             value.append(v)
         assert offset == offset_end
+    elif kind == 'V':
+        value = None
     else:
         assert False, "Unsupported field kind %s during decoding" % (kind,)
     return value, offset
