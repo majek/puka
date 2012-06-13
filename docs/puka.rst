@@ -22,13 +22,14 @@ For more information see:
 
 The :mod:`puka` module defines a single class:
 
-.. class:: Client(amqp_url='amqp:///', pubacks=None)
+.. class:: Client(amqp_url='amqp:///', pubacks=None, client_properties=None)
 
    Consturctor for :class:`Client` class. `amqp_url` is an url-like
    address of the RabbitMQ server. Default points to
    `amqp://guest:guest@localhost:5672/`. `pubacks` tells if the client
    should take advantage of the publiser-acks feature on the server -
-   autodetect by default.
+   autodetect by default.  `client_properties` is a dict of properties
+   to add to the connection properties sent to the server.
 
 Exceptions
 ----------
