@@ -30,9 +30,13 @@ def _connection_start(t, result):
     ccapa = {}
     if scapa.get('consumer_cancel_notify'):
         ccapa['consumer_cancel_notify'] = True
-    frames = spec.encode_connection_start_ok({'product': 'Puka',
-                                              'capabilities': ccapa},
-                                             'PLAIN', response, 'en_US')
+
+    properties = {'product': 'Puka', 'capabilities': ccapa}
+    if t.conn.client_properties is not None:
+        properties.update(t.conn.client_properties)
+
+    frames = spec.encode_connection_start_ok(properties,
+                                    'PLAIN', response, 'en_US')
     t.register(spec.METHOD_CONNECTION_TUNE, _connection_tune)
     t.send_frames(frames)
     t.x_cached_result = result
