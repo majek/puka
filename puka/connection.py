@@ -21,7 +21,7 @@ log = logging.getLogger('puka')
 class Connection(object):
     frame_max = 131072
 
-    def __init__(self, amqp_url='amqp:///', pubacks=None):
+    def __init__(self, amqp_url='amqp:///', pubacks=None, client_properties=None):
         self.pubacks = pubacks
 
         self.channels = channel.ChannelCollection()
@@ -29,6 +29,8 @@ class Connection(object):
 
         (self.username, self.password, self.vhost, self.host, self.port) = \
             parse_amqp_url(str(amqp_url))
+
+        self.client_properties = client_properties
 
     def _init_buffers(self):
         self.recv_buf = simplebuffer.SimpleBuffer()

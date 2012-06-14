@@ -26,6 +26,27 @@ class TestBasic(base.TestCase):
         promise = client.queue_delete(queue=self.name)
         client.wait(promise)
 
+    def test_simple_roundtrip_with_connection_properties(self):
+        props = { 'puka_test': 'blah', 'random_prop': 1234 }
+
+        client = puka.Client(self.amqp_url, client_properties=props)
+        promise = client.connect()
+        client.wait(promise)
+
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
+
+        promise = client.basic_publish(exchange='', routing_key=self.name,
+                                       body=self.msg)
+        client.wait(promise)
+
+        consume_promise = client.basic_consume(queue=self.name, no_ack=True)
+        result = client.wait(consume_promise)
+        self.assertEqual(result['body'], self.msg)
+
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
+
 
     def test_purge(self):
         client = puka.Client(self.amqp_url)
