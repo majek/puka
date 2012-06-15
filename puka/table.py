@@ -107,7 +107,7 @@ def encode(table):
     >>> encode({'a':9223372036854775807+1})
     Traceback (most recent call last):
         ...
-    AssertionError: Unable to represent 64 bit signed integer (too long)
+    AssertionError: Unable to represent integer wider than 64 bits
     '''
     pieces = []
     if table is None:
@@ -135,15 +135,14 @@ def encode_value(pieces, value):
         pieces.append(struct.pack('>cB', 't', int(value)))
         return 2
     elif isinstance(value, int) or isinstance(value, long):
-        bl = value.bit_length()
-        if bl < 32 or value == -2147483648L:
+        if -2147483648L <= value <= 2147483647L:
             pieces.append(struct.pack('>ci', 'I', value))
             return 5
-        elif bl < 64 or value == -9223372036854775808L:
+        elif -9223372036854775808L <= value <= 9223372036854775807L:
             pieces.append(struct.pack('>cq', 'l', value))
             return 9
         else:
-            assert False, "Unable to represent %s bit signed integer (too long)" % (bl,)
+            assert False, "Unable to represent integer wider than 64 bits"
     elif isinstance(value, decimal.Decimal):
         value = value.normalize()
         if value._exp < 0:
