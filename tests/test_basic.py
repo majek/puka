@@ -303,8 +303,8 @@ class TestBasic(base.TestCase):
             "app_id": 'j',
             "cluster_id": 'k',
             "custom": 'l',
-            "blah2": [True, 1, -1, 4611686018427387904L,
-                      -4611686018427387904L, [1,2,3,4, {"a":"b", "c":[]}]],
+            "blah2": [True, 1, -1, 64000L, None, float(12e10),
+                      -64000L, [1,2,3,4, {"a":"b", "c":[]}]],
             }
 
         t = client.basic_publish(exchange='', routing_key=self.name,
