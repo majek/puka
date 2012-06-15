@@ -24,9 +24,15 @@ class TestPublishAsync(base.TestCase):
                                        body=self.msg)
         client.wait(promise)
 
-        consume_promise = client.basic_consume(queue=self.name, no_ack=True)
-        result = client.wait(consume_promise)
-        self.assertEqual(result['body'], self.msg)
+        consume_promise = client.basic_consume(queue=self.name, no_ack=False)
+
+        msg = client.wait(consume_promise)
+        self.assertEqual(msg['body'], self.msg)
+
+        client.basic_ack(msg)
+
+        result = client.wait(consume_promise, timeout=0.1)
+        self.assertEqual(result, None)
 
         promise = client.queue_delete(queue=self.name)
         client.wait(promise)
@@ -100,6 +106,31 @@ class TestPublishAsync(base.TestCase):
             pass
 
         self.assertEqual(response['reply_code'], 313)
+
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
+
+
+    def test_simple_basic_get(self):
+        client = puka.Client(self.amqp_url, pubacks=self.pubacks)
+        promise = client.connect()
+        client.wait(promise)
+
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
+
+        promise = client.basic_publish(exchange='', routing_key=self.name,
+                                       body=self.msg)
+        client.wait(promise)
+
+        promise = client.basic_get(queue=self.name)
+        result = client.wait(promise)
+        self.assertEqual(result['body'], self.msg)
+        client.basic_ack(result)
+
+        promise = client.basic_get(queue=self.name)
+        result = client.wait(promise)
+        self.assertTrue(result['empty'])
 
         promise = client.queue_delete(queue=self.name)
         client.wait(promise)
