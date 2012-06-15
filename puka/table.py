@@ -89,6 +89,25 @@ def encode(table):
     '\x00\x00\x00\x0b\x01ad\x7f\xf0\x00\x00\x00\x00\x00\x00'
     >>> encode({'a':float(10E-300)})
     '\x00\x00\x00\x0b\x01ad\x01\xda\xc9\xa7\xb3\xb70/'
+
+    Encoding of integers, especially corner cases
+
+    >>> encode({'a':2147483647})
+    '\x00\x00\x00\x07\x01aI\x7f\xff\xff\xff'
+    >>> encode({'a':-2147483647-1})
+    '\x00\x00\x00\x07\x01aI\x80\x00\x00\x00'
+    >>> encode({'a':9223372036854775807})
+    '\x00\x00\x00\x0b\x01al\x7f\xff\xff\xff\xff\xff\xff\xff'
+    >>> encode({'a':-9223372036854775807-1})
+    '\x00\x00\x00\x0b\x01al\x80\x00\x00\x00\x00\x00\x00\x00'
+    >>> encode({'a':2147483647+1})
+    '\x00\x00\x00\x0b\x01al\x00\x00\x00\x00\x80\x00\x00\x00'
+    >>> encode({'a':-2147483647-2})
+    '\x00\x00\x00\x0b\x01al\xff\xff\xff\xff\x7f\xff\xff\xff'
+    >>> encode({'a':9223372036854775807+1})
+    Traceback (most recent call last):
+        ...
+    AssertionError: Unable to represent 64 bit signed integer (too long)
     '''
     pieces = []
     if table is None:
@@ -115,20 +134,16 @@ def encode_value(pieces, value):
     elif isinstance(value, bool):
         pieces.append(struct.pack('>cB', 't', int(value)))
         return 2
-    elif isinstance(value, int):
-        pieces.append(struct.pack('>ci', 'I', value))
-        return 5
-    elif isinstance(value, long):
-        s = bin(value)
-        s = s.lstrip('-0b')
-        if len(s) > 64:
-            strlong = str(value)
-            pieces.append(struct.pack('>cI', 'S', len(strlong)))
-            pieces.append(strlong)
-            return 5 + len(strlong)
-        else:
+    elif isinstance(value, int) or isinstance(value, long):
+        bl = value.bit_length()
+        if bl < 32 or value == -2147483648L:
+            pieces.append(struct.pack('>ci', 'I', value))
+            return 5
+        elif bl < 64 or value == -9223372036854775808L:
             pieces.append(struct.pack('>cq', 'l', value))
             return 9
+        else:
+            assert False, "Unable to represent %s bit signed integer (too long)" % (bl,)
     elif isinstance(value, decimal.Decimal):
         value = value.normalize()
         if value._exp < 0:
@@ -186,10 +201,8 @@ def decode(encoded, offset):
     {'test': Decimal('1000000')}
     >>> decode(encode({'a':[1,2,3,'a',decimal.Decimal('-0.01')]}), 0)[0]
     {'a': [1, 2, 3, 'a', Decimal('-0.01')]}
-    >>> decode(encode({'a': 0x7EADBEEFDEADBEEFAL}), 0)[0]
-    {'a': '146050591315076050682'}
-    >>> decode(encode({'a': 100200L}), 0)[0]
-    {'a': 100200L}
+    >>> decode(encode({'a': 100200L, 'b': 9223372036854775807L}), 0)[0]
+    {'a': 100200, 'b': 9223372036854775807L}
     >>> decode(encode({'a': True, 'b': False}), 0)[0]
     {'a': True, 'b': False}
     >>> decode(encode({'a': None}), 0)[0]
