@@ -30,7 +30,7 @@ class TestConnection(base.TestCase):
         client = puka.Client('amqp://%s:%s@%s:%s%s' % \
                                  (username, 'wrongpass', host, port, vhost))
         promise = client.connect()
-        with self.assertRaises(puka.ConnectionBroken):
+        with self.assertRaises(socket.error):
             client.wait(promise)
 
     # def test_wrong_vhost(self):
