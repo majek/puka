@@ -196,10 +196,16 @@ def decode(encoded, offset):
     {'a': None}
     >>> decode(encode({'a': 1e-300}), 0)[0]
     {'a': 1e-300}
+    >>> decode(encode({'a': float('inf'), 'b': float('nan')}), 0)[0]
+    {'a': inf, 'b': nan}
 
     8 bit unsigned, not produced by our encode
     >>> decode('\x00\x00\x00\x04\x01ab\xff', 0)[0]
     {'a': 255}
+
+    16 bit signed, not produced by our encode
+    >>> decode('\x00\x00\x00\x04\x01as\xff\xff', 0)[0]
+    {'a': -1}
     
     single precision real, not produced by our encode
     >>> decode('\x00\x00\x00\x06\x01af\x50\x15\x02\xF9', 0)[0]
