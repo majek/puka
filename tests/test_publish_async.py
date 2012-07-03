@@ -136,6 +136,22 @@ class TestPublishAsync(base.TestCase):
         client.wait(promise)
 
 
+    def test_bug21(self):
+        # Following the testcase: https://github.com/majek/puka/issues/21
+        client = puka.Client(self.amqp_url, pubacks=self.pubacks)
+        promise = client.connect()
+        client.wait(promise)
+
+        promises = []
+        for i in range(0, 42):
+            promise = client.basic_publish('', 'test_key', 'test_body')
+            self.assertTrue(len(client.send_buf) > 0)
+            promises.append(promise)
+
+        #client.wait(promises)
+
+
+
 class TestPublishAsyncPubacksTrue(TestPublishAsync):
     pubacks = True
 
