@@ -192,7 +192,7 @@ class Connection(object):
         try:
             self.on_write()
         except socket.error, e:
-            if e.errno != 10057:
+            if e.errno != errno.ENOTCONN:
                 raise
 
         while True:
