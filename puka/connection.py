@@ -57,6 +57,7 @@ class Connection(object):
         self.sd = socket.socket(family, socktype, proto)
         self.sd.setblocking(False)
         set_ridiculously_high_buffers(self.sd)
+        set_close_exec(self.sd)
         try:
             self.sd.connect(sockaddr)
         except socket.error, e:
@@ -378,3 +379,17 @@ def set_ridiculously_high_buffers(sd):
             aft = sd.getsockopt(socket.SOL_SOCKET, flag)
             if aft <= bef or aft >= 1024*1024:
                 break
+
+def set_close_exec(fd):
+    '''
+    exec functions (e.g. subprocess.Popen) by default force the child
+    process to inherit all file handles which can result in stuck
+    connections and unacknowledged messages. Setting FD_CLOEXEC forces
+    the handles to be closed first.
+    '''
+    try:
+        import fcntl
+        flags = fcntl.fcntl(fd, fcntl.F_GETFD)
+        fcntl.fcntl(fd, fcntl.F_SETFD, flags | fcntl.FD_CLOEXEC)
+    except ImportError:
+        pass
