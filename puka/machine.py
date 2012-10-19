@@ -57,7 +57,7 @@ def _connection_tune(t, result):
     channel_max = t.conn.channels.tune_channel_max(result['channel_max'])
 
     t.register(spec.METHOD_CONNECTION_OPEN_OK, _connection_open_ok)
-    f1 = spec.encode_connection_tune_ok(channel_max, frame_max, 0)
+    f1 = spec.encode_connection_tune_ok(channel_max, frame_max, t.conn.heartbeat)
     f2 = spec.encode_connection_open(t.conn.vhost)
     t.send_frames(f1 + f2)
 
