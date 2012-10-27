@@ -21,7 +21,7 @@ log = logging.getLogger('puka')
 class Connection(object):
     frame_max = 131072
 
-    def __init__(self, amqp_url='amqp:///', pubacks=None, client_properties=None):
+    def __init__(self, amqp_url='amqp:///', pubacks=None, client_properties=None, heartbeat=0):
         self.pubacks = pubacks
 
         self.channels = channel.ChannelCollection()
@@ -31,6 +31,8 @@ class Connection(object):
             parse_amqp_url(str(amqp_url))
 
         self.client_properties = client_properties
+
+        self.heartbeat = heartbeat
 
     def _init_buffers(self):
         self.recv_buf = simplebuffer.SimpleBuffer()
@@ -125,8 +127,24 @@ class Connection(object):
             body_chunk = str(data[offset : offset+payload_size])
             self.channels.channels[channel].inbound_body(body_chunk)
             offset += len(body_chunk)
+        elif frame_type == 0x08: # heartbeat frame
+            #
+            # One corner of the spec doc says this will be 0x04, most says 0x08 which seems to be what's
+            # been implemented by RabbitMQ at least.
+            #
+            # No payload so no need to increment offset
+            #
+            # Got heartbeat, respond with one.
+            #
+            # It seems likely this logic is slightly incorrect. We're getting a heartbeat because we asked for
+            # one from the server. At connection setup it probably asked us for one as well with the same timeout.
+            # We're using the server heartbeat as a trigger instead of setting up a separate heartbeat cycler.
+            #
+            # The end result is the same.
+            #
+            self._send_frames(channel_number=0, frames=[(0x08, '')])
         else:
-            assert False, "Unknown frame type"
+            assert False, "Unknown frame type %x" % frame_type
 
         offset += 1 # '\xCE'
         assert offset == start_offset+8+payload_size
