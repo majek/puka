@@ -128,23 +128,21 @@ class Connection(object):
             self.channels.channels[channel].inbound_body(body_chunk)
             offset += len(body_chunk)
         elif frame_type == 0x08: # heartbeat frame
-            #
-            # One corner of the spec doc says this will be 0x04, most says 0x08 which seems to be what's
-            # been implemented by RabbitMQ at least.
-            #
-            # No payload so no need to increment offset
+            # One corner of the spec doc says this will be 0x04, most
+            # says 0x08 which seems to be what's been implemented by
+            # RabbitMQ at least.
             #
             # Got heartbeat, respond with one.
             #
-            # It seems likely this logic is slightly incorrect. We're getting a heartbeat because we asked for
-            # one from the server. At connection setup it probably asked us for one as well with the same timeout.
-            # We're using the server heartbeat as a trigger instead of setting up a separate heartbeat cycler.
-            #
-            # The end result is the same.
-            #
+            # It seems likely this logic is slightly incorrect. We're
+            # getting a heartbeat because we asked for one from the
+            # server. At connection setup it probably asked us for one
+            # as well with the same timeout.  We're using the server
+            # heartbeat as a trigger instead of setting up a separate
+            # heartbeat cycler.
             self._send_frames(channel_number=0, frames=[(0x08, '')])
         else:
-            assert False, "Unknown frame type %x" % frame_type
+            assert False, "Unknown frame type 0x%x" % frame_type
 
         offset += 1 # '\xCE'
         assert offset == start_offset+8+payload_size
