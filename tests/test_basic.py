@@ -496,6 +496,29 @@ class TestBasic(base.TestCase):
         client.wait(promise)
 
 
+    def test_simple_roundtrip_with_heartbeat(self):
+        client = puka.Client(self.amqp_url, heartbeat=1)
+        promise = client.connect()
+        client.wait(promise)
+
+        promise = client.queue_declare(queue=self.name)
+        client.wait(promise)
+
+        consume_promise = client.basic_consume(queue=self.name, no_ack=True)
+        result = client.wait(consume_promise, timeout=1.1)
+        self.assertEqual(result, None)
+
+        promise = client.basic_publish(exchange='', routing_key=self.name,
+                                       body=self.msg)
+        client.wait(promise)
+
+        result = client.wait(consume_promise)
+        self.assertEqual(result['body'], self.msg)
+
+        promise = client.queue_delete(queue=self.name)
+        client.wait(promise)
+
+
 
 if __name__ == '__main__':
     import tests
