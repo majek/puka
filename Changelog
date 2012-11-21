@@ -1,3 +1,24 @@
+0.0.6
+=====
+
+ * Don't use 'immediate' flag for publishing when not using
+   pubacks - due to RabbitMQ 3.0 changes.
+ * Support for some unusual data types in tables:
+   None, float (including nan and inf) and some unsigned integers.
+ * #19 - some more tweaks for that.
+ * Support 'client_properties' parameter in constructor,
+   which can be used to pass data to the browser.
+ * RabbitMQ way of handling user/pass problems changed -
+   the connection is now dropped instead of sending
+   a connection-close method.
+ * #17 - some more puback / fake puback tests
+ * #15 - on windows errno.ENOTCONN had different value
+   than on linux / mac.
+ * Set fcntl FD_CLOEXEC on puka sockets - we don't want child
+   processes to get a copy of our descriptor.
+ * #26 - basic support for AMQP heartbeats
+
+
 0.0.5
 =====
 
