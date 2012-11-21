@@ -21,6 +21,23 @@ log = logging.getLogger('puka')
 class Connection(object):
     frame_max = 131072
 
+    '''
+    Constructor of Puka Connection object.
+
+    amqp_url - a url-like address of an AMQP server
+    pubacks  - should Puka try to use 'publisher acks' for implementing 
+               blocking 'publish'. In early days (before RabbitMQ 2.3),
+               pubacks weren't available, so Puka had to emulate blocking
+               publish using trickery - sending a confirmation message with
+               'mandatory' flag and waiting for it being bounced by the
+               broker. Possible values:
+                   True  - always use pubacks
+                   False - never use pubakcs, always emualte them
+                   None (default) - auto-detect if pubacks are availalbe
+    client_properties - A dictionary of properties to be sent to the
+               server.
+    heartbeat - basic support for AMQP-level heartbeats (in seconds)
+    '''
     def __init__(self, amqp_url='amqp:///', pubacks=None, client_properties=None, heartbeat=0):
         self.pubacks = pubacks
 
