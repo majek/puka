@@ -116,7 +116,7 @@ def basic_publish(conn, exchange, routing_key='', mandatory=False,
         # Construct ack packet.
         eheaders = {'x-puka-delivery-tag': delivery_tag, 'x-puka-footer': True}
         frames = frames + \
-                 spec.encode_basic_publish('', '', True, True, eheaders,
+                 spec.encode_basic_publish('', '', True, False, eheaders,
                                                 '', conn.frame_max)
     t = conn.promises.new(_nothing, no_channel=True)
     pt.x_async_next.append( (delivery_tag, t, frames) )
