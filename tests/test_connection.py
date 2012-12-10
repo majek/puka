@@ -11,7 +11,7 @@ AMQP_URL=os.getenv('AMQP_URL', 'amqp:///')
 
 class TestConnection(base.TestCase):
     def test_broken_url(self):
-        client = puka.Client('amqp://does.not.resolve/')
+        client = puka.Client('amqp://256.256.256.256/')
         with self.assertRaises(socket.gaierror):
             promise = client.connect()
 
