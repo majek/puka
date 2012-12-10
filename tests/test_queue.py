@@ -6,7 +6,7 @@ import random
 import unittest_backport as unittest
 
 
-AMQP_URL=os.getenv('AMQP_URL')
+AMQP_URL=os.getenv('AMQP_URL', 'amqp:///')
 
 class TestQueue(unittest.TestCase):
     def test_queue_declare(self):

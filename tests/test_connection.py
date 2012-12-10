@@ -7,7 +7,7 @@ import socket
 
 import base
 
-AMQP_URL=os.getenv('AMQP_URL')
+AMQP_URL=os.getenv('AMQP_URL', 'amqp:///')
 
 class TestConnection(base.TestCase):
     def test_broken_url(self):
