@@ -4,7 +4,7 @@ import puka
 import random
 import time
 
-AMQP_URL=os.getenv('AMQP_URL')
+AMQP_URL=os.getenv('AMQP_URL', 'amqp:///')
 
 class TestLimits(unittest.TestCase):
     def test_parallel_queue_declare(self):
