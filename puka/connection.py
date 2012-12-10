@@ -67,9 +67,13 @@ class Connection(object):
         self._handle_read = self._handle_conn_read
         self._init_buffers()
 
-        try:
-            addrinfo = socket.getaddrinfo(self.host, self.port, socket.AF_INET6, socket.SOCK_STREAM)
-        except socket.gaierror:
+        addrinfo = None
+        if socket.has_ipv6:
+            try:
+                addrinfo = socket.getaddrinfo(self.host, self.port, socket.AF_INET6, socket.SOCK_STREAM)
+            except socket.gaierror:
+                pass
+        if not addrinfo:
             addrinfo = socket.getaddrinfo(self.host, self.port, socket.AF_INET, socket.SOCK_STREAM)
 
         (family, socktype, proto, canonname, sockaddr) = addrinfo[0]
