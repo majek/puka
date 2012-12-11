@@ -7,10 +7,9 @@ import socket
 
 import base
 
-AMQP_URL=os.getenv('AMQP_URL', 'amqp:///')
-
 class TestConnection(base.TestCase):
     def test_broken_url(self):
+        # Any address that doesn't resolve
         client = puka.Client('amqp://256.256.256.256/')
         with self.assertRaises(socket.gaierror):
             promise = client.connect()
@@ -25,7 +24,7 @@ class TestConnection(base.TestCase):
     # The following tests take 3 seconds each, due to Rabbit.
     def test_wrong_user(self):
         (username, password, vhost, host, port) = \
-            puka.connection.parse_amqp_url(AMQP_URL)
+            puka.connection.parse_amqp_url(self.amqp_url)
 
         client = puka.Client('amqp://%s:%s@%s:%s%s' % \
                                  (username, 'wrongpass', host, port, vhost))
