@@ -246,13 +246,15 @@ def basic_consume_multi(conn, queues, prefetch_count=0, no_ack=False):
             queue = item
             no_local = exclusive = False
             arguments = {}
+            consumer_tag = ''
         else:
             queue = item['queue']
             no_local = item.get('no_local', False)
             exclusive = item.get('exclusive', False)
             arguments = item.get('arguments', {})
+            consumer_tag = item.get('consumer_tag', '')
         t.x_consumes.append( (queue, spec.encode_basic_consume(
-                    queue, '', no_local, no_ack, exclusive, arguments)) )
+                    queue, consumer_tag, no_local, no_ack, exclusive, arguments)) )
     t.x_no_ack = no_ack
     t.x_consumer_tag = {}
     t.register(spec.METHOD_BASIC_DELIVER, _bcm_basic_deliver)
