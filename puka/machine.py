@@ -100,7 +100,7 @@ def fix_basic_publish_headers(headers):
     return nheaders
 
 def basic_publish(conn, exchange, routing_key='', mandatory=False,
-                  immediate=False, headers={}, body=''):
+                  headers={}, body=''):
     pt = conn.x_publish_promise
     delivery_tag = pt.x_delivery_tag
     pt.x_delivery_tag += 1
@@ -110,7 +110,7 @@ def basic_publish(conn, exchange, routing_key='', mandatory=False,
     nheaders['x-puka-delivery-tag'] = delivery_tag
 
     frames = spec.encode_basic_publish(exchange, routing_key, mandatory,
-                                       immediate, nheaders, body,
+                                       False, nheaders, body,
                                        conn.frame_max)
     if not conn.x_pubacks:
         # Construct ack packet.
