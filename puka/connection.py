@@ -186,6 +186,8 @@ class Connection(object):
         return bool(self.send_buf)
 
     def on_write(self):
+        if not self.send_buf:  # already shutdown or empty buffer?
+            return
         try:
             # On windows socket.send blows up if the buffer is too large.
             r = self.sd.send(self.send_buf.read(128*1024))
