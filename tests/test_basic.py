@@ -310,7 +310,7 @@ class TestBasic(base.TestCase):
             "priority": 1,
             "correlation_id": 'd',
             "reply_to": 'e',
-            "expiration": 'f',
+            "expiration": '1000000',
             "message_id": 'g',
             "timestamp": 1,
             "type_": 'h',
