@@ -148,12 +148,6 @@ class TestBasic(base.TestCase):
                                        mandatory=True, body='')
         client.wait(promise) # no error
 
-        promise = client.basic_publish(exchange='', routing_key=self.name,
-                                       immediate=True, body='')
-        with self.assertRaises(puka.NoConsumers):
-            r = client.wait(promise)
-            print r
-
         promise = client.queue_delete(queue=self.name)
         client.wait(promise)
 

@@ -83,8 +83,8 @@ class TestPublishAsync(base.TestCase):
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key='',
-                                       body=self.msg, immediate=True)
-        with self.assertRaises(puka.NoConsumers):
+                                       body=self.msg, mandatory=True)
+        with self.assertRaises(puka.NoRoute):
             client.wait(promise)
 
 
@@ -97,13 +97,13 @@ class TestPublishAsync(base.TestCase):
         client.wait(promise)
 
         promise = client.basic_publish(exchange='', routing_key='badname',
-                                       immediate=True, body=self.msg)
+                                       mandatory=True, body=self.msg)
         try:
             client.wait(promise)
-        except puka.NoConsumers, (response,):
+        except puka.NoRoute, (response,):
             pass
 
-        self.assertEqual(response['reply_code'], 313)
+        self.assertEqual(response['reply_code'], 312)
 
         promise = client.queue_delete(queue=self.name)
         client.wait(promise)
