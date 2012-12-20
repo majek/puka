@@ -107,7 +107,7 @@ class Connection(object):
         if len(self.recv_buf) >= self.recv_need:
             data = self.recv_buf.read()
             offset = 0
-            while len(data) - offset >= self.recv_need:
+            while len(data) - offset >= self.recv_need and self.sd is not None:
                 offset, self.recv_need = \
                     self._handle_read(data, offset)
             self.recv_buf.consume(offset)
