@@ -5,3 +5,5 @@ dist/
 puka.egg-info/
 venv/
 distribute-*.tar.gz
+/.tox/
+__pycache__/
