@@ -221,22 +221,22 @@ class Connection(object):
             promise_numbers = [promise_numbers]
         promise_numbers = set(promise_numbers)
 
-        # Try flushing the write buffer before entering the loop, we
-        # may as well return soon, and the user has no way to figure
-        # out if the write buffer was flushed or not - (ie: did the
-        # wait run select() or not)
+        # Make sure the buffer is flushed if possible before entering
+        # the loop. We may return soon, and the user has no way to
+        # figure out if the write buffer was flushed or not - (ie: did
+        # the wait run select() or not)
         #
         # This is problem is especially painful with regard to
         # async messages, like basic_ack. See #3.
-        #
-        # Additionally, during the first round trip on windows - when
-        # the connection is being established, the socket may not yet
-        # be in the connected state - swallow an error in that case.
-        try:
+        r, w, e = select.select((self,),
+                                (self,) if self.needs_write() else (),
+                                (self,),
+                                0)
+        if r or e:
+            self.on_read()
+        if w:
             self.on_write()
-        except socket.error, e:
-            if e.errno != errno.ENOTCONN:
-                raise
+
 
         while True:
             while True:
