@@ -25,7 +25,7 @@ class Connection(object):
     Constructor of Puka Connection object.
 
     amqp_url - a url-like address of an AMQP server
-    pubacks  - should Puka try to use 'publisher acks' for implementing 
+    pubacks  - should Puka try to use 'publisher acks' for implementing
                blocking 'publish'. In early days (before RabbitMQ 2.3),
                pubacks weren't available, so Puka had to emulate blocking
                publish using trickery - sending a confirmation message with
@@ -38,7 +38,8 @@ class Connection(object):
                server.
     heartbeat - basic support for AMQP-level heartbeats (in seconds)
     '''
-    def __init__(self, amqp_url='amqp:///', pubacks=None, client_properties=None, heartbeat=0):
+    def __init__(self, amqp_url='amqp:///', pubacks=None,
+                 client_properties=None, heartbeat=0):
         self.pubacks = pubacks
 
         self.channels = channel.ChannelCollection()
@@ -70,11 +71,13 @@ class Connection(object):
         addrinfo = None
         if socket.has_ipv6:
             try:
-                addrinfo = socket.getaddrinfo(self.host, self.port, socket.AF_INET6, socket.SOCK_STREAM)
+                addrinfo = socket.getaddrinfo(
+                    self.host, self.port, socket.AF_INET6, socket.SOCK_STREAM)
             except socket.gaierror:
                 pass
         if not addrinfo:
-            addrinfo = socket.getaddrinfo(self.host, self.port, socket.AF_INET, socket.SOCK_STREAM)
+            addrinfo = socket.getaddrinfo(
+                self.host, self.port, socket.AF_INET, socket.SOCK_STREAM)
 
         (family, socktype, proto, canonname, sockaddr) = addrinfo[0]
         self.sd = socket.socket(family, socktype, proto)
