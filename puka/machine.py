@@ -241,18 +241,17 @@ def basic_consume_multi(conn, queues, prefetch_count=0, no_ack=False):
     t = conn.promises.new(_bcm_basic_qos, reentrant=True)
     t.x_frames = spec.encode_basic_qos(0, prefetch_count, False)
     t.x_consumes = []
-    for item in queues:
+    for i, item in enumerate(queues):
         if isinstance(item, str):
             queue = item
             no_local = exclusive = False
             arguments = {}
-            consumer_tag = ''
         else:
             queue = item['queue']
             no_local = item.get('no_local', False)
             exclusive = item.get('exclusive', False)
             arguments = item.get('arguments', {})
-            consumer_tag = item.get('consumer_tag', '')
+        consumer_tag = '%s.%s' % (t.number, i)
         t.x_consumes.append( (queue, spec.encode_basic_consume(
                     queue, consumer_tag, no_local, no_ack, exclusive, arguments)) )
     t.x_no_ack = no_ack

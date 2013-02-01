@@ -11,6 +11,8 @@ class TestCase(unittest.TestCase):
         self.name1 = 'test%s' % (random.random(),)
         self.name2 = 'test%s' % (random.random(),)
         self.msg = '%s' % (random.random(),)
+        self.msg1 = '%s' % (random.random(),)
+        self.msg2 = '%s' % (random.random(),)
         self.amqp_url = os.getenv('AMQP_URL', 'amqp:///')
 
     def tearDown(self):
