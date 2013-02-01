@@ -96,10 +96,10 @@ example, this snippet creates 1000 queues in parallel:
 Puka also has a nicely optimized AMQP codec, but don't expect miracles
 - it can't go faster than Python.
 
-Puka is sane
-------------
+Puka is sensible
+----------------
 
-Puka does expose only a sane subset of AMQP, as judged by the author.
+Puka does expose only a sensible subset of AMQP, as judged by the author.
 
 The major differences between Puka and normal AMQP libraries include:
 
