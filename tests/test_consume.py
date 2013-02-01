@@ -64,7 +64,7 @@ class TestBasicConsumeMulti(base.TestCase):
         promise = client.basic_consume(queue=self.name, exclusive=True)
         client.wait(promise, timeout=0.001)
 
-        # Do something syncrhonus.
+        # Do something synchronus.
         promise = client.queue_declare(exclusive=True)
         client.wait(promise)
 
