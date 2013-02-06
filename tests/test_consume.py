@@ -97,33 +97,67 @@ class TestBasicConsumeMulti(base.TestCase):
         consume_promise = client.basic_consume(queue=self.name1)
         result = client.wait(consume_promise)
         self.assertEqual(result['body'], self.msg)
-        self.assertEqual(result['consumer_tag'], '%s.0' % consume_promise)
+        self.assertEqual(result['consumer_tag'], '%s.0.' % consume_promise)
         client.basic_ack(result)
         promise = client.basic_cancel(consume_promise)
         result = client.wait(promise)
 
         # Consume multi
         p1 = client.basic_publish(exchange='', routing_key=self.name1,
-                                       body=self.msg1)
+                                  body=self.msg1)
         p2 = client.basic_publish(exchange='', routing_key=self.name2,
-                                       body=self.msg2)
+                                  body=self.msg2)
         client.wait_for_all([p1, p2])
 
-        consume_promise = client.basic_consume_multi(
-            [{'queue': self.name1}, self.name2],
-            prefetch_count=1)
+        consume_promise = client.basic_consume_multi([
+                self.name1,
+                {'queue': self.name2,
+                 'consumer_tag': 'whooa!'}])
 
         for _ in range(2):
             result = client.wait(consume_promise)
             if result['body'] == self.msg1:
                 self.assertEqual(result['body'], self.msg1)
                 self.assertEqual(result['consumer_tag'],
-                                 '%s.0' % consume_promise)
+                                 '%s.0.' % consume_promise)
             else:
                 self.assertEqual(result['body'], self.msg2)
                 self.assertEqual(result['consumer_tag'],
-                                 '%s.1' % consume_promise)
+                                 '%s.1.whooa!' % consume_promise)
             client.basic_ack(result)
+
+        p1 = client.queue_delete(queue=self.name1)
+        p2 = client.queue_delete(queue=self.name2)
+        client.wait_for_all([p1, p2])
+
+
+    @base.connect
+    def test_consumer_tag_repeated(self, client):
+        # In theory consumer_tags are unique. But our users may not
+        # know about it. Test puka's behaviour in that case
+
+        p1 = client.queue_declare(queue=self.name1)
+        p2 = client.queue_declare(queue=self.name2)
+        client.wait_for_all([p1, p2])
+
+        promise = client.basic_publish(exchange='', routing_key=self.name1,
+                                       body=self.msg)
+        client.wait(promise)
+
+        consume_promise = client.basic_consume_multi([
+                {'queue': self.name1,
+                 'consumer_tag': 'repeated'},
+                {'queue': self.name1,
+                 'consumer_tag': 'repeated'},
+                {'queue': self.name2,
+                 'consumer_tag': 'repeated'}])
+
+        result = client.wait(consume_promise)
+        self.assertEqual(result['body'], self.msg)
+        ct = result['consumer_tag'].split('.')
+        self.assertEqual(ct[0], '%s' % consume_promise)
+        self.assertTrue(ct[1] in ('0', '1', '2'))
+        self.assertEqual(ct[2], 'repeated')
 
         p1 = client.queue_delete(queue=self.name1)
         p2 = client.queue_delete(queue=self.name2)
