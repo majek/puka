@@ -16,6 +16,7 @@ from . import promise
 
 log = logging.getLogger('puka')
 
+_ignore_errno_send = (errno.EWOULDBLOCK, errno.ENOBUFS)
 
 
 class Connection(object):
@@ -195,7 +196,7 @@ class Connection(object):
             # On windows socket.send blows up if the buffer is too large.
             r = self.sd.send(self.send_buf.read(128*1024))
         except socket.error, e:
-            if e.errno == errno.EAGAIN:
+            if e.errno in _ignore_errno_send:
                 return
             else:
                 raise
