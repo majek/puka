@@ -194,7 +194,7 @@ class Connection(object):
             # On windows socket.send blows up if the buffer is too large.
             r = self.sd.send(self.send_buf.read(128*1024))
         except socket.error, e:
-            if e.errno in (errno.EAGAIN, errno.ENOBUFS):
+            if e.errno in (errno.EWOULDBLOCK, errno.ENOBUFS):
                 return
             else:
                 raise
