@@ -16,8 +16,6 @@ from . import promise
 
 log = logging.getLogger('puka')
 
-_ignore_errno_send = (errno.EWOULDBLOCK, errno.ENOBUFS)
-
 
 class Connection(object):
     frame_max = 131072
@@ -196,7 +194,7 @@ class Connection(object):
             # On windows socket.send blows up if the buffer is too large.
             r = self.sd.send(self.send_buf.read(128*1024))
         except socket.error, e:
-            if e.errno in _ignore_errno_send:
+            if e.errno in (errno.EAGAIN, errno.ENOBUFS):
                 return
             else:
                 raise
