@@ -84,7 +84,7 @@ class UnpackWrapper(object):
                         ')' if last else ',\n',
                     ),
                 fmts = ''.join([f.fmt for f in fields])
-                print "= struct.unpack_from('!%s', data, offset)" % (fmts,)
+                print "= unpack_from('!%s', data, offset)" % (fmts,)
                 if 'bits' in [f.dname(decor) for f in fields]:
                     self.do_print_bits(p, decor)
                 print p+"offset += %s" % ('+'.join(
@@ -219,7 +219,7 @@ class PackWrapper(object):
                                                 for p in re.findall('..', s)]),)
             else:
                 if fmt[0] is not None:
-                    print prefix+"struct.pack('!%s', %s)%s" % (''.join(fmt),
+                    print prefix+"pack('!%s', %s)%s" % (''.join(fmt),
                                                               ', '.join(names),
                                                                ',' if comma else '')
                 else:
