@@ -108,6 +108,10 @@ def encode(table):
     Traceback (most recent call last):
         ...
     AssertionError: Unable to represent integer wider than 64 bits
+    >>> encode({'a': set()})
+    Traceback (most recent call last):
+        ...
+    AssertionError: Unsupported value type during encoding set([]) (<type 'set'>)
     '''
     pieces = []
     if table is None:
@@ -173,8 +177,8 @@ def encode_value(pieces, value):
         pieces.append(piece)
         return 5 + len(piece)
     else:
-        assert False, "Unsupported field kind during encoding %r/%r" % (
-            key, value)
+        assert False, "Unsupported value type during encoding %r (%r)" % (
+            value, type(value))
 
 def decode(encoded, offset):
     r'''
