@@ -118,7 +118,7 @@ def print_decode_properties(c):
 
 def _default_params(m):
     for f in m.arguments:
-        yield "%s=%r" % (f.n, f.defaultvalue)
+        yield "%s=%r" % (f.n, str(f.defaultvalue) if type(f.defaultvalue) == unicode else f.defaultvalue)
     if m.hasContent:
         yield "user_headers={}"
         yield "payload=''"
