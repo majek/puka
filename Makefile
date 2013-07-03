@@ -1,4 +1,4 @@
-CODEGEN_DIR=../rabbitmq-codegen
+CODEGEN_DIR=vendor/rabbitmq-codegen
 AMQP_JSON_SPEC=$(CODEGEN_DIR)/amqp-rabbitmq-0.9.1.json
 
 PYTHON=python
