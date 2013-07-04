@@ -170,7 +170,8 @@ AMQP methods used to handle messages:
 .. method:: Client.basic_cancel(consume_promise)
 
    Given a `consume_promise` returned by :meth:`basic_consume` or
-   :meth:`basic_consume_multi` cancels the consume.
+   :meth:`basic_consume_multi` cancels the consume. You can `wait` on
+   the returned promise.
 
 .. method:: Client.basic_ack(msg_result)
 
@@ -227,8 +228,8 @@ Synchronously receive three messages:
 
       client.basic_ack(result)
 
-  client.basic_cancel(consume_promise)
-  client.wait(consume_promise)
+  promise = client.basic_cancel(consume_promise)
+  client.wait(promise)
 
   promise = client.close()
   client.wait(promise)
