@@ -1,18 +1,19 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>puka — An opinionated RabbitMQ client &mdash; Python v documentation</title>
+    <title>puka — An opinionated RabbitMQ client &mdash; Python  documentation</title>
+    
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -22,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Python v documentation" href="index.html" /> 
+    <link rel="top" title="Python  documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -34,7 +35,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="#">Python v documentation</a> &raquo;</li> 
+        <li><a href="#">Python  documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -53,20 +54,21 @@ fine with other message brokers that support this protocol.</p>
 </div>
 <p>For more information see:</p>
 <blockquote>
-<ul class="simple">
+<div><ul class="simple">
 <li><a class="reference external" href="http://www.rabbitmq.com/getstarted.html">RabbitMQ tutorials</a>.</li>
 <li>AMQP 0-9-1 <a class="reference external" href="http://www.amqp.org/confluence/download/attachments/720900/amqp0-9-1.pdf?version=1&amp;modificationDate=1227526523000">Specification</a> and <a class="reference external" href="http://www.amqp.org/confluence/download/attachments/720900/amqp-xml-doc0-9-1.pdf?version=1&amp;modificationDate=1227526523000">Definitions</a></li>
 </ul>
-</blockquote>
+</div></blockquote>
 <p>The <a class="reference internal" href="#module-puka" title="puka: An opinionated RabbitMQ client."><tt class="xref py py-mod docutils literal"><span class="pre">puka</span></tt></a> module defines a single class:</p>
 <dl class="class">
 <dt id="puka.Client">
-<em class="property">class </em><tt class="descclassname">puka.</tt><tt class="descname">Client</tt><big>(</big><em>amqp_url='amqp:///'</em>, <em>pubacks=None</em><big>)</big><a class="headerlink" href="#puka.Client" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">puka.</tt><tt class="descname">Client</tt><big>(</big><em>amqp_url='amqp:///'</em>, <em>pubacks=None</em>, <em>client_properties=None</em><big>)</big><a class="headerlink" href="#puka.Client" title="Permalink to this definition">¶</a></dt>
 <dd><p>Consturctor for <a class="reference internal" href="#puka.Client" title="puka.Client"><tt class="xref py py-class docutils literal"><span class="pre">Client</span></tt></a> class. <cite>amqp_url</cite> is an url-like
 address of the RabbitMQ server. Default points to
 <cite>amqp://guest:guest&#64;localhost:5672/</cite>. <cite>pubacks</cite> tells if the client
 should take advantage of the publiser-acks feature on the server -
-autodetect by default.</p>
+autodetect by default.  <cite>client_properties</cite> is a dict of properties
+to add to the connection properties sent to the server.</p>
 </dd></dl>
 
 <div class="section" id="exceptions">
@@ -288,7 +290,8 @@ consumes.</p>
 <dt id="puka.Client.basic_cancel">
 <tt class="descclassname">Client.</tt><tt class="descname">basic_cancel</tt><big>(</big><em>consume_promise</em><big>)</big><a class="headerlink" href="#puka.Client.basic_cancel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a <cite>consume_promise</cite> returned by <a class="reference internal" href="#puka.Client.basic_consume" title="puka.Client.basic_consume"><tt class="xref py py-meth docutils literal"><span class="pre">basic_consume()</span></tt></a> or
-<a class="reference internal" href="#puka.Client.basic_consume_multi" title="puka.Client.basic_consume_multi"><tt class="xref py py-meth docutils literal"><span class="pre">basic_consume_multi()</span></tt></a> cancels the consume.</p>
+<a class="reference internal" href="#puka.Client.basic_consume_multi" title="puka.Client.basic_consume_multi"><tt class="xref py py-meth docutils literal"><span class="pre">basic_consume_multi()</span></tt></a> cancels the consume. You can <cite>wait</cite> on
+the returned promise.</p>
 </dd></dl>
 
 <dl class="method">
@@ -345,8 +348,8 @@ consumes.</p>
 
     <span class="n">client</span><span class="o">.</span><span class="n">basic_ack</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 
-<span class="n">client</span><span class="o">.</span><span class="n">basic_cancel</span><span class="p">(</span><span class="n">consume_promise</span><span class="p">)</span>
-<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">consume_promise</span><span class="p">)</span>
+<span class="n">promise</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">basic_cancel</span><span class="p">(</span><span class="n">consume_promise</span><span class="p">)</span>
+<span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">promise</span><span class="p">)</span>
 
 <span class="n">promise</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 <span class="n">client</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">promise</span><span class="p">)</span>
@@ -412,7 +415,7 @@ consumes.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -435,12 +438,12 @@ consumes.</p>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="#">Python v documentation</a> &raquo;</li> 
+        <li><a href="#">Python  documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright .
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
     </div>
   </body>
 </html>

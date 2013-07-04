@@ -22,13 +22,14 @@ For more information see:
 
 The :mod:`puka` module defines a single class:
 
-.. class:: Client(amqp_url='amqp:///', pubacks=None)
+.. class:: Client(amqp_url='amqp:///', pubacks=None, client_properties=None)
 
    Consturctor for :class:`Client` class. `amqp_url` is an url-like
    address of the RabbitMQ server. Default points to
    `amqp://guest:guest@localhost:5672/`. `pubacks` tells if the client
    should take advantage of the publiser-acks feature on the server -
-   autodetect by default.
+   autodetect by default.  `client_properties` is a dict of properties
+   to add to the connection properties sent to the server.
 
 Exceptions
 ----------
@@ -169,7 +170,8 @@ AMQP methods used to handle messages:
 .. method:: Client.basic_cancel(consume_promise)
 
    Given a `consume_promise` returned by :meth:`basic_consume` or
-   :meth:`basic_consume_multi` cancels the consume.
+   :meth:`basic_consume_multi` cancels the consume. You can `wait` on
+   the returned promise.
 
 .. method:: Client.basic_ack(msg_result)
 
@@ -226,8 +228,8 @@ Synchronously receive three messages:
 
       client.basic_ack(result)
 
-  client.basic_cancel(consume_promise)
-  client.wait(consume_promise)
+  promise = client.basic_cancel(consume_promise)
+  client.wait(promise)
 
   promise = client.close()
   client.wait(promise)
