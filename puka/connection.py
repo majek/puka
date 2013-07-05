@@ -37,9 +37,12 @@ class Connection(object):
     client_properties - A dictionary of properties to be sent to the
                server.
     heartbeat - basic support for AMQP-level heartbeats (in seconds)
+    sslConnectionParameters - SSL parameters to be used for amqps: connection
+               (instance of SslConnectionParameters)
     '''
     def __init__(self, amqp_url='amqp:///', pubacks=None,
-                 client_properties=None, heartbeat=0):
+                 client_properties=None, heartbeat=0,
+                 sslConnectionParameters=None):
         self.pubacks = pubacks
 
         self.channels = channel.ChannelCollection()
@@ -51,6 +54,7 @@ class Connection(object):
         self.client_properties = client_properties
 
         self.heartbeat = heartbeat
+        self._sslConnectionParameters = sslConnectionParameters
         self._needs_ssl_handshake = False
 
     def _init_buffers(self):
@@ -100,7 +104,28 @@ class Connection(object):
         """Wrap the socket for connecting over SSL.
         :rtype: ssl.SSLSocket
         """
-        return ssl.wrap_socket(sock, do_handshake_on_connect=False)
+        keyfile = None if self._sslConnectionParameters is None else \
+            self._sslConnectionParameters.keyfile
+
+        certfile = None if self._sslConnectionParameters is None else \
+            self._sslConnectionParameters.certfile
+
+        ca_certs = None if self._sslConnectionParameters is None else \
+            self._sslConnectionParameters.ca_certs
+
+        #require_certificate
+        cert_reqs = ssl.CERT_NONE
+        if ca_certs:
+            cert_reqs = ssl.CERT_REQUIRED if \
+                self._sslConnectionParameters.require_certificate \
+                else ssl.CERT_OPTIONAL
+
+        return ssl.wrap_socket(sock,
+                               do_handshake_on_connect=False,
+                               keyfile=keyfile,
+                               certfile=certfile,
+                               cert_reqs=cert_reqs,
+                               ca_certs=ca_certs)
 
     def _do_ssl_handshake(self, timeout=None):
         """Perform SSL handshaking
@@ -485,3 +510,42 @@ def set_close_exec(fd):
     except ImportError:
         pass
 
+
+class SslConnectionParameters(object):
+    def __init__(self):
+        self._certfile = None
+        self._keyfile = None
+        self._ca_certs = None
+        self._require_certificate = True
+
+    @property
+    def certfile(self):
+        return self._certfile
+
+    @certfile.setter
+    def certfile(self, value):
+        self._certfile = value
+
+    @property
+    def keyfile(self):
+        return self._keyfile
+
+    @keyfile.setter
+    def keyfile(self, value):
+        self._keyfile = value
+
+    @property
+    def ca_certs(self):
+        return self._ca_certs
+
+    @ca_certs.setter
+    def ca_certs(self, value):
+        self._ca_certs = value
+
+    @property
+    def require_certificate(self):
+        return self._require_certificate
+
+    @require_certificate.setter
+    def require_certificate(self, value):
+        self._require_certificate = value
