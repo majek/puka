@@ -37,24 +37,24 @@ class Connection(object):
     client_properties - A dictionary of properties to be sent to the
                server.
     heartbeat - basic support for AMQP-level heartbeats (in seconds)
-    sslConnectionParameters - SSL parameters to be used for amqps: connection
+    ssl_parameters - SSL parameters to be used for amqps: connection
                (instance of SslConnectionParameters)
     '''
     def __init__(self, amqp_url='amqp:///', pubacks=None,
                  client_properties=None, heartbeat=0,
-                 sslConnectionParameters=None):
+                 ssl_parameters=None):
         self.pubacks = pubacks
 
         self.channels = channel.ChannelCollection()
         self.promises = promise.PromiseCollection(self)
 
         (self.username, self.password, self.vhost,
-         self.host, self.port, self.ssl) = parse_amqp_url(str(amqp_url))
+            self.host, self.port, self.ssl) = parse_amqp_url(str(amqp_url))
 
         self.client_properties = client_properties
 
         self.heartbeat = heartbeat
-        self._sslConnectionParameters = sslConnectionParameters
+        self._ssl_parameters = ssl_parameters
         self._needs_ssl_handshake = False
 
     def _init_buffers(self):
@@ -85,7 +85,6 @@ class Connection(object):
 
         (family, socktype, proto, canonname, sockaddr) = addrinfo[0]
         self.sd = socket.socket(family, socktype, proto)
-        self.sd.setblocking(False)
         set_ridiculously_high_buffers(self.sd)
         set_close_exec(self.sd)
         try:
@@ -94,6 +93,7 @@ class Connection(object):
             if e.errno not in (errno.EINPROGRESS, errno.EWOULDBLOCK):
                 raise
 
+        self.sd.setblocking(False)
         if self.ssl:
             self.sd = self._wrap_socket(self.sd)
             self._needs_ssl_handshake = True
@@ -104,20 +104,20 @@ class Connection(object):
         """Wrap the socket for connecting over SSL.
         :rtype: ssl.SSLSocket
         """
-        keyfile = None if self._sslConnectionParameters is None else \
-            self._sslConnectionParameters.keyfile
+        keyfile = None if self._ssl_parameters is None else \
+            self._ssl_parameters.keyfile
 
-        certfile = None if self._sslConnectionParameters is None else \
-            self._sslConnectionParameters.certfile
+        certfile = None if self._ssl_parameters is None else \
+            self._ssl_parameters.certfile
 
-        ca_certs = None if self._sslConnectionParameters is None else \
-            self._sslConnectionParameters.ca_certs
+        ca_certs = None if self._ssl_parameters is None else \
+            self._ssl_parameters.ca_certs
 
         #require_certificate
         cert_reqs = ssl.CERT_NONE
         if ca_certs:
             cert_reqs = ssl.CERT_REQUIRED if \
-                self._sslConnectionParameters.require_certificate \
+                self._ssl_parameters.require_certificate \
                 else ssl.CERT_OPTIONAL
 
         return ssl.wrap_socket(sock,
@@ -157,13 +157,20 @@ class Connection(object):
                     raise
 
     def on_read(self):
-        try:
-            r = self.sd.recv(131072)
-        except socket.error, e:
-            if e.errno == errno.EAGAIN:
-                return
-            else:
+        while True:
+            try:
+                r = self.sd.recv(Connection.frame_max)
+                break
+            except ssl.SSLError, e:
+                if e.args[0] == ssl.SSL_ERROR_WANT_READ:
+                    select.select([self.sd], [], [])
+                    continue
                 raise
+            except socket.error, e:
+                if e.errno == errno.EAGAIN:
+                    return
+                else:
+                    raise
 
         if len(r) == 0:
             # a = self.sd.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
@@ -256,14 +263,21 @@ class Connection(object):
     def on_write(self):
         if not self.send_buf:  # already shutdown or empty buffer?
             return
-        try:
-            # On windows socket.send blows up if the buffer is too large.
-            r = self.sd.send(self.send_buf.read(128*1024))
-        except socket.error, e:
-            if e.errno in (errno.EWOULDBLOCK, errno.ENOBUFS):
-                return
-            else:
+        while True:
+            try:
+                # On windows socket.send blows up if the buffer is too large.
+                r = self.sd.send(self.send_buf.read(128*1024))
+                break
+            except ssl.SSLError, e:
+                if e.args[0] == ssl.SSL_ERROR_WANT_WRITE:
+                    select.select([], [self.sd], [])
+                    continue
                 raise
+            except socket.error, e:
+                if e.errno in (errno.EWOULDBLOCK, errno.ENOBUFS):
+                    return
+                else:
+                    raise
         self.send_buf.consume(r)
 
 
