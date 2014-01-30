@@ -2,6 +2,7 @@ import array
 import logging
 
 from . import machine
+from spec_exceptions import ChannelError
 
 log = logging.getLogger('puka')
 
@@ -26,8 +27,10 @@ class ChannelCollection(object):
         return self.channel_max
 
     def new(self):
-        # TODO: handle out of channels case
-        number = self.free_channel_numbers.pop()
+        try:
+            number = self.free_channel_numbers.pop()
+        except IndexError:
+            raise ChannelError('No free channels')
         channel = Channel(number)
         self.channels[number] = channel
         return channel
