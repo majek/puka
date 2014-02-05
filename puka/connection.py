@@ -67,27 +67,24 @@ class Connection(object):
         self._handle_read = self._handle_conn_read
         self._init_buffers()
 
-        addrinfo = None
-        if socket.has_ipv6:
-            try:
-                addrinfo = socket.getaddrinfo(
-                    self.host, self.port, socket.AF_INET6, socket.SOCK_STREAM)
-            except socket.gaierror:
-                pass
-        if not addrinfo:
-            addrinfo = socket.getaddrinfo(
-                self.host, self.port, socket.AF_INET, socket.SOCK_STREAM)
+        addrinfo = socket.getaddrinfo(
+            self.host, self.port,
+            socket.AF_UNSPEC if socket.has_ipv6 else socket.AF_INET,
+            socket.SOCK_STREAM)
 
-        (family, socktype, proto, canonname, sockaddr) = addrinfo[0]
-        self.sd = socket.socket(family, socktype, proto)
-        self.sd.setblocking(False)
-        set_ridiculously_high_buffers(self.sd)
-        set_close_exec(self.sd)
-        try:
-            self.sd.connect(sockaddr)
-        except socket.error, e:
-            if e.errno not in (errno.EINPROGRESS, errno.EWOULDBLOCK):
-                raise
+        err = None
+
+        for addr in addrinfo:
+            try:
+                self.sd = connect_to(addr, len(addrinfo) == 1)
+                err = None
+                break
+            except socket.error, err:
+                pass
+
+        if err is not None:
+            raise err
+
         return machine.connection_handshake(self)
 
     def on_read(self):
@@ -434,3 +431,27 @@ def set_close_exec(fd):
         fcntl.fcntl(fd, fcntl.F_SETFD, flags | fcntl.FD_CLOEXEC)
     except ImportError:
         pass
+
+def prepare_socket(sd):
+    sd.setblocking(False)
+    set_ridiculously_high_buffers(sd)
+    set_close_exec(sd)
+
+def connect_to(addr, nonblocking):
+    (family, socktype, proto, canonname, sockaddr) = addr
+    sock = socket.socket(family, socktype, proto)
+    if nonblocking:
+        prepare_socket(sock)
+
+    try:
+        sock.connect(sockaddr)
+    except socket.error, e:
+        if nonblocking and e.errno in (errno.EINPROGRESS, errno.EWOULDBLOCK):
+            return sock
+        sock.close()
+        raise e
+
+    if not nonblocking:
+        prepare_socket(sock)
+
+    return sock
