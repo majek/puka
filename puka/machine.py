@@ -212,9 +212,9 @@ def _channel_open_ok(t, result):
 
 ####
 def queue_declare(conn, queue='', durable=False, exclusive=False,
-                  auto_delete=False, arguments={}):
+                  auto_delete=False, passive=False, arguments={}):
     t = conn.promises.new(_queue_declare)
-    t.x_frames = spec.encode_queue_declare(queue, False, durable, exclusive,
+    t.x_frames = spec.encode_queue_declare(queue, passive, durable, exclusive,
                                            auto_delete, arguments)
     return t
 
