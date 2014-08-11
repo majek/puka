@@ -1,3 +1,50 @@
+0.0.7
+=====
+
+32612c3 Fix a test.
+ff9a902 Merge pull request #43 from istalker2/master
+bf9242d Merge pull request #51 from ov7a/master
+d2a1a87 Passive flag for queue_declare
+cb8d2b9 Merge pull request #50 from c2h5oh/master
+d51337a Raise ChannelError when no free channels left
+01ab099 Handle SSL errors that happen when using RabbitMQ over WAN/virtual networks etc.
+33a1823 SSL connection parameters
+67cfa63 #44 - fix docs
+b1c4c9f Default values should be strings, not unicodes
+0fa7e17 Use rabbitmq-codegen from submodule
+31ef0a2 Added SSL support (amqps:// scheme)
+22d0c80 #42: Fix assertion message
+ddf0595 Regenerated spec.
+a02a959 Yey! make the code 1% faster by not delimiting the struct module
+43b35ec #41 - must be EWOULDBLOCK instead of EAGAIN to make windows happy
+c448c1a #41 - Also ignore ENOBUFS
+19fbfa1 ignore EWOULDBLOCK and ENOBUFS when sending
+5243b28 #38 - allow user to specify part of consumer_tag value
+93fe894 Merge branch 'master' of github.com:majek/puka
+b8f9f6a typo
+4806ca4 #38 - automatically set consumer_tag to a meaningful value
+de80272 Merge pull request #39 from pomke/master
+0e4f637 Removed ableist language from readme
+bd98bb7 Allow caller to specify the consumer_tag
+c1b6c55 Fix #35 - flush outgoing buffer only if possible
+4407f0c cosmetic
+7cf5971 Updated email address.
+ffdbdbc Fix #34 - check if previously handled frame didn't close the connection
+b5699c4 RabbitMQ 3.0 adaption - just don't support immediate flag at all.
+15b3594 Adapt tests to RabbitMQ 3.0 - expiry property is supported and must be numeric
+d06c1be Adapt tests to RabbitMQ 3.0 - immediate is not supported any more
+cd59bb6 Merge pull request #33 from schmir/fix-on_write-after-shutdown
+de4f805 Merge pull request #31 from schmir/document-required-python-version
+db4658b make on_write handle shutdown connections and an empty buffer
+19d3552 document supported python versions
+66519db #29 - minor cleanup
+e4c55d5 Merge pull request #29 from schmir/small-fixes-to-tests
+40dbc0c use a name that does not resolve
+0b004ac use amqp:/// as default for AMQP_URL
+a7bcb7c #27 - don't try ipv6 if socket.has_ipv6 is False
+c21ccfa Explain pubakcs
+
+
 0.0.6
 =====
 
