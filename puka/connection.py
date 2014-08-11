@@ -441,7 +441,7 @@ def parse_amqp_url(amqp_url):
     >>> parse_amqp_url('http://asd')
     Traceback (most recent call last):
       ...
-    AssertionError: Only amqp:// protocol supported.
+    AssertionError: Only amqp:// and amqps:// protocols are supported.
     >>> parse_amqp_url('amqp://host/%2f')
     ('guest', 'guest', '/', 'host', 5672, False)
     >>> parse_amqp_url('amqp://host/%2fabc')
