@@ -12,21 +12,21 @@ Puka is simple
 
 Puka exposes a simple, easy to understand API. Take a look at the
 `publisher` example:
+```python
+import puka
 
-    import puka
+client = puka.Client("amqp://localhost/")
 
-    client = puka.Client("amqp://localhost/")
+promise = client.connect()
+client.wait(promise)
 
-    promise = client.connect()
-    client.wait(promise)
+promise = client.queue_declare(queue='test')
+client.wait(promise)
 
-    promise = client.queue_declare(queue='test')
-    client.wait(promise)
-
-    promise = client.basic_publish(exchange='', routing_key='test',
-                                  body='Hello world!')
-    client.wait(promise)
-
+promise = client.basic_publish(exchange='', routing_key='test',
+                              body='Hello world!')
+client.wait(promise)
+```
 
 Puka is asynchronous
 --------------------
@@ -36,25 +36,25 @@ above, it can behave synchronously. That's especially useful for
 simple tasks when you don't want to introduce callbacks.
 
 Here's the same code written in an asynchronous way:
+```python
+import puka
 
-    import puka
+def on_connection(promise, result):
+    client.queue_declare(queue='test', callback=on_queue_declare)
 
-    def on_connection(promise, result):
-        client.queue_declare(queue='test', callback=on_queue_declare)
+def on_queue_declare(promise, result):
+    client.basic_publish(exchange='', routing_key='test',
+                         body="Hello world!",
+                         callback=on_basic_publish)
 
-    def on_queue_declare(promise, result):
-        client.basic_publish(exchange='', routing_key='test',
-                             body="Hello world!",
-                             callback=on_basic_publish)
+def on_basic_publish(promise, result):
+    print " [*] Message sent"
+    client.loop_break()
 
-    def on_basic_publish(promise, result):
-        print " [*] Message sent"
-        client.loop_break()
-
-    client = puka.Client("amqp://localhost/")
-    client.connect(callback=on_connection)
-    client.loop()
-
+client = puka.Client("amqp://localhost/")
+client.connect(callback=on_connection)
+client.loop()
+```
 You can mix synchronous and asynchronous programming styles if you want
 to.
 
@@ -68,19 +68,19 @@ notify when new data is available on the network socket. To allow that
 Puka allows you to access the raw socket descriptor. With that in hand
 you can construct your own event loop. Here's an the event loop that
 may replace `wait_for_any` from previous example:
+```python
+fd = client.fileno()
+while True:
+    client.run_any_callbacks()
 
-     fd = client.fileno()
-     while True:
-        client.run_any_callbacks()
-
-        r, w, e = select.select([fd],
-                                [fd] if client.needs_write() else [],
-                                [fd])
-        if r or e:
-            client.on_read()
-        if w:
-            client.on_write()
-
+    r, w, e = select.select([fd],
+                            [fd] if client.needs_write() else [],
+                            [fd])
+    if r or e:
+        client.on_read()
+    if w:
+        client.on_write()
+```
 
 Puka is fast
 ------------
@@ -88,10 +88,11 @@ Puka is fast
 Puka is asynchronous and has no trouble in handling many requests at a
 time. This can be exploited to achieve a degree of parallelism. For
 example, this snippet creates 1000 queues in parallel:
-
-    promises = [client.queue_declare(queue='a%04i' % i) for i in range(1000)]
-    for promise in promises:
-        client.wait(promise)
+```python
+promises = [client.queue_declare(queue='a%04i' % i) for i in range(1000)]
+for promise in promises:
+    client.wait(promise)
+```
 
 Puka also has a nicely optimized AMQP codec, but don't expect miracles
 - it can't go faster than Python.
