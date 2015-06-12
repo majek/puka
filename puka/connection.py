@@ -97,6 +97,13 @@ class Connection(object):
         if self.ssl:
             self.sd = self._wrap_socket(self.sd)
             self._needs_ssl_handshake = True
+            self.needs_write = self.needs_write_handshake
+            self.on_write = self.on_write_handshake
+            self.on_read = self.on_read_handshake
+        else:
+            self.needs_write = self.needs_write_nohandshake
+            self.on_write = self.on_write_nohandshake
+            self.on_read = self.on_read_nohandshake
 
         return machine.connection_handshake(self)
 
@@ -156,7 +163,10 @@ class Connection(object):
                 else:
                     raise
 
-    def on_read(self):
+    def on_read_handshake(self):
+        pass
+
+    def on_read_nohandshake(self):
         while True:
             try:
                 r = self.sd.recv(Connection.frame_max)
@@ -257,10 +267,26 @@ class Connection(object):
                                       payload, '\xCE')) \
                                  for frame_type, payload in frames]) )
 
-    def needs_write(self):
+    def needs_write_handshake(self):
+        try:
+            self.sd.do_handshake()
+            self._needs_ssl_handshake = False
+            self.needs_write = self.needs_write_nohandshake
+            self.on_write = self.on_write_nohandshake
+            self.on_read = self.on_read_nohandshake
+            return self.needs_write()
+        except ssl.SSLWantReadError:
+            return False
+        except ssl.SSLWantWriteError:
+            return True
+
+    def needs_write_nohandshake(self):
         return bool(self.send_buf)
 
-    def on_write(self):
+    def on_write_handshake(self):
+        pass
+
+    def on_write_nohandshake(self):
         if not self.send_buf:  # already shutdown or empty buffer?
             return
         while True:
