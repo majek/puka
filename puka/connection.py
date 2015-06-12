@@ -55,7 +55,6 @@ class Connection(object):
 
         self.heartbeat = heartbeat
         self._ssl_parameters = ssl_parameters
-        self._needs_ssl_handshake = False
 
     def _init_buffers(self):
         self.recv_buf = simplebuffer.SimpleBuffer()
@@ -98,7 +97,6 @@ class Connection(object):
         self.on_write = self.on_write_connect
         if self.ssl:
             self.sd = self._wrap_socket(self.sd)
-            self._needs_ssl_handshake = True
             self.on_read = self.on_read_handshake
         else:
             self.on_read = self.on_read_nohandshake
@@ -131,35 +129,6 @@ class Connection(object):
                                certfile=certfile,
                                cert_reqs=cert_reqs,
                                ca_certs=ca_certs)
-
-    def _do_ssl_handshake(self, timeout=None):
-        """Perform SSL handshaking
-        """
-        if not self._needs_ssl_handshake:
-            return False
-        if timeout is not None:
-            t1 = time.time() + timeout
-        else:
-            td = None
-            t1 = None
-
-        while True:
-            if timeout is not None:
-                t0 = time.time()
-                td = t1 - t0
-                if td < 0:
-                    break
-            try:
-                self.sd.do_handshake()
-                self._needs_ssl_handshake = False
-                break
-            except ssl.SSLError, e:
-                if e.args[0] == ssl.SSL_ERROR_WANT_READ:
-                    select.select([self.sd], [], [])
-                elif e.args[0] == ssl.SSL_ERROR_WANT_WRITE:
-                    select.select([], [self.sd], [])
-                else:
-                    raise
 
     def on_read_handshake(self):
         pass
@@ -275,7 +244,6 @@ class Connection(object):
     def needs_write_handshake(self):
         try:
             self.sd.do_handshake()
-            self._needs_ssl_handshake = False
             self.needs_write = self.needs_write_nohandshake
             self.on_write = self.on_write_nohandshake
             self.on_read = self.on_read_nohandshake
@@ -328,7 +296,6 @@ class Connection(object):
         self.frame_max = min(self.frame_max, new_frame_max)
         return self.frame_max
 
-
     def wait(self, promise_numbers, timeout=None, raise_errors=True):
         '''
         Wait for selected promises. Exit after promise runs a callback.
@@ -341,8 +308,6 @@ class Connection(object):
         if isinstance(promise_numbers, int):
             promise_numbers = [promise_numbers]
         promise_numbers = set(promise_numbers)
-
-        self._do_ssl_handshake(timeout=timeout)
 
         # Make sure the buffer is flushed if possible before entering
         # the loop. We may return soon, and the user has no way to
@@ -404,8 +369,6 @@ class Connection(object):
         else:
             td = None
         self._loop_break = False
-
-        self._do_ssl_handshake(timeout=timeout)
 
         while True:
             self.run_any_callbacks()
