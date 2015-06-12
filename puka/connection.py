@@ -85,6 +85,7 @@ class Connection(object):
 
         (family, socktype, proto, canonname, sockaddr) = addrinfo[0]
         self.sd = socket.socket(family, socktype, proto)
+        self.sd.setblocking(False)
         set_ridiculously_high_buffers(self.sd)
         set_close_exec(self.sd)
         try:
@@ -93,18 +94,15 @@ class Connection(object):
             if e.errno not in (errno.EINPROGRESS, errno.EWOULDBLOCK):
                 raise
 
-        self.sd.setblocking(False)
+        self.needs_write = self.needs_write_connect
+        self.on_write = self.on_write_connect
         if self.ssl:
             self.sd = self._wrap_socket(self.sd)
             self._needs_ssl_handshake = True
-            self.needs_write = self.needs_write_handshake
-            self.on_write = self.on_write_handshake
             self.on_read = self.on_read_handshake
         else:
-            self.needs_write = self.needs_write_nohandshake
-            self.on_write = self.on_write_nohandshake
             self.on_read = self.on_read_nohandshake
-
+        
         return machine.connection_handshake(self)
 
     def _wrap_socket(self, sock):
@@ -267,6 +265,13 @@ class Connection(object):
                                       payload, '\xCE')) \
                                  for frame_type, payload in frames]) )
 
+    def needs_write_connect(self):
+        if self.ssl:
+            self.needs_write = self.needs_write_handshake
+        else:
+            self.needs_write = self.needs_write_nohandshake
+        return True
+
     def needs_write_handshake(self):
         try:
             self.sd.do_handshake()
@@ -282,6 +287,18 @@ class Connection(object):
 
     def needs_write_nohandshake(self):
         return bool(self.send_buf)
+
+    def on_write_connect(self):
+        errno = self.sd.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+        if errno:
+            self._shutdown(exceptions.mark_frame(spec.Frame(),
+                                                 exceptions.ConnectionBroken()))
+            return
+        if self.ssl:
+            self.on_write = self.on_write_handshake
+        else:
+            self.on_write = self.on_write_nohandshake
+        self.on_write()
 
     def on_write_handshake(self):
         pass
@@ -305,7 +322,6 @@ class Connection(object):
                 else:
                     raise
         self.send_buf.consume(r)
-
 
     def _tune_frame_max(self, new_frame_max):
         new_frame_max = new_frame_max if new_frame_max != 0 else 2**19
