@@ -96,7 +96,6 @@ class Connection(object):
         self.needs_write = self.needs_write_connect
         self.on_write = self.on_write_connect
         if self.ssl:
-            self.sd = self._wrap_socket(self.sd)
             self.on_read = self.on_read_handshake
         else:
             self.on_read = self.on_read_nohandshake
@@ -235,11 +234,7 @@ class Connection(object):
                                  for frame_type, payload in frames]) )
 
     def needs_write_connect(self):
-        if self.ssl:
-            self.needs_write = self.needs_write_handshake
-        else:
-            self.needs_write = self.needs_write_nohandshake
-        return True
+        return not self.sd is None
 
     def needs_write_handshake(self):
         try:
@@ -248,10 +243,10 @@ class Connection(object):
             self.on_write = self.on_write_nohandshake
             self.on_read = self.on_read_nohandshake
             return self.needs_write()
-        except ssl.SSLWantReadError:
-            return False
-        except ssl.SSLWantWriteError:
-            return True
+	except ssl.SSLError, e:
+            if e.args[0] == ssl.SSL_ERROR_WANT_WRITE:
+                return True
+        return False
 
     def needs_write_nohandshake(self):
         return bool(self.send_buf)
@@ -263,8 +258,11 @@ class Connection(object):
                                                  exceptions.ConnectionBroken()))
             return
         if self.ssl:
+            self.sd = self._wrap_socket(self.sd)
+            self.needs_write = self.needs_write_handshake
             self.on_write = self.on_write_handshake
         else:
+            self.needs_write = self.needs_write_nohandshake
             self.on_write = self.on_write_nohandshake
         self.on_write()
 
