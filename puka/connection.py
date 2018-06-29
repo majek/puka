@@ -96,7 +96,7 @@ class Connection(object):
         self.needs_write = self.needs_write_connect
         self.on_write = self.on_write_connect
         if self.ssl:
-            self.on_read = self.on_read_handshake
+            self.on_read = self.on_read_handshake_connect
         else:
             self.on_read = self.on_read_nohandshake
         
@@ -129,24 +129,45 @@ class Connection(object):
                                cert_reqs=cert_reqs,
                                ca_certs=ca_certs)
 
+    def on_read_handshake_connect(self):
+        errno = self.sd.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+        if errno:
+            self._shutdown(exceptions.mark_frame(spec.Frame(),
+                exceptions.ConnectionBroken()))
+            return
+        self.sd = self._wrap_socket(self.sd)
+        self.needs_write = self.needs_write_handshake
+        self.on_write = self.on_write_handshake
+        self.on_read = self.on_read_handshake
+
     def on_read_handshake(self):
-        pass
+        try:
+            self.sd.do_handshake()
+            self.needs_write = self.needs_write_nohandshake
+            self.on_write = self.on_write_nohandshake
+            self.on_read = self.on_read_nohandshake
+        except ssl.SSLError, e:
+            if e.args[0] == ssl.SSL_ERROR_WANT_READ:
+                return
+            raise
+        except socket.error, e:
+            if e.errno == errno.EAGAIN:
+                return
+            self._shutdown(exceptions.mark_frame(spec.Frame(),
+                exceptions.ConnectionBroken()))
+        return
 
     def on_read_nohandshake(self):
-        while True:
-            try:
-                r = self.sd.recv(Connection.frame_max)
-                break
-            except ssl.SSLError, e:
-                if e.args[0] == ssl.SSL_ERROR_WANT_READ:
-                    select.select([self.sd], [], [])
-                    continue
-                raise
-            except socket.error, e:
-                if e.errno == errno.EAGAIN:
-                    return
-                else:
-                    raise
+        try:
+            r = self.sd.recv(Connection.frame_max)
+        except ssl.SSLError, e:
+            if e.args[0] == ssl.SSL_ERROR_WANT_READ:
+                return
+            raise
+        except socket.error, e:
+            if e.errno == errno.EAGAIN:
+                return
+            raise
 
         if len(r) == 0:
             # a = self.sd.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
@@ -261,6 +282,7 @@ class Connection(object):
             self.sd = self._wrap_socket(self.sd)
             self.needs_write = self.needs_write_handshake
             self.on_write = self.on_write_handshake
+            self.on_read = self.on_read_handshake
         else:
             self.needs_write = self.needs_write_nohandshake
             self.on_write = self.on_write_nohandshake
@@ -272,21 +294,17 @@ class Connection(object):
     def on_write_nohandshake(self):
         if not self.send_buf:  # already shutdown or empty buffer?
             return
-        while True:
-            try:
-                # On windows socket.send blows up if the buffer is too large.
-                r = self.sd.send(self.send_buf.read(128*1024))
-                break
-            except ssl.SSLError, e:
-                if e.args[0] == ssl.SSL_ERROR_WANT_WRITE:
-                    select.select([], [self.sd], [])
-                    continue
-                raise
-            except socket.error, e:
-                if e.errno in (errno.EWOULDBLOCK, errno.ENOBUFS):
-                    return
-                else:
-                    raise
+        try:
+            # On windows socket.send blows up if the buffer is too large.
+            r = self.sd.send(self.send_buf.read(128*1024))
+        except ssl.SSLError, e:
+            if e.args[0] == ssl.SSL_ERROR_WANT_WRITE:
+                return
+            raise
+        except socket.error, e:
+            if e.errno in (errno.EWOULDBLOCK, errno.ENOBUFS):
+                return
+            raise
         self.send_buf.consume(r)
 
     def _tune_frame_max(self, new_frame_max):
@@ -502,7 +520,12 @@ def set_ridiculously_high_buffers(sd):
     Set large tcp/ip buffers kernel. Let's move the complexity
     to the operating system! That's a wonderful idea!
     '''
-    for flag in [socket.SO_SNDBUF, socket.SO_RCVBUF]:
+    flags = []
+    if hasattr(socket, 'SO_SNDBUF'):
+        flags.append(socket.SO_SNDBUF)
+    if hasattr(socket, 'SO_RECVBUF'):
+        flags.append(socket.SO_RECVBUF)
+    for flag in flags:
         for i in range(10):
             bef = sd.getsockopt(socket.SOL_SOCKET, flag)
             try:
