@@ -101,10 +101,11 @@ class TestPublishAsync(base.TestCase):
 
         promise = client.basic_publish(exchange='', routing_key='badname',
                                        mandatory=True, body=self.msg)
+        response = {}
         try:
             client.wait(promise)
-        except puka.NoRoute, (response,):
-            pass
+        except puka.NoRoute as (e,):
+            response = e
 
         self.assertEqual(response['reply_code'], 312)
 

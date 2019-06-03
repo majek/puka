@@ -89,7 +89,7 @@ class Connection(object):
         set_close_exec(self.sd)
         try:
             self.sd.connect(sockaddr)
-        except socket.error, e:
+        except socket.error as e:
             if e.errno not in (errno.EINPROGRESS, errno.EWOULDBLOCK):
                 raise
 
@@ -160,11 +160,11 @@ class Connection(object):
     def on_read_nohandshake(self):
         try:
             r = self.sd.recv(Connection.frame_max)
-        except ssl.SSLError, e:
+        except ssl.SSLError as e:
             if e.args[0] == ssl.SSL_ERROR_WANT_READ:
                 return
             raise
-        except socket.error, e:
+        except socket.error as e:
             if e.errno == errno.EAGAIN:
                 return
             raise
@@ -264,7 +264,7 @@ class Connection(object):
             self.on_write = self.on_write_nohandshake
             self.on_read = self.on_read_nohandshake
             return self.needs_write()
-	except ssl.SSLError, e:
+        except ssl.SSLError as e:
             if e.args[0] == ssl.SSL_ERROR_WANT_WRITE:
                 return True
         return False
@@ -297,11 +297,11 @@ class Connection(object):
         try:
             # On windows socket.send blows up if the buffer is too large.
             r = self.sd.send(self.send_buf.read(128*1024))
-        except ssl.SSLError, e:
+        except ssl.SSLError as e:
             if e.args[0] == ssl.SSL_ERROR_WANT_WRITE:
                 return
             raise
-        except socket.error, e:
+        except socket.error as e:
             if e.errno in (errno.EWOULDBLOCK, errno.ENOBUFS):
                 return
             raise
@@ -436,7 +436,7 @@ class Connection(object):
         # And kill the socket
         try:
             self.sd.shutdown(socket.SHUT_RDWR)
-        except socket.error, e:
+        except socket.error as e:
             if e.errno is not errno.ENOTCONN: raise
         self.sd.close()
         self.sd = None

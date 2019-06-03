@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 import array
 import logging
 
 from . import machine
-from spec_exceptions import ChannelError
+from .spec_exceptions import ChannelError
 
 log = logging.getLogger('puka')
 

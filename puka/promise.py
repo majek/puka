@@ -1,3 +1,4 @@
+from __future__ import print_function
 import logging
 
 from . import channel
@@ -170,6 +171,6 @@ class Promise(object):
             pass
         else:
             # TODO:
-            print "Unable to free channel %i (promise %i)" % \
-                (self.channel.number, self.number)
+            print("Unable to free channel %i (promise %i)" % \
+                (self.channel.number, self.number))
         self.number = None
