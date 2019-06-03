@@ -4,16 +4,14 @@ import puka
 import random
 import time
 
-AMQP_URL=os.getenv('AMQP_URL', 'amqp:///')
+import base
 
-class TestLimits(unittest.TestCase):
-    def test_parallel_queue_declare(self):
+class TestLimits(base.TestCase):
+
+    @base.connect
+    def test_parallel_queue_declare(self, client):
         qname = 'test%s' % (random.random(),)
         msg = '%s' % (random.random(),)
-
-        client = puka.Client(AMQP_URL)
-        promise = client.connect()
-        client.wait(promise)
 
         queues = [qname+'.%s' % (i,) for i in xrange(100)]
         promises = [client.queue_declare(queue=q) for q in queues]
@@ -24,4 +22,3 @@ class TestLimits(unittest.TestCase):
         promises = [client.queue_delete(queue=q) for q in queues]
         for promise in promises:
             client.wait(promise)
-

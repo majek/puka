@@ -11,12 +11,13 @@ import base
 class TestPublishAsync(base.TestCase):
     pubacks = None
     def test_simple_roundtrip(self):
-        client = puka.Client(self.amqp_url, pubacks=self.pubacks)
+        self.client = client = puka.Client(self.amqp_url, pubacks=self.pubacks)
         promise = client.connect()
         client.wait(promise)
 
         promise = client.queue_declare(queue=self.name)
         client.wait(promise)
+        self.cleanup_promise(client.queue_delete, queue=self.name)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
                                        body=self.msg)
@@ -36,13 +37,14 @@ class TestPublishAsync(base.TestCase):
         client.wait(promise)
 
     def test_big_failure(self):
-        client = puka.Client(self.amqp_url, pubacks=self.pubacks)
+        self.client = client = puka.Client(self.amqp_url, pubacks=self.pubacks)
         promise = client.connect()
         client.wait(promise)
 
         # synchronize publish channel - give time for chanel-open
         promise = client.queue_declare(queue=self.name)
         client.wait(promise)
+        self.cleanup_promise(client.queue_delete, queue=self.name)
 
         promise1 = client.basic_publish(exchange='', routing_key='',
                                         body=self.msg)
@@ -78,7 +80,7 @@ class TestPublishAsync(base.TestCase):
         client.wait(promise)
 
     def test_return(self):
-        client = puka.Client(self.amqp_url, pubacks=self.pubacks)
+        self.client = client = puka.Client(self.amqp_url, pubacks=self.pubacks)
         promise = client.connect()
         client.wait(promise)
 
@@ -89,12 +91,13 @@ class TestPublishAsync(base.TestCase):
 
 
     def test_return_2(self):
-        client = puka.Client(self.amqp_url, pubacks=self.pubacks)
+        self.client = client = puka.Client(self.amqp_url, pubacks=self.pubacks)
         promise = client.connect()
         client.wait(promise)
 
         promise = client.queue_declare(queue=self.name)
         client.wait(promise)
+        self.cleanup_promise(client.queue_delete, queue=self.name)
 
         promise = client.basic_publish(exchange='', routing_key='badname',
                                        mandatory=True, body=self.msg)
@@ -105,17 +108,15 @@ class TestPublishAsync(base.TestCase):
 
         self.assertEqual(response['reply_code'], 312)
 
-        promise = client.queue_delete(queue=self.name)
-        client.wait(promise)
-
 
     def test_simple_basic_get(self):
-        client = puka.Client(self.amqp_url, pubacks=self.pubacks)
+        self.client = client = puka.Client(self.amqp_url, pubacks=self.pubacks)
         promise = client.connect()
         client.wait(promise)
 
         promise = client.queue_declare(queue=self.name)
         client.wait(promise)
+        self.cleanup_promise(client.queue_delete, queue=self.name)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
                                        body=self.msg)
@@ -130,13 +131,10 @@ class TestPublishAsync(base.TestCase):
         result = client.wait(promise)
         self.assertTrue(result['empty'])
 
-        promise = client.queue_delete(queue=self.name)
-        client.wait(promise)
-
 
     def test_bug21(self):
         # Following the testcase: https://github.com/majek/puka/issues/21
-        client = puka.Client(self.amqp_url, pubacks=self.pubacks)
+        self.client = client = puka.Client(self.amqp_url, pubacks=self.pubacks)
         promise = client.connect()
         client.wait(promise)
 

@@ -5,13 +5,14 @@ import random
 import base
 
 
-class TestBasic(base.TestCase):
+class TestBasicAsync(base.TestCase):
     def test_simple_roundtrip(self):
         client = puka.Client(self.amqp_url)
 
         def on_connect(t, result):
             client.queue_declare(queue=self.name,
                                  callback=on_queue_declare)
+            self.cleanup_promise(client.queue_delete, queue=self.name)
 
         def on_queue_declare(t, result):
             client.basic_publish(exchange='', routing_key=self.name,
@@ -31,8 +32,11 @@ class TestBasic(base.TestCase):
         def on_queue_delete(t, result):
             client.loop_break()
 
-        client.connect(callback=on_connect)
-        client.loop()
+        try:
+            client.connect(callback=on_connect)
+            client.loop()
+        finally:
+            self.run_cleanup_promises(client)
 
         promise = client.close()
         client.wait(promise)
@@ -41,6 +45,7 @@ class TestBasic(base.TestCase):
     def test_close(self):
         def on_connection(promise, result):
             client.queue_declare(queue=self.name, callback=on_queue_declare)
+            self.cleanup_promise(client.queue_delete, queue=self.name)
 
         def on_queue_declare(promise, result):
             client.basic_publish(exchange='', routing_key=self.name,
@@ -55,8 +60,11 @@ class TestBasic(base.TestCase):
             client.loop_break()
 
         client = puka.Client(self.amqp_url)
-        client.connect(callback=on_connection)
-        client.loop()
+        try:
+            client.connect(callback=on_connection)
+            client.loop()
+        finally:
+            self.run_cleanup_promises(client)
 
         promise = client.close()
         client.wait(promise)
@@ -66,6 +74,7 @@ class TestBasic(base.TestCase):
         def on_connection(promise, result):
             client.queue_declare(queue=self.name, auto_delete=True,
                                  callback=on_queue_declare)
+            self.cleanup_promise(client.queue_delete, queue=self.name)
 
         def on_queue_declare(promise, result):
             client.basic_consume(queue=self.name, callback=on_basic_consume)
@@ -75,8 +84,11 @@ class TestBasic(base.TestCase):
             self.assertTrue(result.is_error)
 
         client = puka.Client(self.amqp_url)
-        client.connect(callback=on_connection)
-        client.loop()
+        try:
+            client.connect(callback=on_connection)
+            client.loop()
+        finally:
+            self.run_cleanup_promises(client)
 
         promise = client.close()
         client.wait(promise)

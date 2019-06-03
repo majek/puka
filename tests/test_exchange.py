@@ -1,6 +1,8 @@
 from __future__ import with_statement
 
 import os
+import unittest
+
 import puka
 import random
 
@@ -8,13 +10,12 @@ import base
 
 
 class TestExchange(base.TestCase):
-    def test_exchange_redeclare(self):
-        client = puka.Client(self.amqp_url)
-        promise = client.connect()
-        client.wait(promise)
 
+    @base.connect
+    def test_exchange_redeclare(self, client):
         promise = client.exchange_declare(exchange=self.name)
         r = client.wait(promise)
+        self.cleanup_promise(client.exchange_delete, exchange=self.name)
 
         promise = client.exchange_declare(exchange=self.name, type='fanout')
         with self.assertRaises(puka.PreconditionFailed):
@@ -33,19 +34,19 @@ class TestExchange(base.TestCase):
         with self.assertRaises(puka.NotFound):
             client.wait(promise)
 
-    def test_bind(self):
-        client = puka.Client(self.amqp_url)
-        promise = client.connect()
-        client.wait(promise)
-
+    @base.connect
+    def test_bind(self, client):
         promise = client.exchange_declare(exchange=self.name1, type='fanout')
         client.wait(promise)
+        self.cleanup_promise(client.exchange_delete, exchange=self.name1)
 
         promise = client.exchange_declare(exchange=self.name2, type='fanout')
         client.wait(promise)
+        self.cleanup_promise(client.exchange_delete, exchange=self.name2)
 
         promise = client.queue_declare()
         qname = client.wait(promise)['queue']
+        self.cleanup_promise(client.queue_declare, name=qname)
 
         promise = client.queue_bind(queue=qname, exchange=self.name2)
         client.wait(promise)
@@ -82,9 +83,6 @@ class TestExchange(base.TestCase):
         promise = client.exchange_delete(exchange=self.name2)
         client.wait(promise)
         promise = client.queue_delete(queue=qname)
-        client.wait(promise)
-
-        promise = client.close()
         client.wait(promise)
 
 
