@@ -278,7 +278,7 @@ from struct import pack, unpack_from
 import future.utils as futils
 
 from . import table
-from .compat import join_as_bytes
+from .compat import as_str, join_as_bytes
 
 """)
     print("PREAMBLE = b'AMQP\\x00\\x%02x\\x%02x\\x%02x'" % (

@@ -1,8 +1,18 @@
 from __future__ import absolute_import
 from builtins import object
+import future.utils as futils
 
 import os
-from io import BytesIO
+
+if futils.PY2:
+    try:
+        from cStringIO import StringIO
+    except ImportError:
+        from StringIO import StringIO
+else:
+    from io import BytesIO as StringIO
+
+from .compat import as_bytes, as_str
 
 # Python 2.4 support: os lacks SEEK_END and friends
 try:
@@ -14,11 +24,11 @@ except AttributeError:
 class SimpleBuffer(object):
     """
     >>> b = SimpleBuffer()
-    >>> b.write(b'abcdef')
+    >>> b.write('abcdef')
     >>> b.read(3)
     'abc'
     >>> b.consume(3)
-    >>> b.write(b'z')
+    >>> b.write('z')
     >>> b.read()
     'defz'
     >>> b.read()
@@ -40,15 +50,16 @@ class SimpleBuffer(object):
     False
     >>> b.read(1)
     ''
-    >>> b.write(b'a'*524288)
+    >>> b.write('a'*524288)
     >>> b.flush() # run GC code
     """
     def __init__(self):
-        self.buf = BytesIO()
+        self.buf = StringIO()
         self.size = 0
         self.offset = 0
 
     def write(self, data):
+        data = as_bytes(data)
         self.buf.write(data)
         self.size += len(data)
 
@@ -69,7 +80,7 @@ class SimpleBuffer(object):
         # GC old StringIO instance and free memory used by it.
         if self.size == 0 and self.offset > 524288:
             self.buf.close()
-            self.buf = BytesIO()
+            self.buf = StringIO()
             self.offset = 0
 
     def flush(self):

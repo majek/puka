@@ -3,7 +3,7 @@ import logging
 import os
 import puka
 import random
-import unittest_backport as unittest
+import unittest
 
 
 class TestCase(unittest.TestCase):

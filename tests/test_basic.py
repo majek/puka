@@ -69,14 +69,14 @@ class TestBasic(base.TestCase):
 
         for i in range(4):
             promise = client.basic_publish(exchange='', routing_key=self.name,
-                                           body=self.msg+futils.native_bytes(i))
+                                           body=self.msg+futils.native_str(i))
             client.wait(promise)
 
         msgs = []
         for i in range(4):
             promise = client.basic_get(queue=self.name)
             result = client.wait(promise)
-            self.assertEqual(result['body'], self.msg+futils.native_bytes(i))
+            self.assertEqual(result['body'], self.msg+futils.native_str(i))
             self.assertEqual(result['redelivered'], False)
             msgs.append( result )
 
@@ -103,7 +103,7 @@ class TestBasic(base.TestCase):
             with self.assertRaises(puka.NotFound) as cm:
                 client.wait(promise)
 
-            (r,) = cm.exception # unpack args of exception
+            r = cm.exception.args[0]  # unpack args of exception
             self.assertTrue(r.is_error)
             self.assertEqual(r['reply_code'], 404)
 
@@ -152,12 +152,12 @@ class TestBasic(base.TestCase):
         promise = client.basic_get(queue=self.name, no_ack=True)
         result = client.wait(promise)
         self.assertTrue('delivery_mode' in result['headers'])
-        self.assertEquals(result['headers']['delivery_mode'], 2)
+        self.assertEqual(result['headers']['delivery_mode'], 2)
 
         promise = client.basic_get(queue=self.name, no_ack=True)
         result = client.wait(promise)
         self.assertTrue('delivery_mode' in result['headers'])
-        self.assertEquals(result['headers']['delivery_mode'], 1)
+        self.assertEqual(result['headers']['delivery_mode'], 1)
 
     @base.connect
     def test_basic_reject(self, client):
@@ -362,7 +362,7 @@ class TestBasic(base.TestCase):
 
         promise = client.basic_get(queue=qname)
         r = client.wait(promise)
-        self.assertEquals(r['body'], 'a')
+        self.assertEqual(r['body'], 'a')
 
         promise = client.queue_delete(queue=qname)
         client.wait(promise)

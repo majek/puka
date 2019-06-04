@@ -57,58 +57,58 @@ import decimal
 import datetime
 import calendar
 
-from .compat import join_as_bytes
+from . import compat
 
 
 def encode(table):
     r"""
     >>> encode(None)
-    b'\x00\x00\x00\x00'
+    '\x00\x00\x00\x00'
     >>> encode({})
-    b'\x00\x00\x00\x00'
+    '\x00\x00\x00\x00'
     >>> encode({'a':1, 'c':1, 'd':'x', 'e':{}})
-    b'\x00\x00\x00\x1d\x01aI\x00\x00\x00\x01\x01cI\x00\x00\x00\x01\x01eF\x00\x00\x00\x00\x01dS\x00\x00\x00\x01x'
+    '\x00\x00\x00\x1d\x01aI\x00\x00\x00\x01\x01cI\x00\x00\x00\x01\x01eF\x00\x00\x00\x00\x01dS\x00\x00\x00\x01x'
     >>> encode({'a':decimal.Decimal('1.0')})
-    b'\x00\x00\x00\x08\x01aD\x00\x00\x00\x00\x01'
+    '\x00\x00\x00\x08\x01aD\x00\x00\x00\x00\x01'
     >>> encode({'a':decimal.Decimal('5E-3')})
-    b'\x00\x00\x00\x08\x01aD\x03\x00\x00\x00\x05'
+    '\x00\x00\x00\x08\x01aD\x03\x00\x00\x00\x05'
     >>> encode({'a':datetime.datetime(2010,12,31,23,58,59)})
-    b'\x00\x00\x00\x0b\x01aT\x00\x00\x00\x00M\x1enC'
+    '\x00\x00\x00\x0b\x01aT\x00\x00\x00\x00M\x1enC'
     >>> encode({'test':decimal.Decimal('-0.01')})
-    b'\x00\x00\x00\x0b\x04testD\x02\xff\xff\xff\xff'
+    '\x00\x00\x00\x0b\x04testD\x02\xff\xff\xff\xff'
     >>> encode({'a':-1, 'b':[1,2,3,4,-1],'g':-1})
-    b'\x00\x00\x00.\x01aI\xff\xff\xff\xff\x01bA\x00\x00\x00\x19I\x00\x00\x00\x01I\x00\x00\x00\x02I\x00\x00\x00\x03I\x00\x00\x00\x04I\xff\xff\xff\xff\x01gI\xff\xff\xff\xff'
+    '\x00\x00\x00.\x01aI\xff\xff\xff\xff\x01bA\x00\x00\x00\x19I\x00\x00\x00\x01I\x00\x00\x00\x02I\x00\x00\x00\x03I\x00\x00\x00\x04I\xff\xff\xff\xff\x01gI\xff\xff\xff\xff'
     >>> encode({'a': True, 'b':False})
-    b'\x00\x00\x00\x08\x01at\x01\x01bt\x00'
+    '\x00\x00\x00\x08\x01at\x01\x01bt\x00'
     >>> encode({'a':None})
-    b'\x00\x00\x00\x03\x01aV'
+    '\x00\x00\x00\x03\x01aV'
     >>> encode({'a':float(0)})
-    b'\x00\x00\x00\x0b\x01ad\x00\x00\x00\x00\x00\x00\x00\x00'
+    '\x00\x00\x00\x0b\x01ad\x00\x00\x00\x00\x00\x00\x00\x00'
     >>> encode({'a':float(1)})
-    b'\x00\x00\x00\x0b\x01ad?\xf0\x00\x00\x00\x00\x00\x00'
+    '\x00\x00\x00\x0b\x01ad?\xf0\x00\x00\x00\x00\x00\x00'
     >>> encode({'a':float(-1)})
-    b'\x00\x00\x00\x0b\x01ad\xbf\xf0\x00\x00\x00\x00\x00\x00'
+    '\x00\x00\x00\x0b\x01ad\xbf\xf0\x00\x00\x00\x00\x00\x00'
     >>> encode({'a':float('nan')})
-    b'\x00\x00\x00\x0b\x01ad\x7f\xf8\x00\x00\x00\x00\x00\x00'
+    '\x00\x00\x00\x0b\x01ad\x7f\xf8\x00\x00\x00\x00\x00\x00'
     >>> encode({'a':float('inf')})
-    b'\x00\x00\x00\x0b\x01ad\x7f\xf0\x00\x00\x00\x00\x00\x00'
+    '\x00\x00\x00\x0b\x01ad\x7f\xf0\x00\x00\x00\x00\x00\x00'
     >>> encode({'a':float(10E-300)})
-    b'\x00\x00\x00\x0b\x01ad\x01\xda\xc9\xa7\xb3\xb70/'
+    '\x00\x00\x00\x0b\x01ad\x01\xda\xc9\xa7\xb3\xb70/'
 
     Encoding of integers, especially corner cases
 
     >>> encode({'a':2147483647})
-    b'\x00\x00\x00\x07\x01aI\x7f\xff\xff\xff'
+    '\x00\x00\x00\x07\x01aI\x7f\xff\xff\xff'
     >>> encode({'a':-2147483647-1})
-    b'\x00\x00\x00\x07\x01aI\x80\x00\x00\x00'
+    '\x00\x00\x00\x07\x01aI\x80\x00\x00\x00'
     >>> encode({'a':9223372036854775807})
-    b'\x00\x00\x00\x0b\x01al\x7f\xff\xff\xff\xff\xff\xff\xff'
+    '\x00\x00\x00\x0b\x01al\x7f\xff\xff\xff\xff\xff\xff\xff'
     >>> encode({'a':-9223372036854775807-1})
-    b'\x00\x00\x00\x0b\x01al\x80\x00\x00\x00\x00\x00\x00\x00'
+    '\x00\x00\x00\x0b\x01al\x80\x00\x00\x00\x00\x00\x00\x00'
     >>> encode({'a':2147483647+1})
-    b'\x00\x00\x00\x0b\x01al\x00\x00\x00\x00\x80\x00\x00\x00'
+    '\x00\x00\x00\x0b\x01al\x00\x00\x00\x00\x80\x00\x00\x00'
     >>> encode({'a':-2147483647-2})
-    b'\x00\x00\x00\x0b\x01al\xff\xff\xff\xff\x7f\xff\xff\xff'
+    '\x00\x00\x00\x0b\x01al\xff\xff\xff\xff\x7f\xff\xff\xff'
     >>> encode({'a':9223372036854775807+1})
     Traceback (most recent call last):
         ...
@@ -130,25 +130,25 @@ def encode(table):
         tablesize = tablesize + 1 + len(key)
         tablesize += encode_value(pieces, value)
     pieces[length_index] = struct.pack('>I', tablesize)
-    return join_as_bytes(pieces)
+    return compat.join_as_bytes(pieces)
 
 def encode_value(pieces, value):
     if value is None:
-        pieces.append(struct.pack('>c', 'V'))
+        pieces.append(struct.pack('>c', b'V'))
         return 1
-    elif isinstance(value, str):
-        pieces.append(struct.pack('>cI', 'S', len(value)))
-        pieces.append(value)
+    elif isinstance(value, futils.string_types):
+        pieces.append(struct.pack('>cI', b'S', len(value)))
+        pieces.append(compat.as_bytes(value))
         return 5 + len(value)
     elif isinstance(value, bool):
-        pieces.append(struct.pack('>cB', 't', int(value)))
+        pieces.append(struct.pack('>cB', b't', int(value)))
         return 2
     elif isinstance(value, futils.integer_types):
         if -2147483648 <= value <= 2147483647:
-            pieces.append(struct.pack('>ci', 'I', value))
+            pieces.append(struct.pack('>ci', b'I', value))
             return 5
         elif -9223372036854775808 <= value <= 9223372036854775807:
-            pieces.append(struct.pack('>cq', 'l', value))
+            pieces.append(struct.pack('>cq', b'l', value))
             return 9
         else:
             assert False, "Unable to represent integer wider than 64 bits"
@@ -157,28 +157,28 @@ def encode_value(pieces, value):
         if value._exp < 0:
             decimals = -value._exp
             raw = int(value * (decimal.Decimal(10) ** decimals))
-            pieces.append(struct.pack('>cBi', 'D', decimals, raw))
+            pieces.append(struct.pack('>cBi', b'D', decimals, raw))
         else:
             # per spec, the "decimals" octet is unsigned (!)
-            pieces.append(struct.pack('>cBi', 'D', 0, int(value)))
+            pieces.append(struct.pack('>cBi', b'D', 0, int(value)))
         return 6
     elif isinstance(value, datetime.datetime):
-        pieces.append(struct.pack('>cQ', 'T', calendar.timegm(
+        pieces.append(struct.pack('>cQ', b'T', calendar.timegm(
                     value.utctimetuple())))
         return 9
     elif isinstance(value, float):
-        pieces.append(struct.pack('>cd', 'd', value))
+        pieces.append(struct.pack('>cd', b'd', value))
         return 9
     elif isinstance(value, dict):
-        pieces.append(struct.pack('>c', 'F'))
+        pieces.append(struct.pack('>c', b'F'))
         piece = encode(value)
         pieces.append(piece)
         return 1 + len(piece)
     elif isinstance(value, list):
         p = []
         [encode_value(p, v) for v in value]
-        piece = join_as_bytes(p)
-        pieces.append(struct.pack('>cI', 'A', len(piece)))
+        piece = compat.join_as_bytes(p)
+        pieces.append(struct.pack('>cI', b'A', len(piece)))
         pieces.append(piece)
         return 5 + len(piece)
     else:
@@ -239,18 +239,20 @@ def decode(encoded, offset):
     while offset < limit:
         keylen = struct.unpack_from('B', encoded, offset)[0]
         offset = offset + 1
-        key = encoded[offset : offset + keylen]
+        key = compat.as_str(encoded[offset : offset + keylen])
         offset = offset + keylen
         result[key], offset = decode_value(encoded, offset)
     return (result, offset)
 
 def decode_value(encoded, offset):
     kind = encoded[offset]
+    if not futils.PY2:
+        kind = bytes([kind])
     offset = offset + 1
     if (kind == b'S') or (kind == b'x'):
         length = struct.unpack_from('>I', encoded, offset)[0]
         offset = offset + 4
-        value = encoded[offset : offset + length]
+        value = compat.as_str(encoded[offset : offset + length])
         offset = offset + length
     elif kind == b's':
         value = struct.unpack_from('>h', encoded, offset)[0]

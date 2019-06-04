@@ -92,7 +92,7 @@ class Channel(object):
             result = self.method_frame
             props = self.props
 
-            result['body'] = compat.join_as_bytes(self.body_chunks)
+            result['body'] = compat.as_str(compat.join_as_bytes(self.body_chunks))
             result['headers'] = props.get('headers', {})
             # Aint need a reference loop.
             if 'headers' in props:

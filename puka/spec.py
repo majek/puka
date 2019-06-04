@@ -7,7 +7,7 @@ from struct import pack, unpack_from
 import future.utils as futils
 
 from . import table
-from .compat import join_as_bytes
+from .compat import as_str, join_as_bytes
 
 
 PREAMBLE = b'AMQP\x00\x00\x09\x01'
@@ -90,11 +90,11 @@ def decode_connection_start(data, offset):
     frame['server_properties'], offset = table.decode(data, offset)
     (str_len,) = unpack_from('!I', data, offset)
     offset += 4
-    frame['mechanisms'] = data[offset : offset+str_len]
+    frame['mechanisms'] = as_str(data[offset : offset+str_len])
     offset += str_len
     (str_len,) = unpack_from('!I', data, offset)
     offset += 4
-    frame['locales'] = data[offset : offset+str_len]
+    frame['locales'] = as_str(data[offset : offset+str_len])
     offset += str_len
     return frame, offset
 
@@ -107,7 +107,7 @@ def decode_connection_secure(data, offset):
     frame = FrameConnectionSecure()
     (str_len,) = unpack_from('!I', data, offset)
     offset += 4
-    frame['challenge'] = data[offset : offset+str_len]
+    frame['challenge'] = as_str(data[offset : offset+str_len])
     offset += str_len
     return frame, offset
 
@@ -133,7 +133,7 @@ def decode_connection_open_ok(data, offset):
     frame = FrameConnectionOpenOk()
     (str_len,) = unpack_from('!B', data, offset)
     offset += 1
-    frame['known_hosts'] = data[offset : offset+str_len]
+    frame['known_hosts'] = as_str(data[offset : offset+str_len])
     offset += str_len
     return frame, offset
 
@@ -147,7 +147,7 @@ def decode_connection_close(data, offset):
     (frame['reply_code'],
      str_len) = unpack_from('!HB', data, offset)
     offset += 2+1
-    frame['reply_text'] = data[offset : offset+str_len]
+    frame['reply_text'] = as_str(data[offset : offset+str_len])
     offset += str_len
     (frame['class_id'],
      frame['method_id']) = unpack_from('!HH', data, offset)
@@ -172,7 +172,7 @@ def decode_connection_blocked(data, offset):
     frame = FrameConnectionBlocked()
     (str_len,) = unpack_from('!B', data, offset)
     offset += 1
-    frame['reason'] = data[offset : offset+str_len]
+    frame['reason'] = as_str(data[offset : offset+str_len])
     offset += str_len
     return frame, offset
 
@@ -194,7 +194,7 @@ def decode_channel_open_ok(data, offset):
     frame = FrameChannelOpenOk()
     (str_len,) = unpack_from('!I', data, offset)
     offset += 4
-    frame['channel_id'] = data[offset : offset+str_len]
+    frame['channel_id'] = as_str(data[offset : offset+str_len])
     offset += str_len
     return frame, offset
 
@@ -232,7 +232,7 @@ def decode_channel_close(data, offset):
     (frame['reply_code'],
      str_len) = unpack_from('!HB', data, offset)
     offset += 2+1
-    frame['reply_text'] = data[offset : offset+str_len]
+    frame['reply_text'] = as_str(data[offset : offset+str_len])
     offset += str_len
     (frame['class_id'],
      frame['method_id']) = unpack_from('!HH', data, offset)
@@ -293,7 +293,7 @@ def decode_queue_declare_ok(data, offset):
     frame = FrameQueueDeclareOk()
     (str_len,) = unpack_from('!B', data, offset)
     offset += 1
-    frame['queue'] = data[offset : offset+str_len]
+    frame['queue'] = as_str(data[offset : offset+str_len])
     offset += str_len
     (frame['message_count'],
      frame['consumer_count']) = unpack_from('!II', data, offset)
@@ -358,7 +358,7 @@ def decode_basic_consume_ok(data, offset):
     frame = FrameBasicConsumeOk()
     (str_len,) = unpack_from('!B', data, offset)
     offset += 1
-    frame['consumer_tag'] = data[offset : offset+str_len]
+    frame['consumer_tag'] = as_str(data[offset : offset+str_len])
     offset += str_len
     return frame, offset
 
@@ -371,7 +371,7 @@ def decode_basic_cancel(data, offset):
     frame = FrameBasicCancel()
     (str_len,) = unpack_from('!B', data, offset)
     offset += 1
-    frame['consumer_tag'] = data[offset : offset+str_len]
+    frame['consumer_tag'] = as_str(data[offset : offset+str_len])
     offset += str_len
     (bits,) = unpack_from('!B', data, offset)
     frame['nowait'] = bool(bits & 0x1)
@@ -387,7 +387,7 @@ def decode_basic_cancel_ok(data, offset):
     frame = FrameBasicCancelOk()
     (str_len,) = unpack_from('!B', data, offset)
     offset += 1
-    frame['consumer_tag'] = data[offset : offset+str_len]
+    frame['consumer_tag'] = as_str(data[offset : offset+str_len])
     offset += str_len
     return frame, offset
 
@@ -403,15 +403,15 @@ def decode_basic_return(data, offset):
     (frame['reply_code'],
      str_len) = unpack_from('!HB', data, offset)
     offset += 2+1
-    frame['reply_text'] = data[offset : offset+str_len]
+    frame['reply_text'] = as_str(data[offset : offset+str_len])
     offset += str_len
     (str_len,) = unpack_from('!B', data, offset)
     offset += 1
-    frame['exchange'] = data[offset : offset+str_len]
+    frame['exchange'] = as_str(data[offset : offset+str_len])
     offset += str_len
     (str_len,) = unpack_from('!B', data, offset)
     offset += 1
-    frame['routing_key'] = data[offset : offset+str_len]
+    frame['routing_key'] = as_str(data[offset : offset+str_len])
     offset += str_len
     return frame, offset
 
@@ -426,18 +426,18 @@ def decode_basic_deliver(data, offset):
     frame = FrameBasicDeliver()
     (str_len,) = unpack_from('!B', data, offset)
     offset += 1
-    frame['consumer_tag'] = data[offset : offset+str_len]
+    frame['consumer_tag'] = as_str(data[offset : offset+str_len])
     offset += str_len
     (frame['delivery_tag'],
      bits,
      str_len) = unpack_from('!QBB', data, offset)
     frame['redelivered'] = bool(bits & 0x1)
     offset += 8+1+1
-    frame['exchange'] = data[offset : offset+str_len]
+    frame['exchange'] = as_str(data[offset : offset+str_len])
     offset += str_len
     (str_len,) = unpack_from('!B', data, offset)
     offset += 1
-    frame['routing_key'] = data[offset : offset+str_len]
+    frame['routing_key'] = as_str(data[offset : offset+str_len])
     offset += str_len
     return frame, offset
 
@@ -455,11 +455,11 @@ def decode_basic_get_ok(data, offset):
      str_len) = unpack_from('!QBB', data, offset)
     frame['redelivered'] = bool(bits & 0x1)
     offset += 8+1+1
-    frame['exchange'] = data[offset : offset+str_len]
+    frame['exchange'] = as_str(data[offset : offset+str_len])
     offset += str_len
     (str_len,) = unpack_from('!B', data, offset)
     offset += 1
-    frame['routing_key'] = data[offset : offset+str_len]
+    frame['routing_key'] = as_str(data[offset : offset+str_len])
     offset += str_len
     (frame['message_count'],) = unpack_from('!I', data, offset)
     offset += 4
@@ -474,7 +474,7 @@ def decode_basic_get_empty(data, offset):
     frame = FrameBasicGetEmpty()
     (str_len,) = unpack_from('!B', data, offset)
     offset += 1
-    frame['cluster_id'] = data[offset : offset+str_len]
+    frame['cluster_id'] = as_str(data[offset : offset+str_len])
     offset += str_len
     return frame, offset
 
@@ -556,12 +556,12 @@ def decode_basic_properties(data, offset):
     if (flags & 0x8000): # 1 << 15
         (str_len,) = unpack_from('!B', data, offset)
         offset += 1
-        props['content_type'] = data[offset : offset+str_len]
+        props['content_type'] = as_str(data[offset : offset+str_len])
         offset += str_len
     if (flags & 0x4000): # 1 << 14
         (str_len,) = unpack_from('!B', data, offset)
         offset += 1
-        props['content_encoding'] = data[offset : offset+str_len]
+        props['content_encoding'] = as_str(data[offset : offset+str_len])
         offset += str_len
     if (flags & 0x2000): # 1 << 13
         props['headers'], offset = table.decode(data, offset)
@@ -574,22 +574,22 @@ def decode_basic_properties(data, offset):
     if (flags & 0x0400): # 1 << 10
         (str_len,) = unpack_from('!B', data, offset)
         offset += 1
-        props['correlation_id'] = data[offset : offset+str_len]
+        props['correlation_id'] = as_str(data[offset : offset+str_len])
         offset += str_len
     if (flags & 0x0200): # 1 << 9
         (str_len,) = unpack_from('!B', data, offset)
         offset += 1
-        props['reply_to'] = data[offset : offset+str_len]
+        props['reply_to'] = as_str(data[offset : offset+str_len])
         offset += str_len
     if (flags & 0x0100): # 1 << 8
         (str_len,) = unpack_from('!B', data, offset)
         offset += 1
-        props['expiration'] = data[offset : offset+str_len]
+        props['expiration'] = as_str(data[offset : offset+str_len])
         offset += str_len
     if (flags & 0x0080): # 1 << 7
         (str_len,) = unpack_from('!B', data, offset)
         offset += 1
-        props['message_id'] = data[offset : offset+str_len]
+        props['message_id'] = as_str(data[offset : offset+str_len])
         offset += str_len
     if (flags & 0x0040): # 1 << 6
         (props['timestamp'],) = unpack_from('!Q', data, offset)
@@ -597,22 +597,22 @@ def decode_basic_properties(data, offset):
     if (flags & 0x0020): # 1 << 5
         (str_len,) = unpack_from('!B', data, offset)
         offset += 1
-        props['type_'] = data[offset : offset+str_len]
+        props['type_'] = as_str(data[offset : offset+str_len])
         offset += str_len
     if (flags & 0x0010): # 1 << 4
         (str_len,) = unpack_from('!B', data, offset)
         offset += 1
-        props['user_id'] = data[offset : offset+str_len]
+        props['user_id'] = as_str(data[offset : offset+str_len])
         offset += str_len
     if (flags & 0x0008): # 1 << 3
         (str_len,) = unpack_from('!B', data, offset)
         offset += 1
-        props['app_id'] = data[offset : offset+str_len]
+        props['app_id'] = as_str(data[offset : offset+str_len])
         offset += str_len
     if (flags & 0x0004): # 1 << 2
         (str_len,) = unpack_from('!B', data, offset)
         offset += 1
-        props['cluster_id'] = data[offset : offset+str_len]
+        props['cluster_id'] = as_str(data[offset : offset+str_len])
         offset += str_len
     return props, offset
 

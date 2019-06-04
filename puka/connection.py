@@ -211,7 +211,11 @@ class Connection(object):
         offset += 7
         if len(data)-start_offset < 8+payload_size:
             return start_offset, 8+payload_size
-        assert data[offset+payload_size] == b'\xCE'
+
+        if futils.PY2:
+            assert data[offset+payload_size] == '\xCE'
+        else:
+            assert bytes([data[offset+payload_size]]) == b'\xCE'
 
         if frame_type == 0x01: # Method frame
             method_id, = struct.unpack_from('!I', data, offset)
@@ -510,18 +514,18 @@ def parse_amqp_url(amqp_url):
     # urlsplit doesn't know how to parse query when scheme is amqp,
     # we need to pretend we're http'
     o = urlparse.urlsplit('http' + amqp_url[len('amqp'):])
-    username = urllib.parse.unquote(o.username) if o.username is not None else 'guest'
-    password = urllib.parse.unquote(o.password) if o.password is not None else 'guest'
+    username = futils.native_str(urllib.parse.unquote(o.username)) if o.username is not None else 'guest'
+    password = futils.native_str(urllib.parse.unquote(o.password)) if o.password is not None else 'guest'
 
     path = o.path[1:] if o.path.startswith('/') else o.path
     # We do not support empty vhost case. Empty vhost is treated as
     # '/'. This is mostly for backwards compatibility, and the fact
     # that empty vhost is not very useful.
-    vhost = urllib.parse.unquote(path) if path else '/'
-    host = urllib.parse.unquote(o.hostname) if o.hostname else 'localhost'
+    vhost = futils.native_str(urllib.parse.unquote(path)) if path else '/'
+    host = futils.native_str(urllib.parse.unquote(o.hostname)) if o.hostname else 'localhost'
     port = o.port if o.port else 5672
-    ssl = o.scheme == 'https'
-    return (username, password, vhost, host, port, ssl)
+    ssl = futils.native_str(o.scheme) == 'https'
+    return username, password, vhost, host, port, ssl
 
 def set_ridiculously_high_buffers(sd):
     '''
