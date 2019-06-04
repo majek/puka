@@ -30,7 +30,10 @@ parsing quirks from older RFCs are retained. The testcases in
 test_urlparse.py provides a good indicator of parsing behavior.
 
 """
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import chr, object
 
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "urlsplit", "urlunsplit", "parse_qs", "parse_qsl"]
@@ -331,7 +334,7 @@ def unquote(s):
         except KeyError:
             s += '%' + item
         except UnicodeDecodeError:
-            s += unichr(int(item[:2], 16)) + item[2:]
+            s += chr(int(item[:2], 16)) + item[2:]
     return s
 
 def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
@@ -446,9 +449,9 @@ def test():
             fp = open(fn)
     else:
         try:
-            from cStringIO import StringIO
+            from io import StringIO
         except ImportError:
-            from StringIO import StringIO
+            from io import StringIO
         fp = StringIO(test_input)
     for line in fp:
         words = line.split()

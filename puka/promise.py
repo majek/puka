@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 import logging
 
 from . import channel
@@ -6,7 +6,6 @@ from . import spec
 from . import exceptions
 
 log = logging.getLogger('puka')
-
 
 
 class PromiseCollection(object):
@@ -39,7 +38,7 @@ class PromiseCollection(object):
         return self._promises[number]
 
     def all(self):
-        return self._promises.values()
+        return list(self._promises.values())
 
 
 class Promise(object):
@@ -95,10 +94,8 @@ class Promise(object):
     def unregister(self, method_id):
         del self.methods[method_id]
 
-
     def send_frames(self, frames):
         self.conn._send_frames(self.channel.number, frames)
-
 
     def done(self, result, delay_release=None, no_callback=False):
         # log.debug('#%i done %r', self.number, result)
@@ -121,7 +118,6 @@ class Promise(object):
         self.callbacks.append( (self.user_callback, result) )
         self.conn.promises.mark_ready(self)
 
-
     def run_callback(self, raise_errors=True):
         user_callback, result = self.callbacks.pop(0)
         if not self.callbacks:
@@ -135,7 +131,6 @@ class Promise(object):
         if raise_errors and result.is_error:
             raise result.exception
         return result
-
 
     def after_machine(self):
         if self.after_machine_callback:

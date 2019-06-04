@@ -1,12 +1,14 @@
 from __future__ import absolute_import
+from builtins import range
+
 import array
 import logging
 
+from . import compat
 from . import machine
 from .spec_exceptions import ChannelError
 
 log = logging.getLogger('puka')
-
 
 
 class ChannelCollection(object):
@@ -24,7 +26,7 @@ class ChannelCollection(object):
         new_channel_max = new_channel_max if new_channel_max != 0 else 65535
         self.channel_max = min(self.channel_max, new_channel_max)
         self.free_channel_numbers = array.array('H',
-                                                xrange(self.channel_max, 0, -1))
+                                                range(self.channel_max, 0, -1))
         return self.channel_max
 
     def new(self):
@@ -58,7 +60,6 @@ class ChannelCollection(object):
             self.free_channel_numbers.append( channel.number )
 
 
-
 class Channel(object):
     alive = False
 
@@ -72,7 +73,6 @@ class Channel(object):
         self.body_chunks = []
         self.body_len = self.body_size = 0
 
-
     def inbound_method(self, frame):
         if frame.has_content:
             self.method_frame = frame
@@ -83,7 +83,7 @@ class Channel(object):
         self.body_size = body_size
         self.props = props
         if self.body_size == 0: # don't expect body frame
-            self.inbound_body('')
+            self.inbound_body(b'')
 
     def inbound_body(self, body_chunk):
         self.body_chunks.append( body_chunk )
@@ -92,7 +92,7 @@ class Channel(object):
             result = self.method_frame
             props = self.props
 
-            result['body'] = ''.join(self.body_chunks)
+            result['body'] = compat.join_as_bytes(self.body_chunks)
             result['headers'] = props.get('headers', {})
             # Aint need a reference loop.
             if 'headers' in props:
@@ -104,4 +104,3 @@ class Channel(object):
 
     def _handle_inbound(self, result):
         self.promise.recv_method(result)
-
