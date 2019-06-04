@@ -1,3 +1,4 @@
+from builtins import range
 import os
 import unittest
 import puka
@@ -13,7 +14,7 @@ class TestLimits(base.TestCase):
         qname = 'test%s' % (random.random(),)
         msg = '%s' % (random.random(),)
 
-        queues = [qname+'.%s' % (i,) for i in xrange(100)]
+        queues = [qname+'.%s' % (i,) for i in range(100)]
         promises = [client.queue_declare(queue=q) for q in queues]
 
         for promise in promises:

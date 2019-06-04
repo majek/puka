@@ -4,7 +4,9 @@
 # Original source: Python-2.7/Lib/unittest/case.py
 #
 from __future__ import with_statement
+import future.utils as futils
 
+import re
 from unittest import *
 import unittest
 
@@ -35,7 +37,7 @@ class _AssertRaisesContext(object):
             return True
 
         expected_regexp = self.expected_regexp
-        if isinstance(expected_regexp, basestring):
+        if isinstance(expected_regexp, futils.string_types):
             expected_regexp = re.compile(expected_regexp)
         if not expected_regexp.search(str(exc_value)):
             raise self.failureException('"%s" does not match "%s"' %

@@ -1,4 +1,6 @@
 from __future__ import with_statement
+from builtins import range
+import future.utils as futils
 
 import os
 import puka
@@ -67,14 +69,14 @@ class TestBasic(base.TestCase):
 
         for i in range(4):
             promise = client.basic_publish(exchange='', routing_key=self.name,
-                                           body=self.msg+str(i))
+                                           body=self.msg+futils.native_bytes(i))
             client.wait(promise)
 
         msgs = []
         for i in range(4):
             promise = client.basic_get(queue=self.name)
             result = client.wait(promise)
-            self.assertEqual(result['body'], self.msg+str(i))
+            self.assertEqual(result['body'], self.msg+futils.native_bytes(i))
             self.assertEqual(result['redelivered'], False)
             msgs.append( result )
 

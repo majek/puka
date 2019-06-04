@@ -1,4 +1,5 @@
 from __future__ import with_statement
+from builtins import range
 
 import os
 import puka
@@ -104,10 +105,10 @@ class TestPublishAsync(base.TestCase):
         response = {}
         try:
             client.wait(promise)
-        except puka.NoRoute as (e,):
+        except puka.NoRoute as e:
             response = e
 
-        self.assertEqual(response['reply_code'], 312)
+        self.assertEqual(response.reply_code, 312)
 
 
     def test_simple_basic_get(self):
