@@ -3,10 +3,10 @@ import future.utils as futils
 
 import copy
 import logging
+from collections import OrderedDict
 
 from . import exceptions
 from . import spec
-from . import ordereddict
 
 log = logging.getLogger('puka')
 
@@ -79,7 +79,7 @@ def publish_promise(conn):
     pt.x_async_enabled = False
     pt.x_delivery_tag = 1
     pt.x_delivery_tag_shift = 0
-    pt.x_async_inflight = ordereddict.OrderedDict()
+    pt.x_async_inflight = OrderedDict()
     pt.x_async_next = []
     conn.x_publish_promise = pt
 
