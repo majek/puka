@@ -61,4 +61,3 @@ ERRORS = {
     540: AMQPNotImplemented,
     541: InternalError,
 }
-

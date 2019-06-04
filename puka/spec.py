@@ -22,6 +22,8 @@ METHOD_CONNECTION_OPEN          = 0x000A0028 	# 10,40 655400
 METHOD_CONNECTION_OPEN_OK       = 0x000A0029 	# 10,41 655401
 METHOD_CONNECTION_CLOSE         = 0x000A0032 	# 10,50 655410
 METHOD_CONNECTION_CLOSE_OK      = 0x000A0033 	# 10,51 655411
+METHOD_CONNECTION_BLOCKED       = 0x000A003C 	# 10,60 655420
+METHOD_CONNECTION_UNBLOCKED     = 0x000A003D 	# 10,61 655421
 METHOD_CHANNEL_OPEN             = 0x0014000A 	# 20,10 1310730
 METHOD_CHANNEL_OPEN_OK          = 0x0014000B 	# 20,11 1310731
 METHOD_CHANNEL_FLOW             = 0x00140014 	# 20,20 1310740
@@ -68,6 +70,7 @@ METHOD_CONFIRM_SELECT           = 0x0055000A 	# 85,10 5570570
 METHOD_CONFIRM_SELECT_OK        = 0x0055000B 	# 85,11 5570571
 
 CLASS_BASIC             = 0x003C
+
 
 
 class Frame(dict):
@@ -158,6 +161,28 @@ class FrameConnectionCloseOk(Frame):
 
 def decode_connection_close_ok(data, offset):
     frame = FrameConnectionCloseOk()
+    return frame, offset
+
+
+class FrameConnectionBlocked(Frame):
+    name = 'connection.blocked'
+    method_id = METHOD_CONNECTION_BLOCKED
+
+def decode_connection_blocked(data, offset):
+    frame = FrameConnectionBlocked()
+    (str_len,) = unpack_from('!B', data, offset)
+    offset += 1
+    frame['reason'] = data[offset : offset+str_len]
+    offset += str_len
+    return frame, offset
+
+
+class FrameConnectionUnblocked(Frame):
+    name = 'connection.unblocked'
+    method_id = METHOD_CONNECTION_UNBLOCKED
+
+def decode_connection_unblocked(data, offset):
+    frame = FrameConnectionUnblocked()
     return frame, offset
 
 
@@ -493,6 +518,8 @@ METHODS = {
     METHOD_CONNECTION_OPEN_OK:      decode_connection_open_ok,
     METHOD_CONNECTION_CLOSE:        decode_connection_close,
     METHOD_CONNECTION_CLOSE_OK:     decode_connection_close_ok,
+    METHOD_CONNECTION_BLOCKED:      decode_connection_blocked,
+    METHOD_CONNECTION_UNBLOCKED:    decode_connection_unblocked,
     METHOD_CHANNEL_OPEN_OK:         decode_channel_open_ok,
     METHOD_CHANNEL_FLOW:            decode_channel_flow,
     METHOD_CHANNEL_FLOW_OK:         decode_channel_flow_ok,
@@ -650,6 +677,21 @@ def encode_connection_close(reply_code, reply_text, class_id, method_id):
 def encode_connection_close_ok():
     return ( (0x01,
                 pack('!I', METHOD_CONNECTION_CLOSE_OK),
+           ), )
+
+# reason=''
+def encode_connection_blocked(reason):
+    return ( (0x01,
+              join_as_bytes((
+                pack('!IB', METHOD_CONNECTION_BLOCKED, len(reason)),
+                reason,
+              ))
+           ), )
+
+# 
+def encode_connection_unblocked():
+    return ( (0x01,
+                pack('!I', METHOD_CONNECTION_UNBLOCKED),
            ), )
 
 # out_of_band=''
