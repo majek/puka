@@ -120,6 +120,13 @@ def encode(table):
     Traceback (most recent call last):
         ...
     AssertionError: Unsupported value type during encoding set([]) (<type 'set'>)
+
+    Checking the handling of unicode and byte values
+
+    >>> encode({u'd': u'x'})
+    '\x00\x00\x00\x08\x01dS\x00\x00\x00\x01x'
+    >>> encode({b'd': b'x'})
+    '\x00\x00\x00\x08\x01dS\x00\x00\x00\x01x'
     """
     pieces = []
     if table is None:
@@ -142,6 +149,10 @@ def encode_value(pieces, value):
     elif isinstance(value, futils.string_types):
         pieces.append(struct.pack('>cI', b'S', len(value)))
         pieces.append(compat.as_bytes(value))
+        return 5 + len(value)
+    elif isinstance(value, futils.binary_type):
+        pieces.append(struct.pack('>cI', b'S', len(value)))
+        pieces.append(value)
         return 5 + len(value)
     elif isinstance(value, bool):
         pieces.append(struct.pack('>cB', b't', int(value)))
