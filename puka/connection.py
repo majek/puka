@@ -153,11 +153,11 @@ class Connection(object):
             self.needs_write = self.needs_write_nohandshake
             self.on_write = self.on_write_nohandshake
             self.on_read = self.on_read_nohandshake
-        except ssl.SSLError, e:
+        except ssl.SSLError as e:
             if e.args[0] == ssl.SSL_ERROR_WANT_READ:
                 return
             raise
-        except socket.error, e:
+        except socket.error as e:
             if e.errno == errno.EAGAIN:
                 return
             self._shutdown(exceptions.mark_frame(spec.Frame(),
