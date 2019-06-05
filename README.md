@@ -142,7 +142,7 @@ tests (see the `./tests` directory).
 I want to install Puka
 ----------------------
 
-Puka works with Python 2.6 and 2.7.
+Puka works with Python 2.7/3.6+.
 
 You can install Puka system-wide using pip:
 
