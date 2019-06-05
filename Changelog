@@ -1,3 +1,34 @@
+0.0.8
+=====
+
+415cad6 py3: Extend table.encode() to handle both str and bytes
+b9a2928 Fix broken test not unpacking correct number of return values
+d6a5d40 py3: Fix few remaining py3 exception syntax
+74a7c4a py3: update README and setup.py for py3 support and min version py 2.7
+af3644b Update LICENSE to remove reference to vendored ordereddict
+94e11bd Add pytest config
+11342ec py3: Fix pylint warning
+11a1759 py3: Fix broken doctests because of sorted dict order impl in py3.6+
+47e40a4 py3: replace reaching into Decimal private field with public tuple field
+b1010b0 py3: conforming py3 to bytes and back to str for socket data; remove old unittest backport
+768eb54 py3: re-vendor amqp_codegen and update codegen tools
+6b95b6f py3: replace vendor ordereddict with py2.7+ stdlib
+a43cd6c py3: futurize stage2 fixes for tests
+869a865 py3: futurize stage2 fixes and custom str/bytes handling
+69e84b8 py3: futurize stage1 fixes
+e62894d tests: make amqp user configurable
+f136a26 tests: Add cleanup callbacks to unittests to remove test queues/exchanges even on failure
+1277092 Merge pull request #67 from jmptbl/master
+cd68a87 More fixes for non-blocking SSL connections.
+f06c361 Merge pull request #64 from jmptbl/master
+00bfd39 Non-blocking connect() broke SSL wrap_socket() and backward compatibility fix
+5f137ed Merge pull request #63 from jmptbl/master
+76ceebf remove Connection._do_ssl_handshake() - unneeded since non-blocking TLS fix
+5d15722 make socket connect() non-blocking
+7028439 fix non-blocking TLS connect
+9a8ac3b Merge pull request #58 from fpietka/patch-1
+ae0a83d Add some code highlighting in README.md file
+
 0.0.7
 =====
 
