@@ -24,7 +24,7 @@ class TestConnection(base.TestCase):
     # The following tests take 3 seconds each, due to Rabbit.
     def test_wrong_user(self):
         (username, password, vhost, host, port) = \
-            puka.connection.parse_amqp_url(self.amqp_url)
+            puka.connection.parse_amqp_url(self.amqp_url)[:5]
 
         client = puka.Client('amqp://%s:%s@%s:%s%s' % \
                                  (username, 'wrongpass', host, port, vhost))
