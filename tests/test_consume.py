@@ -1,4 +1,5 @@
 from __future__ import with_statement
+from builtins import range
 
 import os
 import puka
@@ -7,14 +8,16 @@ import base
 
 
 class TestBasicConsumeMulti(base.TestCase):
+
     @base.connect
     def test_shared_qos(self, client):
         promise = client.queue_declare(queue=self.name1)
+        self.cleanup_promise(client.queue_delete, queue=self.name1)
         client.wait(promise)
 
         promise = client.queue_declare(queue=self.name2)
+        self.cleanup_promise(client.queue_delete, queue=self.name2)
         client.wait(promise)
-
 
         promise = client.basic_publish(exchange='', routing_key=self.name1,
                                       body='a')
@@ -44,16 +47,10 @@ class TestBasicConsumeMulti(base.TestCase):
         promise = client.basic_cancel(consume_promise)
         client.wait(promise)
 
-        promise = client.queue_delete(queue=self.name1)
-        client.wait(promise)
-
-        promise = client.queue_delete(queue=self.name2)
-        client.wait(promise)
-
-
     @base.connect
     def test_access_refused(self, client):
         promise = client.queue_declare(queue=self.name, exclusive=True)
+        self.cleanup_promise(client.queue_delete, queue=self.name)
         client.wait(promise)
 
         promise = client.queue_declare(queue=self.name)
@@ -72,9 +69,6 @@ class TestBasicConsumeMulti(base.TestCase):
         with self.assertRaises(puka.AccessRefused):
             client.wait(promise)
 
-        promise = client.queue_delete(queue=self.name)
-        client.wait(promise)
-
 
     @base.connect
     def test_consumer_tag(self, client):
@@ -86,6 +80,8 @@ class TestBasicConsumeMulti(base.TestCase):
 
         p1 = client.queue_declare(queue=self.name1)
         p2 = client.queue_declare(queue=self.name2)
+        self.cleanup_promise(client.queue_delete, queue=self.name1)
+        self.cleanup_promise(client.queue_delete, queue=self.name2)
         client.wait_for_all([p1, p2])
 
         # Single consumer, unspecified tag
@@ -126,11 +122,6 @@ class TestBasicConsumeMulti(base.TestCase):
                                  '%s.1.whooa!' % consume_promise)
             client.basic_ack(result)
 
-        p1 = client.queue_delete(queue=self.name1)
-        p2 = client.queue_delete(queue=self.name2)
-        client.wait_for_all([p1, p2])
-
-
     @base.connect
     def test_consumer_tag_repeated(self, client):
         # In theory consumer_tags are unique. But our users may not
@@ -140,28 +131,30 @@ class TestBasicConsumeMulti(base.TestCase):
         p2 = client.queue_declare(queue=self.name2)
         client.wait_for_all([p1, p2])
 
-        promise = client.basic_publish(exchange='', routing_key=self.name1,
-                                       body=self.msg)
-        client.wait(promise)
+        try:
+            promise = client.basic_publish(exchange='', routing_key=self.name1,
+                                           body=self.msg)
+            client.wait(promise)
 
-        consume_promise = client.basic_consume_multi([
-                {'queue': self.name1,
-                 'consumer_tag': 'repeated'},
-                {'queue': self.name1,
-                 'consumer_tag': 'repeated'},
-                {'queue': self.name2,
-                 'consumer_tag': 'repeated'}])
+            consume_promise = client.basic_consume_multi([
+                    {'queue': self.name1,
+                     'consumer_tag': 'repeated'},
+                    {'queue': self.name1,
+                     'consumer_tag': 'repeated'},
+                    {'queue': self.name2,
+                     'consumer_tag': 'repeated'}])
 
-        result = client.wait(consume_promise)
-        self.assertEqual(result['body'], self.msg)
-        ct = result['consumer_tag'].split('.')
-        self.assertEqual(ct[0], '%s' % consume_promise)
-        self.assertTrue(ct[1] in ('0', '1', '2'))
-        self.assertEqual(ct[2], 'repeated')
+            result = client.wait(consume_promise)
+            self.assertEqual(result['body'], self.msg)
+            ct = result['consumer_tag'].split('.')
+            self.assertEqual(ct[0], '%s' % consume_promise)
+            self.assertTrue(ct[1] in ('0', '1', '2'))
+            self.assertEqual(ct[2], 'repeated')
 
-        p1 = client.queue_delete(queue=self.name1)
-        p2 = client.queue_delete(queue=self.name2)
-        client.wait_for_all([p1, p2])
+        finally:
+            p1 = client.queue_delete(queue=self.name1)
+            p2 = client.queue_delete(queue=self.name2)
+            client.wait_for_all([p1, p2])
 
 
 if __name__ == '__main__':

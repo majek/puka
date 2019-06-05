@@ -1,3 +1,9 @@
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+import future.utils as futils
+
 import errno
 import logging
 import select
@@ -5,10 +11,11 @@ import socket
 import ssl
 import struct
 import time
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from . import urlparse
 
 from . import channel
+from . import compat
 from . import exceptions
 from . import machine
 from . import simplebuffer
@@ -49,7 +56,7 @@ class Connection(object):
         self.promises = promise.PromiseCollection(self)
 
         (self.username, self.password, self.vhost,
-            self.host, self.port, self.ssl) = parse_amqp_url(str(amqp_url))
+            self.host, self.port, self.ssl) = parse_amqp_url(futils.native_str(amqp_url))
 
         self.client_properties = client_properties
 
@@ -89,7 +96,7 @@ class Connection(object):
         set_close_exec(self.sd)
         try:
             self.sd.connect(sockaddr)
-        except socket.error, e:
+        except socket.error as e:
             if e.errno not in (errno.EINPROGRESS, errno.EWOULDBLOCK):
                 raise
 
@@ -146,11 +153,11 @@ class Connection(object):
             self.needs_write = self.needs_write_nohandshake
             self.on_write = self.on_write_nohandshake
             self.on_read = self.on_read_nohandshake
-        except ssl.SSLError, e:
+        except ssl.SSLError as e:
             if e.args[0] == ssl.SSL_ERROR_WANT_READ:
                 return
             raise
-        except socket.error, e:
+        except socket.error as e:
             if e.errno == errno.EAGAIN:
                 return
             self._shutdown(exceptions.mark_frame(spec.Frame(),
@@ -160,11 +167,11 @@ class Connection(object):
     def on_read_nohandshake(self):
         try:
             r = self.sd.recv(Connection.frame_max)
-        except ssl.SSLError, e:
+        except ssl.SSLError as e:
             if e.args[0] == ssl.SSL_ERROR_WANT_READ:
                 return
             raise
-        except socket.error, e:
+        except socket.error as e:
             if e.errno == errno.EAGAIN:
                 return
             raise
@@ -186,7 +193,7 @@ class Connection(object):
 
     def _handle_conn_read(self, data, offset):
         self._handle_read = self._handle_frame_read
-        if data[offset:].startswith('AMQP'):
+        if data[offset:].startswith(b'AMQP'):
             a,b,c,d = struct.unpack('!BBBB', data[offset+4:offset+4+4])
             self._shutdown(exceptions.mark_frame(
                     spec.Frame(),
@@ -204,7 +211,11 @@ class Connection(object):
         offset += 7
         if len(data)-start_offset < 8+payload_size:
             return start_offset, 8+payload_size
-        assert data[offset+payload_size] == '\xCE'
+
+        if futils.PY2:
+            assert data[offset+payload_size] == '\xCE'
+        else:
+            assert bytes([data[offset+payload_size]]) == b'\xCE'
 
         if frame_type == 0x01: # Method frame
             method_id, = struct.unpack_from('!I', data, offset)
@@ -217,7 +228,7 @@ class Connection(object):
             props, offset = spec.PROPS[class_id](data, offset)
             self.channels.channels[channel].inbound_props(body_size, props)
         elif frame_type == 0x03: # body frame
-            body_chunk = str(data[offset : offset+payload_size])
+            body_chunk = data[offset:offset+payload_size]
             self.channels.channels[channel].inbound_body(body_chunk)
             offset += len(body_chunk)
         elif frame_type == 0x08: # heartbeat frame
@@ -233,7 +244,7 @@ class Connection(object):
             # as well with the same timeout.  We're using the server
             # heartbeat as a trigger instead of setting up a separate
             # heartbeat cycler.
-            self._send_frames(channel_number=0, frames=[(0x08, '')])
+            self._send_frames(channel_number=0, frames=[(0x08, b'')])
         else:
             assert False, "Unknown frame type 0x%x" % frame_type
 
@@ -247,12 +258,13 @@ class Connection(object):
         self.send_buf.write(data)
 
     def _send_frames(self, channel_number, frames):
-        self._send( ''.join([''.join((struct.pack('!BHI',
-                                                  frame_type,
-                                                  channel_number,
-                                                  len(payload)),
-                                      payload, '\xCE')) \
-                                 for frame_type, payload in frames]) )
+        self._send(compat.join_as_bytes([
+            compat.join_as_bytes((
+                struct.pack('!BHI', frame_type, channel_number, len(payload)),
+                compat.as_bytes(payload), b'\xCE',
+            ))
+            for frame_type, payload in frames
+        ]))
 
     def needs_write_connect(self):
         return not self.sd is None
@@ -264,7 +276,7 @@ class Connection(object):
             self.on_write = self.on_write_nohandshake
             self.on_read = self.on_read_nohandshake
             return self.needs_write()
-	except ssl.SSLError, e:
+        except ssl.SSLError as e:
             if e.args[0] == ssl.SSL_ERROR_WANT_WRITE:
                 return True
         return False
@@ -297,11 +309,11 @@ class Connection(object):
         try:
             # On windows socket.send blows up if the buffer is too large.
             r = self.sd.send(self.send_buf.read(128*1024))
-        except ssl.SSLError, e:
+        except ssl.SSLError as e:
             if e.args[0] == ssl.SSL_ERROR_WANT_WRITE:
                 return
             raise
-        except socket.error, e:
+        except socket.error as e:
             if e.errno in (errno.EWOULDBLOCK, errno.ENOBUFS):
                 return
             raise
@@ -436,7 +448,7 @@ class Connection(object):
         # And kill the socket
         try:
             self.sd.shutdown(socket.SHUT_RDWR)
-        except socket.error, e:
+        except socket.error as e:
             if e.errno is not errno.ENOTCONN: raise
         self.sd.close()
         self.sd = None
@@ -502,18 +514,18 @@ def parse_amqp_url(amqp_url):
     # urlsplit doesn't know how to parse query when scheme is amqp,
     # we need to pretend we're http'
     o = urlparse.urlsplit('http' + amqp_url[len('amqp'):])
-    username = urllib.unquote(o.username) if o.username is not None else 'guest'
-    password = urllib.unquote(o.password) if o.password is not None else 'guest'
+    username = futils.native_str(urllib.parse.unquote(o.username)) if o.username is not None else 'guest'
+    password = futils.native_str(urllib.parse.unquote(o.password)) if o.password is not None else 'guest'
 
     path = o.path[1:] if o.path.startswith('/') else o.path
     # We do not support empty vhost case. Empty vhost is treated as
     # '/'. This is mostly for backwards compatibility, and the fact
     # that empty vhost is not very useful.
-    vhost = urllib.unquote(path) if path else '/'
-    host = urllib.unquote(o.hostname) if o.hostname else 'localhost'
+    vhost = futils.native_str(urllib.parse.unquote(path)) if path else '/'
+    host = futils.native_str(urllib.parse.unquote(o.hostname)) if o.hostname else 'localhost'
     port = o.port if o.port else 5672
-    ssl = o.scheme == 'https'
-    return (username, password, vhost, host, port, ssl)
+    ssl = futils.native_str(o.scheme) == 'https'
+    return username, password, vhost, host, port, ssl
 
 def set_ridiculously_high_buffers(sd):
     '''

@@ -48,20 +48,28 @@
 #
 # Code originally from Pika, adapted to Puka.
 #
+from __future__ import absolute_import
+from builtins import int
+import future.utils as futils
 
 import struct
 import decimal
 import datetime
 import calendar
+from collections import OrderedDict
+
+from . import compat
 
 
 def encode(table):
-    r'''
+    r"""
     >>> encode(None)
     '\x00\x00\x00\x00'
     >>> encode({})
     '\x00\x00\x00\x00'
-    >>> encode({'a':1, 'c':1, 'd':'x', 'e':{}})
+
+    # python 3.6+ uses sorted dict implementation, so we have to ensure order for 2.x
+    >>> encode(OrderedDict([('a',1), ('c',1), ('e',{}), ('d','x')]))
     '\x00\x00\x00\x1d\x01aI\x00\x00\x00\x01\x01cI\x00\x00\x00\x01\x01eF\x00\x00\x00\x00\x01dS\x00\x00\x00\x01x'
     >>> encode({'a':decimal.Decimal('1.0')})
     '\x00\x00\x00\x08\x01aD\x00\x00\x00\x00\x01'
@@ -71,9 +79,9 @@ def encode(table):
     '\x00\x00\x00\x0b\x01aT\x00\x00\x00\x00M\x1enC'
     >>> encode({'test':decimal.Decimal('-0.01')})
     '\x00\x00\x00\x0b\x04testD\x02\xff\xff\xff\xff'
-    >>> encode({'a':-1, 'b':[1,2,3,4,-1],'g':-1})
+    >>> encode(OrderedDict([('a',-1), ('b',[1,2,3,4,-1]), ('g',-1)]))
     '\x00\x00\x00.\x01aI\xff\xff\xff\xff\x01bA\x00\x00\x00\x19I\x00\x00\x00\x01I\x00\x00\x00\x02I\x00\x00\x00\x03I\x00\x00\x00\x04I\xff\xff\xff\xff\x01gI\xff\xff\xff\xff'
-    >>> encode({'a': True, 'b':False})
+    >>> encode(OrderedDict([('a', True), ('b', False)]))
     '\x00\x00\x00\x08\x01at\x01\x01bt\x00'
     >>> encode({'a':None})
     '\x00\x00\x00\x03\x01aV'
@@ -112,68 +120,80 @@ def encode(table):
     Traceback (most recent call last):
         ...
     AssertionError: Unsupported value type during encoding set([]) (<type 'set'>)
-    '''
+
+    Checking the handling of unicode and byte values
+
+    >>> encode({u'd': u'x'})
+    '\x00\x00\x00\x08\x01dS\x00\x00\x00\x01x'
+    >>> encode({b'd': b'x'})
+    '\x00\x00\x00\x08\x01dS\x00\x00\x00\x01x'
+    """
     pieces = []
     if table is None:
         table = {}
     length_index = len(pieces)
     pieces.append(None) # placeholder
     tablesize = 0
-    for (key, value) in table.iteritems():
+    for (key, value) in futils.viewitems(table):
         pieces.append(struct.pack('B', len(key)))
         pieces.append(key)
         tablesize = tablesize + 1 + len(key)
         tablesize += encode_value(pieces, value)
     pieces[length_index] = struct.pack('>I', tablesize)
-    return ''.join(pieces)
+    return compat.join_as_bytes(pieces)
 
 def encode_value(pieces, value):
     if value is None:
-        pieces.append(struct.pack('>c', 'V'))
+        pieces.append(struct.pack('>c', b'V'))
         return 1
-    elif isinstance(value, str):
-        pieces.append(struct.pack('>cI', 'S', len(value)))
+    elif isinstance(value, futils.string_types):
+        pieces.append(struct.pack('>cI', b'S', len(value)))
+        pieces.append(compat.as_bytes(value))
+        return 5 + len(value)
+    elif isinstance(value, futils.binary_type):
+        pieces.append(struct.pack('>cI', b'S', len(value)))
         pieces.append(value)
         return 5 + len(value)
     elif isinstance(value, bool):
-        pieces.append(struct.pack('>cB', 't', int(value)))
+        pieces.append(struct.pack('>cB', b't', int(value)))
         return 2
-    elif isinstance(value, int) or isinstance(value, long):
-        if -2147483648L <= value <= 2147483647L:
-            pieces.append(struct.pack('>ci', 'I', value))
+    elif isinstance(value, futils.integer_types):
+        if -2147483648 <= value <= 2147483647:
+            pieces.append(struct.pack('>ci', b'I', value))
             return 5
-        elif -9223372036854775808L <= value <= 9223372036854775807L:
-            pieces.append(struct.pack('>cq', 'l', value))
+        elif -9223372036854775808 <= value <= 9223372036854775807:
+            pieces.append(struct.pack('>cq', b'l', value))
             return 9
         else:
             assert False, "Unable to represent integer wider than 64 bits"
     elif isinstance(value, decimal.Decimal):
         value = value.normalize()
-        if value._exp < 0:
-            decimals = -value._exp
+        exp = value.as_tuple().exponent
+        if exp < 0:
+            decimals = -exp
             raw = int(value * (decimal.Decimal(10) ** decimals))
-            pieces.append(struct.pack('>cBi', 'D', decimals, raw))
+            pieces.append(struct.pack('>cBi', b'D', decimals, raw))
         else:
             # per spec, the "decimals" octet is unsigned (!)
-            pieces.append(struct.pack('>cBi', 'D', 0, int(value)))
+            pieces.append(struct.pack('>cBi', b'D', 0, int(value)))
         return 6
     elif isinstance(value, datetime.datetime):
-        pieces.append(struct.pack('>cQ', 'T', calendar.timegm(
+        pieces.append(struct.pack('>cQ', b'T', calendar.timegm(
                     value.utctimetuple())))
         return 9
     elif isinstance(value, float):
-        pieces.append(struct.pack('>cd', 'd', value))
+        pieces.append(struct.pack('>cd', b'd', value))
         return 9
     elif isinstance(value, dict):
-        pieces.append(struct.pack('>c', 'F'))
+        pieces.append(struct.pack('>c', b'F'))
         piece = encode(value)
         pieces.append(piece)
         return 1 + len(piece)
     elif isinstance(value, list):
         p = []
         [encode_value(p, v) for v in value]
-        piece = ''.join(p)
-        pieces.append(struct.pack('>cI', 'A', len(piece)))
+        piece = compat.join_as_bytes(p)
+        pieces.append(struct.pack('>cI', b'A', len(piece)))
         pieces.append(piece)
         return 5 + len(piece)
     else:
@@ -181,13 +201,15 @@ def encode_value(pieces, value):
             value, type(value))
 
 def decode(encoded, offset):
-    r'''
+    r"""
     >>> decode(encode(None), 0)
     ({}, 4)
     >>> decode(encode({}), 0)[0]
     {}
-    >>> decode(encode({'a':1, 'c':1, 'd':'x', 'e':{}, 'f':-1}), 0)[0]
-    {'a': 1, 'c': 1, 'e': {}, 'd': 'x', 'f': -1}
+
+    # python 3.6+ uses sorted dict implementation, so we have to ensure order for 2.x
+    >>> sorted(decode(encode({'a':1, 'c':1, 'd':'x', 'e':{}, 'f':-1}), 0)[0].items())
+    [('a', 1), ('c', 1), ('d', 'x'), ('e', {}), ('f', -1)]
 
     # python 2.5 reports Decimal("1.01"), python 2.6 Decimal('1.01')
     >>> decode(encode({'a':decimal.Decimal('1.01')}), 0)[0] # doctest: +ELLIPSIS
@@ -204,8 +226,8 @@ def decode(encoded, offset):
     {'test': Decimal('1000000')}
     >>> decode(encode({'a':[1,2,3,'a',decimal.Decimal('-0.01')]}), 0)[0]
     {'a': [1, 2, 3, 'a', Decimal('-0.01')]}
-    >>> decode(encode({'a': 100200L, 'b': 9223372036854775807L}), 0)[0]
-    {'a': 100200, 'b': 9223372036854775807L}
+    >>> decode(encode({'a': 100200, 'b': 9223372036854775807}), 0)[0]
+    {'a': 100200, 'b': 9223372036854775807}
     >>> decode(encode({'a': True, 'b': False}), 0)[0]
     {'a': True, 'b': False}
     >>> decode(encode({'a': None}), 0)[0]
@@ -216,17 +238,17 @@ def decode(encoded, offset):
     {'a': inf, 'b': nan}
 
     8 bit unsigned, not produced by our encode
-    >>> decode('\x00\x00\x00\x04\x01ab\xff', 0)[0]
+    >>> decode(b'\x00\x00\x00\x04\x01ab\xff', 0)[0]
     {'a': 255}
 
     16 bit signed, not produced by our encode
-    >>> decode('\x00\x00\x00\x04\x01as\xff\xff', 0)[0]
+    >>> decode(b'\x00\x00\x00\x04\x01as\xff\xff', 0)[0]
     {'a': -1}
     
     single precision real, not produced by our encode
-    >>> decode('\x00\x00\x00\x06\x01af\x50\x15\x02\xF9', 0)[0]
+    >>> decode(b'\x00\x00\x00\x06\x01af\x50\x15\x02\xF9', 0)[0]
     {'a': 10000000000.0}
-    '''
+    """
     result = {}
     tablesize = struct.unpack_from('>I', encoded, offset)[0]
     offset = offset + 4
@@ -234,57 +256,59 @@ def decode(encoded, offset):
     while offset < limit:
         keylen = struct.unpack_from('B', encoded, offset)[0]
         offset = offset + 1
-        key = encoded[offset : offset + keylen]
+        key = compat.as_str(encoded[offset : offset + keylen])
         offset = offset + keylen
         result[key], offset = decode_value(encoded, offset)
     return (result, offset)
 
 def decode_value(encoded, offset):
     kind = encoded[offset]
+    if not futils.PY2:
+        kind = bytes([kind])
     offset = offset + 1
-    if (kind == 'S') or (kind == 'x'):
+    if (kind == b'S') or (kind == b'x'):
         length = struct.unpack_from('>I', encoded, offset)[0]
         offset = offset + 4
-        value = encoded[offset : offset + length]
+        value = compat.as_str(encoded[offset : offset + length])
         offset = offset + length
-    elif kind == 's':
+    elif kind == b's':
         value = struct.unpack_from('>h', encoded, offset)[0]
         offset = offset + 2
-    elif kind == 't':
+    elif kind == b't':
         value = struct.unpack_from('>B', encoded, offset)[0]
         value = bool(value)
         offset = offset + 1
-    elif kind == 'b':
+    elif kind == b'b':
         value = struct.unpack_from('>B', encoded, offset)[0]
         offset = offset + 1
-    elif kind == 'I':
+    elif kind == b'I':
         value = struct.unpack_from('>i', encoded, offset)[0]
         offset = offset + 4
-    elif kind == 'l':
+    elif kind == b'l':
         value = struct.unpack_from('>q', encoded, offset)[0]
-        value = long(value)
+        value = int(value)
         offset = offset + 8
-    elif kind == 'f':
+    elif kind == b'f':
         # IEEE 754 single
         value = struct.unpack_from('>f', encoded, offset)[0]
         offset = offset + 4
-    elif kind == 'd':
+    elif kind == b'd':
         # IEEE 754 double
         value = struct.unpack_from('>d', encoded, offset)[0]
         offset = offset + 8
-    elif kind == 'D':
+    elif kind == b'D':
         decimals = struct.unpack_from('B', encoded, offset)[0]
         offset = offset + 1
         raw = struct.unpack_from('>i', encoded, offset)[0]
         offset = offset + 4
         value = decimal.Decimal(raw) * (decimal.Decimal(10) ** -decimals)
-    elif kind == 'T':
+    elif kind == b'T':
         value = datetime.datetime.utcfromtimestamp(
             struct.unpack_from('>Q', encoded, offset)[0])
         offset = offset + 8
-    elif kind == 'F':
+    elif kind == b'F':
         (value, offset) = decode(encoded, offset)
-    elif kind == 'A':
+    elif kind == b'A':
         length, = struct.unpack_from('>I', encoded, offset)
         offset = offset + 4
         offset_end = offset + length
@@ -293,7 +317,7 @@ def decode_value(encoded, offset):
             v, offset = decode_value(encoded, offset)
             value.append(v)
         assert offset == offset_end
-    elif kind == 'V':
+    elif kind == b'V':
         value = None
     else:
         assert False, "Unsupported field kind %s during decoding" % (kind,)

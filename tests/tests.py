@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys
 import glob
 import time
@@ -9,8 +10,8 @@ import unittest
 try:
     import coverage
 except ImportError:
-    print "No 'coverage' module found. Try:"
-    print "     sudo apt-get install python-coverage"
+    print("No 'coverage' module found. Try:")
+    print("     sudo apt-get install python-coverage")
     sys.exit(1)
 
 import logging
@@ -55,20 +56,20 @@ def main_coverage(TESTS):
         modules.append(mod)
 
     if 'unittest' in TESTS:
-        print "***** Unittest *****"
+        print("***** Unittest *****")
         test_args = {'verbosity': 1}
         suite = unittest.TestLoader().loadTestsFromNames(TEST_NAMES)
         unittest.TextTestRunner(**test_args).run(suite)
 
     if 'doctest' in TESTS:
         t0 = time.time()
-        print "\n***** Doctest *****"
+        print("\n***** Doctest *****")
         for mod in modules:
             doctest.testmod(mod, verbose=VERBOSE)
         td = time.time() - t0
-        print "      Tests took %.3f seconds" % (td, )
+        print("      Tests took %.3f seconds" % (td, ))
 
-    print "\n***** Coverage Python *****"
+    print("\n***** Coverage Python *****")
     cov.stop()
     cov.report(modules, ignore_errors=1, show_missing=1)
     #cov.html_report(morfs=modules, directory='/tmp')

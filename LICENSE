@@ -5,4 +5,3 @@ MIT License.  For the MIT License please see LICENSE-MIT-Puka.
 spec/table.py: Adapted from Pika, licensed under GPL or MPL
 puka/urlparse.py: Backported from Python 2.7 (ipv6 support).
                   Distributed on Python License.
-puka/ordereddict.py: MIT license by 2009 Raymond Hettinger.

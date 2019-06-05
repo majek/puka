@@ -1,13 +1,17 @@
+from __future__ import absolute_import
+from future.utils import with_metaclass
+
 import functools
 
 from . import connection
 from . import machine
 
-def meta_attach_methods(name, bases, cls):
-    decorator, list_of_methods = cls['attach_methods']
-    for method in list_of_methods:
-        cls[method.__name__] = decorator(method)
-    return type(name, bases, cls)
+class meta_attach_methods(type):
+    def __new__(cls, name, bases, nmspc):
+        decorator, list_of_methods = nmspc['attach_methods']
+        for method in list_of_methods:
+            nmspc[method.__name__] = decorator(method)
+        return super(meta_attach_methods, cls).__new__(cls, name, bases, nmspc)
 
 
 def machine_decorator(method):
@@ -23,8 +27,7 @@ def machine_decorator(method):
     return wrapper
 
 
-class Client(connection.Connection):
-    __metaclass__ = meta_attach_methods
+class Client(with_metaclass(meta_attach_methods, connection.Connection)):
     attach_methods = (machine_decorator, [
         machine.queue_declare,
         machine.queue_purge,

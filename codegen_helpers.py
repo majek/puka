@@ -1,3 +1,4 @@
+from __future__ import print_function
 import itertools
 import random
 import re
@@ -32,12 +33,12 @@ class Field(object):
 
 class FieldStr(Field):
     def _do_print(self, prefix, dname):
-        print prefix+"%s = data[offset : offset+str_len]" % dname
-        print prefix+"offset += str_len"
+        print(prefix+"%s = as_str(data[offset : offset+str_len])" % dname)
+        print(prefix+"offset += str_len")
 
 class FieldTable(Field):
     def _do_print(self, prefix, dname):
-        print prefix+"%s, offset = table.decode(data, offset)" % dname
+        print(prefix+"%s, offset = table.decode(data, offset)" % dname)
 
 def xdecode_bits(wrapper, name):
     wrapper.bits.append( name )
@@ -77,26 +78,26 @@ class UnpackWrapper(object):
         for for_struct, fields in self._groups():
             if for_struct:
                 for f, first, last in fl_iterate(fields):
-                    print p+"%s%s%s%s" % (
+                    print(p+"%s%s%s%s" % (
                         '(' if first else ' ',
                         f.dname(decor),
                         ',' if first and last else '',
                         ')' if last else ',\n',
-                    ),
+                    ), end=(' ' if last else ''))
                 fmts = ''.join([f.fmt for f in fields])
-                print "= unpack_from('!%s', data, offset)" % (fmts,)
+                print("= unpack_from('!%s', data, offset)" % (fmts,))
                 if 'bits' in [f.dname(decor) for f in fields]:
                     self.do_print_bits(p, decor)
-                print p+"offset += %s" % ('+'.join(
+                print(p+"offset += %s" % ('+'.join(
                         map(str, [f.size for f in fields])
-                        ),)
+                        ),))
             else:
                 assert len(fields)==1
                 fields[0].do_print(p, decor)
 
     def do_print_bits(self, prefix, decor):
         for b, name in enumerate(self.bits):
-            print prefix+"%s = bool(bits & 0x%x)" % (decor % name, 1 << b)
+            print(prefix+"%s = bool(bits & 0x%x)" % (decor % name, 1 << b))
 
 
 fixed_types = {
@@ -197,8 +198,8 @@ class PackWrapper(object):
         return len(list(self.groups()))
 
     def groups(self):
-        groups = itertools.groupby(self.fields, lambda (a,b,c): True \
-                                       if a else random.random())
+        groups = itertools.groupby(self.fields, lambda a_b_c: True \
+                                       if a_b_c[0] else random.random())
         for _, fields_group in groups:
             fmt, sizes, names = itertools.izip(*fields_group)
             if re.match("^[0-9]+$", ''.join(names)):
@@ -215,15 +216,15 @@ class PackWrapper(object):
                 s = ""
                 for size, name in zip(sizes, names):
                     s+=  "%0*x" % (size*2, int(name))
-                print prefix+'"%s",' % (''.join(["\\x%s" % p
-                                                for p in re.findall('..', s)]),)
+                print(prefix+'"%s",' % (''.join(["\\x%s" % p
+                                                for p in re.findall('..', s)]),))
             else:
                 if fmt[0] is not None:
-                    print prefix+"pack('!%s', %s)%s" % (''.join(fmt),
+                    print(prefix+"pack('!%s', %s)%s" % (''.join(fmt),
                                                               ', '.join(names),
-                                                               ',' if comma else '')
+                                                               ',' if comma else ''))
                 else:
                     assert len(fmt) == 1
-                    print prefix+"%s%s" % (names[0],
-                                           ',' if comma else '')
+                    print(prefix+"%s%s" % (names[0],
+                                           ',' if comma else ''))
 

@@ -3,33 +3,29 @@ from __future__ import with_statement
 import os
 import puka
 import random
-import unittest_backport as unittest
+import unittest
 
+import base
 
-AMQP_URL=os.getenv('AMQP_URL', 'amqp:///')
+class TestQueue(base.TestCase):
 
-class TestQueue(unittest.TestCase):
-    def test_queue_declare(self):
+    @base.connect
+    def test_queue_declare(self, client):
         qname = 'test%s-this-queue-should-be-autodeleted' % (random.random(),)
-
-        client = puka.Client(AMQP_URL)
-        promise = client.connect()
-        client.wait(promise)
-
         promise = client.queue_declare(queue=qname, auto_delete=True)
         client.wait(promise)
         # The queue intentionally left hanging. Should be autoremoved.
         # Yes, no assertion here, we don't want to wait for 5 seconds.
 
-    def test_queue_redeclare(self):
-        qname = 'test%s' % (random.random(),)
+        self.cleanup_promise(client.queue_delete, queue=qname)
 
-        client = puka.Client(AMQP_URL)
-        promise = client.connect()
-        client.wait(promise)
+    @base.connect
+    def test_queue_redeclare(self, client):
+        qname = 'test%s' % (random.random(),)
 
         promise = client.queue_declare(queue=qname, auto_delete=False)
         r = client.wait(promise)
+        self.cleanup_promise(client.queue_delete, queue=qname)
 
         promise = client.queue_declare(queue=qname, auto_delete=False)
         r = client.wait(promise)
@@ -38,51 +34,36 @@ class TestQueue(unittest.TestCase):
         with self.assertRaises(puka.PreconditionFailed):
             client.wait(promise)
 
-        promise = client.queue_delete(queue=qname)
-        client.wait(promise)
-
-
-    def test_queue_redeclare_args(self):
+    @base.connect
+    def test_queue_redeclare_args(self, client):
         qname = 'test%s' % (random.random(),)
-
-        client = puka.Client(AMQP_URL)
-        promise = client.connect()
-        client.wait(promise)
 
         promise = client.queue_declare(queue=qname, arguments={})
         r = client.wait(promise)
+        self.cleanup_promise(client.queue_delete, queue=qname)
 
         promise = client.queue_declare(queue=qname, arguments={'x-expires':101})
         with self.assertRaises(puka.PreconditionFailed):
             client.wait(promise)
 
-        promise = client.queue_delete(queue=qname)
-        client.wait(promise)
-
-
-    def test_queue_delete_not_found(self):
-        client = puka.Client(AMQP_URL)
-        promise = client.connect()
-        client.wait(promise)
-
+    @base.connect
+    def test_queue_delete_not_found(self, client):
         promise = client.queue_delete(queue='not_existing_queue')
 
         with self.assertRaises(puka.NotFound):
             client.wait(promise)
 
-
-    def test_queue_bind(self):
+    @base.connect
+    def test_queue_bind(self, client):
         qname = 'test%s' % (random.random(),)
-
-        client = puka.Client(AMQP_URL)
-        promise = client.connect()
-        client.wait(promise)
 
         t = client.queue_declare(queue=qname)
         client.wait(t)
+        self.cleanup_promise(client.queue_delete, queue=qname)
 
         t = client.exchange_declare(exchange=qname, type='direct')
         client.wait(t)
+        self.cleanup_promise(client.exchange_delete, exchange=qname)
 
         t = client.basic_publish(exchange=qname, routing_key=qname, body='a')
         client.wait(t)
@@ -101,8 +82,8 @@ class TestQueue(unittest.TestCase):
 
         t = client.basic_get(queue=qname)
         r = client.wait(t)
-        self.assertEquals(r['body'], 'b')
-        self.assertEquals(r['message_count'], 0)
+        self.assertEqual(r['body'], 'b')
+        self.assertEqual(r['message_count'], 0)
 
         t = client.queue_delete(queue=qname)
         client.wait(t)

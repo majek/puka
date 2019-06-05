@@ -1,4 +1,5 @@
 from __future__ import with_statement
+from builtins import range
 
 import os
 import puka
@@ -11,6 +12,8 @@ class TestCancel(base.TestCase):
     def test_cancel_single(self, client):
         promise = client.queue_declare(queue=self.name)
         client.wait(promise)
+
+        self.cleanup_promise(client.queue_delete, queue=self.name)
 
         promise = client.basic_publish(exchange='', routing_key=self.name,
                                        body='a')
@@ -29,9 +32,6 @@ class TestCancel(base.TestCase):
         #with self.assertRaises(Exception):
         #    client.wait(consume_promise)
 
-        promise = client.queue_delete(queue=self.name)
-        client.wait(promise)
-
 
     @base.connect
     def test_cancel_multi(self, client):
@@ -39,6 +39,8 @@ class TestCancel(base.TestCase):
         for name in names:
             promise = client.queue_declare(queue=name)
             client.wait(promise)
+            self.cleanup_promise(client.queue_delete, queue=name)
+
             promise = client.basic_publish(exchange='', routing_key=name,
                                            body='a')
             client.wait(promise)
@@ -66,6 +68,8 @@ class TestCancel(base.TestCase):
         promise = client.queue_declare(queue=self.name)
         client.wait(promise)
 
+        self.cleanup_promise(client.queue_delete, queue=self.name)
+
         promise = client.basic_publish(exchange='', routing_key=self.name,
                                        body='a')
         client.wait(promise)
@@ -91,6 +95,8 @@ class TestCancel(base.TestCase):
         for name in names:
             promise = client.queue_declare(queue=name)
             client.wait(promise)
+            self.cleanup_promise(client.queue_delete, queue=name)
+
             promise = client.basic_publish(exchange='', routing_key=name,
                                            body='a')
             client.wait(promise)
@@ -110,6 +116,7 @@ class TestCancel(base.TestCase):
         for name in names:
             promise = client.queue_declare(queue=name)
             result = client.wait(promise)
+            self.cleanup_promise(client.queue_delete, queue=name)
             self.assertEqual(result['consumer_count'], 0)
 
     @base.connect
@@ -118,6 +125,7 @@ class TestCancel(base.TestCase):
         for name in names:
             promise = client.queue_declare(queue=name)
             client.wait(promise)
+            self.cleanup_promise(client.queue_delete, queue=name)
             promise = client.basic_publish(exchange='', routing_key=name,
                                            body='a')
             client.wait(promise)
@@ -138,6 +146,7 @@ class TestCancel(base.TestCase):
         for name in names:
             promise = client.queue_declare(queue=name)
             result = client.wait(promise)
+            self.cleanup_promise(client.queue_delete, queue=name)
             self.assertEqual(result['consumer_count'], 0)
 
 
