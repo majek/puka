@@ -154,8 +154,9 @@ def encode_value(pieces, value):
             assert False, "Unable to represent integer wider than 64 bits"
     elif isinstance(value, decimal.Decimal):
         value = value.normalize()
-        if value._exp < 0:
-            decimals = -value._exp
+        exp = value.as_tuple().exponent
+        if exp < 0:
+            decimals = -exp
             raw = int(value * (decimal.Decimal(10) ** decimals))
             pieces.append(struct.pack('>cBi', b'D', decimals, raw))
         else:
