@@ -259,7 +259,7 @@ class TestBasic(base.TestCase):
             "message_id": 'g',
             "timestamp": 1,
             "type_": 'h',
-            "user_id": 'guest',  # that one needs to match real user
+            "user_id": os.getenv('PUKA_TEST_USER', 'guest'),  # that one needs to match real user
             "app_id": 'j',
             "cluster_id": 'k',
             "custom": 'l',
