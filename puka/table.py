@@ -56,6 +56,7 @@ import struct
 import decimal
 import datetime
 import calendar
+from collections import OrderedDict
 
 from . import compat
 
@@ -66,7 +67,9 @@ def encode(table):
     '\x00\x00\x00\x00'
     >>> encode({})
     '\x00\x00\x00\x00'
-    >>> encode({'a':1, 'c':1, 'd':'x', 'e':{}})
+
+    # python 3.6+ uses sorted dict implementation, so we have to ensure order for 2.x
+    >>> encode(OrderedDict([('a',1), ('c',1), ('e',{}), ('d','x')]))
     '\x00\x00\x00\x1d\x01aI\x00\x00\x00\x01\x01cI\x00\x00\x00\x01\x01eF\x00\x00\x00\x00\x01dS\x00\x00\x00\x01x'
     >>> encode({'a':decimal.Decimal('1.0')})
     '\x00\x00\x00\x08\x01aD\x00\x00\x00\x00\x01'
@@ -76,9 +79,9 @@ def encode(table):
     '\x00\x00\x00\x0b\x01aT\x00\x00\x00\x00M\x1enC'
     >>> encode({'test':decimal.Decimal('-0.01')})
     '\x00\x00\x00\x0b\x04testD\x02\xff\xff\xff\xff'
-    >>> encode({'a':-1, 'b':[1,2,3,4,-1],'g':-1})
+    >>> encode(OrderedDict([('a',-1), ('b',[1,2,3,4,-1]), ('g',-1)]))
     '\x00\x00\x00.\x01aI\xff\xff\xff\xff\x01bA\x00\x00\x00\x19I\x00\x00\x00\x01I\x00\x00\x00\x02I\x00\x00\x00\x03I\x00\x00\x00\x04I\xff\xff\xff\xff\x01gI\xff\xff\xff\xff'
-    >>> encode({'a': True, 'b':False})
+    >>> encode(OrderedDict([('a', True), ('b', False)]))
     '\x00\x00\x00\x08\x01at\x01\x01bt\x00'
     >>> encode({'a':None})
     '\x00\x00\x00\x03\x01aV'
@@ -192,8 +195,10 @@ def decode(encoded, offset):
     ({}, 4)
     >>> decode(encode({}), 0)[0]
     {}
-    >>> decode(encode({'a':1, 'c':1, 'd':'x', 'e':{}, 'f':-1}), 0)[0]
-    {'a': 1, 'c': 1, 'e': {}, 'd': 'x', 'f': -1}
+
+    # python 3.6+ uses sorted dict implementation, so we have to ensure order for 2.x
+    >>> sorted(decode(encode({'a':1, 'c':1, 'd':'x', 'e':{}, 'f':-1}), 0)[0].items())
+    [('a', 1), ('c', 1), ('d', 'x'), ('e', {}), ('f', -1)]
 
     # python 2.5 reports Decimal("1.01"), python 2.6 Decimal('1.01')
     >>> decode(encode({'a':decimal.Decimal('1.01')}), 0)[0] # doctest: +ELLIPSIS
