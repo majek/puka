@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from future import utils as futils
 
 
