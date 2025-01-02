@@ -181,4 +181,4 @@ The easiest way to get started is to take a look at the examples and
 tweak them to your needs.  Detailed documentation doesn't exist
 now. If it existed it would live here:
 
-[http://majek.github.com/puka/](http://majek.github.com/puka/)
+[http://majek.github.io/puka/](http://majek.github.io/puka/)
